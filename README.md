@@ -14,4 +14,8 @@ This web application for depression treatment integrates advanced artificial int
 Pytorch ,
 Transformers ,
 Llama 3.2 1B model ,
+Keras ,
+Tensorflow ,
+EfficientNetv2 . 
+Librosa
 
