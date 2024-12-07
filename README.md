@@ -11,8 +11,7 @@ This web application for depression treatment integrates advanced artificial int
 
 
 # Project Dependencies
-Pytorch
-Python
-Transformers
-Llama 3.2 1B model
+Pytorch ,
+Transformers ,
+Llama 3.2 1B model ,
 
