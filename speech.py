@@ -1,4 +1,3 @@
-# speech.py
 import torch
 import whisper
 import pyaudio
@@ -9,7 +8,7 @@ class SpeechRecognition:
     def __init__(self):
         self.is_recording = False
         self.audio_file = "recorded_audio.wav"
-        self.model = None  # To be loaded from models/base.pt
+        self.model = None 
 
     def load_model(self):
         """Loads the Whisper model from the local models/ folder."""

@@ -7,12 +7,9 @@ import markdown
 from tkhtmlview import HTMLLabel
 import threading
 import os
-import pyaudio
-import wave
-import torch
-import whisper
-from config import MODEL_PATH, AUDIO_FILE, RATE, CHUNK, FORMAT, CHANNELS
+from config import AUDIO_FILE
 from api import send_to_backend
+from audio_handler import AudioHandler 
 
 class ChatbotApp(tb.Window):
     def __init__(self):
@@ -22,7 +19,6 @@ class ChatbotApp(tb.Window):
         self.state("zoomed")
         self.min_chat_width = 1024
 
-        # Load icons
         icon_size = (30, 30)
         self.user_icon = ImageTk.PhotoImage(
             Image.open("assets/user_icon.png").resize(icon_size, Image.LANCZOS)
@@ -32,10 +28,8 @@ class ChatbotApp(tb.Window):
         ) if os.path.exists("assets/robot_icon.png") else None
 
         self.message_count = 0
-        self.conversation_history = []
-        self.is_recording = False
-        self.model = None
-
+        self.conversation_history = []   
+        self.audio_handler = AudioHandler()
         self.create_widgets()
         self.add_message("AI", "Hello! How can I help you today?")
         threading.Thread(target=self.load_model, daemon=True).start()
@@ -117,32 +111,25 @@ class ChatbotApp(tb.Window):
         self.chat_canvas.yview_moveto(1.0)
 
     def load_model(self):
-        """Loads the Whisper model from the local models/ folder asynchronously."""
-        self.add_message("AI", "Loading Whisper model... Please wait.")
-        try:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            if not os.path.exists(MODEL_PATH):
-                self.add_message("AI", "Error: Model file not found in models/ folder.")
-                return
-            self.model = whisper.load_model(MODEL_PATH, device=device)
-            self.add_message("AI", f"Whisper model loaded successfully from models/ on {device.upper()}!")
-        except Exception as e:
-            self.add_message("AI", f"Error loading model: {e}")
-
+        """Loads the Speech Identify model from the local models/ folder asynchronously."""
+        self.add_message("AI", "Loading Speech Identify model... Please wait.")
+        result = self.audio_handler.load_model()  
+        self.add_message("AI", result)
+    
     def recognize_speech(self):
         """Toggles voice recording and transcribes speech using Whisper."""
-        if not self.is_recording:
+        if not self.audio_handler.is_recording:
             self.add_message("AI", "Listening... Click again to stop.")
-            self.is_recording = True
-            self.recording_thread = threading.Thread(target=self.record_audio, daemon=True)
+            self.audio_handler.is_recording = True
+            self.recording_thread = threading.Thread(target=self.audio_handler.record_audio, daemon=True)
             self.recording_thread.start()
             self.speak_btn.config(text="🛑 Stop")
         else:
-            self.is_recording = False
+            self.audio_handler.is_recording = False
             self.recording_thread.join()
             self.speak_btn.config(text="🎤 Speak")
             if os.path.exists(AUDIO_FILE):
-                text = self.transcribe_audio(AUDIO_FILE)
+                text = self.audio_handler.transcribe_audio(AUDIO_FILE)  
                 if text.strip():
                     self.add_message("User", text)
                     self.user_input.delete(0, tk.END)
@@ -152,36 +139,6 @@ class ChatbotApp(tb.Window):
                     self.add_message("AI", "I couldn't understand. Please try again.")
             else:
                 self.add_message("AI", "Error: Audio file not saved properly.")
-
-    def record_audio(self):
-        """Records audio at 16kHz, 16-bit Mono and saves it as a WAV file."""
-        mic = pyaudio.PyAudio()
-        try:
-            stream = mic.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
-            frames = []
-            while self.is_recording:
-                data = stream.read(CHUNK, exception_on_overflow=False)
-                frames.append(data)
-            stream.stop_stream()
-            stream.close()
-            mic.terminate()
-            with wave.open(AUDIO_FILE, "wb") as wf:
-                wf.setnchannels(CHANNELS)
-                wf.setsampwidth(mic.get_sample_size(FORMAT))
-                wf.setframerate(RATE)
-                wf.writeframes(b''.join(frames))
-        except Exception as e:
-            self.add_message("AI", f"Recording error: {e}")
-
-    def transcribe_audio(self, file_path):
-        """Transcribes speech from an audio file using Whisper."""
-        if self.model is None:
-            return "Error: Whisper model not loaded."
-        try:
-            result = self.model.transcribe(file_path)
-            return result["text"].strip()
-        except Exception as e:
-            return f"Transcription error: {e}"
 
     def send_message(self):
         """Sends user message along with conversation history to the backend and updates history."""
