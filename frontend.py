@@ -22,7 +22,7 @@ API_URL = "http://127.0.0.1:8000/chat"
 class ChatbotApp(tb.Window):
     def __init__(self):
         super().__init__(themename="darkly")
-        self.title("TinyLlama Chat 🤖")
+        self.title("Mirror Chat 🤖")
         self.geometry("1920x1080")
         self.state("zoomed")
         self.min_chat_width = 1024
