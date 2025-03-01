@@ -32,6 +32,7 @@ async def chat(request: ChatRequest):
     prompt = f"[SYSTEM]: {system_prompt}\n"
     for item in request.history:
         prompt += item + "\n"
+        
     prompt += f"[USER]: {request.message}\n[ASSISTANT]:"
 
     response = llm(
