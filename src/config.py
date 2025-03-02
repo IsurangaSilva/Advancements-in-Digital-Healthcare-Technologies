@@ -16,7 +16,7 @@ TEMP_TRANSCRIPTION_FILE = "transcriptions/temp_transcript/temp_transcript.csv"
 TRAIN_TEXT_DATASET = 'datasets/Text_Based/2025_research_04.csv'
 TEST_TEXT_DATASET = 'datasets/Text_Based/test_final_dataset.csv'
 VAL_TEXT_DATASET = 'datasets/Text_Based/val_final_dataset.csv'
-TEMP_TEXT_PREDICTION_RESULT_CSV = 'results/Text/temp_prediction.csv'
+TEMP_TEXT_PREDICTION_RESULT_CSV = 'result/Text/temp_prediction.csv'
 TEMP_TEXT_PREDICTION_RESULT_JSON = 'db/Text/temp_prediction.json'
 
 # Audio recording settings

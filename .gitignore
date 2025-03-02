@@ -10,3 +10,6 @@ transcriptions/temp_transcript/temp_transcript.csv
 audios/temp_audio/recorded_audio.wav
 db/Audio/audio.json
 db/Text/temp_prediction.json
+db/Result/temp_prediction.json
+result/Audio
+result/Text
