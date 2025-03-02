@@ -5,7 +5,7 @@ from chat import ChatbotApp
 from config import API_URL
 
 if __name__ == "__main__":
-    backend_process = subprocess.Popen(["python", "backend.py"])
+    backend_process = subprocess.Popen(["python", "src/backend.py"])
     print("Waiting for backend to start...")
     time.sleep(5)
     backend_ready = False

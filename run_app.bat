@@ -1,4 +1,4 @@
 @echo off
 echo Starting the application...
-python main.py
+python src/main.py
 pause
