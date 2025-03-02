@@ -1,1 +1,9 @@
 SpeechRecognition
+pandas
+nltk
+tensorflow
+pandas
+scikit-learn
+numpy
+textblob
+vaderSentiment

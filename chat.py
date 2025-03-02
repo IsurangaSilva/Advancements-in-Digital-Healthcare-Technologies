@@ -10,7 +10,8 @@ import os
 from config import AUDIO_FILE
 from api import send_to_backend
 from audio_handler import AudioHandler
-from chat_ui import create_widgets, update_scroll_region, bind_mouse_scroll  # Import the functions
+from text_prediction import TextualPrediction
+from chat_ui import create_widgets, update_scroll_region, bind_mouse_scroll  
 
 class ChatbotApp(tb.Window):
     def __init__(self):
@@ -31,6 +32,7 @@ class ChatbotApp(tb.Window):
         self.message_count = 0
         self.conversation_history = []   
         self.audio_handler = AudioHandler()
+        self.text_prediction = TextualPrediction()
 
         # Create Widget
         create_widgets(self)
@@ -84,7 +86,8 @@ class ChatbotApp(tb.Window):
             self.recording_thread.join()
             self.speak_btn.config(text="🎤 Speak")
             if os.path.exists(AUDIO_FILE):
-                text = self.audio_handler.transcribe_audio(AUDIO_FILE)  
+                text = self.audio_handler.transcribe_audio(AUDIO_FILE) 
+                self.text_prediction.prediction(text) 
                 if text.strip():
                     self.add_message("User", text)
                     self.user_input.delete(0, tk.END)

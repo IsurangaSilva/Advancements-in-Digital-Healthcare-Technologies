@@ -1,0 +1,2 @@
+transcription,timestamp,Prediction,Emotion Scores,VADER Score,Polarity,Subjectivity
+hello I am Lakshita I am very well,2025-03-02 21:30:30,neutral (0.66),"{'anger': 0.008488812, 'fear': 0.0509985, 'joy': 0.014974202, 'neutral': 0.6628717, 'sadness': 0.042162344, 'surprise': 0.22050437}",0.3384,0.2,0.3

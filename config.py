@@ -5,8 +5,19 @@ API_URL = "http://127.0.0.1:8000/chat"
 
 # Model paths and settings
 MODEL_PATH = os.path.join("models", "base.pt")
-AUDIO_FILE = "recorded_audio.wav"
-TRANSCRIPTION_FILE = "transcriptions.csv"
+TEXT_MODEL_PATH = os.path.join("models", "IT20629144_TextBased_03.keras")
+
+#Audio File Paths
+AUDIO_FILE = "audios/temp_audio/recorded_audio.wav"
+
+#Text File Paths
+TRANSCRIPTION_FILE = "transcriptions/full_transcript/full_transcript.csv"
+TEMP_TRANSCRIPTION_FILE = "transcriptions/temp_transcript/temp_transcript.csv"
+TRAIN_TEXT_DATASET = 'datasets/Text_Based/2025_research_04.csv'
+TEST_TEXT_DATASET = 'datasets/Text_Based/test_final_dataset.csv'
+VAL_TEXT_DATASET = 'datasets/Text_Based/val_final_dataset.csv'
+TEMP_TEXT_PREDICTION_RESULT_CSV = 'results/Text/temp_prediction.csv'
+TEMP_TEXT_PREDICTION_RESULT_JSON = 'db/Text/temp_prediction.json'
 
 # Audio recording settings
 RATE = 16000
