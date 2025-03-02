@@ -1,4 +1,3 @@
-# prediction.py
 import time
 import logging
 import pandas as pd
@@ -19,6 +18,8 @@ import nltk
 import os
 import sys
 from config import TRAIN_TEXT_DATASET,TEST_TEXT_DATASET,VAL_TEXT_DATASET,TEXT_MODEL_PATH
+import json
+import logging
 
 # Download NLTK data
 # nltk.download('punkt')
@@ -36,7 +37,7 @@ def safe_read_csv(file_path):
         return pd.read_csv(file_path)
     except Exception as e:
         print(f"Error reading {file_path}: {e}")
-        return pd.DataFrame()  # Return an empty dataframe in case of error
+        return pd.DataFrame()  
 
 # Load the datasets
 df_train = safe_read_csv(train_file_path)
@@ -59,16 +60,16 @@ def preprocess_text(text):
 # Sentiment Analysis (VADER)
 def analyze_sentiment_vader(text):
     if not isinstance(text, str) or not text.strip():
-        return None  # Handle non-text or empty inputs
+        return None 
     analyzer = SentimentIntensityAnalyzer()
-    sentiment = analyzer.polarity_scores(text.strip().lower())  # Preprocessing
+    sentiment = analyzer.polarity_scores(text.strip().lower())  
     return sentiment['compound']
 
 # Emotional Tone (TextBlob)
 def analyze_emotional_tone(text):
     if not isinstance(text, str) or not text.strip():
-        return None, None  # Handle non-text or empty inputs
-    blob = TextBlob(text.strip().lower())  # Preprocessing
+        return None, None  
+    blob = TextBlob(text.strip().lower())  
     return blob.sentiment.polarity, blob.sentiment.subjectivity
 
 # Filter dataset
@@ -131,89 +132,6 @@ logging.basicConfig(
     ]
 )
 
-# # Custom prediction function for CSV
-# def predict_emotion_level(file_path, model, output_csv_path, output_json_path):
-#     """Predicts emotions from a CSV file containing transcriptions and saves the results."""
-#     try:
-#         # Load the CSV file
-#         df = pd.read_csv(file_path, encoding='ISO-8859-1')
-
-#         # Ensure the 'transcription' and 'timestamp' columns exist
-#         if 'transcription' not in df.columns or 'timestamp' not in df.columns:
-#             raise ValueError("The CSV file must contain both 'transcription' and 'timestamp' columns.")
-
-#         # Initialize results
-#         predictions = []
-#         vader_scores = []
-#         polarities = []
-#         subjectivities = []
-#         emotion_scores_list = []
-
-#         # Iterate through each row in the CSV
-#         for idx, (text, timestamp) in enumerate(zip(df['transcription'], df['timestamp'])):
-#             # Preprocess text for the model
-#             sentence_preprocessed = preprocess_text(text)
-#             tokenized_sentence = tokenizer.texts_to_sequences([sentence_preprocessed])
-#             padded_sentence = pad_sequences(tokenized_sentence, maxlen=256, truncating='pre')
-
-#             # Model prediction
-#             prediction = model.predict(padded_sentence)
-#             result = le.inverse_transform([np.argmax(prediction)])[0]
-#             proba = np.max(prediction)
-
-#             # # Sentiment Analysis (VADER)
-#             # vader_score = analyze_sentiment_vader(text)
-
-#             # # Emotional Tone (TextBlob)
-#             # polarity, subjectivity = analyze_emotional_tone(text)
-
-#             # Emotion scores
-#             emotion_scores = {emotion: prediction[0][i] for i, emotion in enumerate(le.classes_)}
-
-#             # Collect results for the current row
-#             predictions.append(f"{result} ({proba:.2f})")
-#             # vader_scores.append(vader_score)
-#             # polarities.append(polarity)
-#             # subjectivities.append(subjectivity)
-#             emotion_scores_list.append(emotion_scores)
-
-#             # Log prediction result with timestamp
-#             logging.info(f"Row {idx + 1}:")
-#             logging.info(f"Text: {text}")
-#             logging.info(f"Prediction: {result} ({proba:.2f})")
-#             # logging.info(f"VADER Score: {vader_score}")
-#             # logging.info(f"Polarity: {polarity}")
-#             # logging.info(f"Subjectivity: {subjectivity}")
-#             logging.info("Emotion Scores:")
-#             for emotion, score in emotion_scores.items():
-#                 logging.info(f"  {emotion}: {score:.4f}")
-#             logging.info(f"Timestamp: {timestamp}")
-#             logging.info("-" * 50)
-
-#         # Add results to the DataFrame
-#         df['Prediction'] = predictions
-#         df['VADER Score'] = vader_scores
-#         df['Polarity'] = polarities
-#         df['Subjectivity'] = subjectivities
-#         df['Emotion Scores'] = emotion_scores_list
-
-#         # Save the updated DataFrame to a new CSV
-#         df.to_csv(output_csv_path, index=False)
-#         print(f"Results saved to {output_csv_path}")
-
-#         # Save the results to a JSON file
-#         df.to_json(output_json_path, orient='records', lines=True, indent=4)
-#         print(f"Results saved to {output_json_path}")
-
-#     except Exception as e:
-#         print(f"Error predicting emotions: {e}")
-
-import json
-import pandas as pd
-import numpy as np
-import logging
-from keras.preprocessing.sequence import pad_sequences
-
 def predict_emotion_level(file_path, model, output_csv_path , output_json_path):
     """Predicts emotions from a CSV file containing transcriptions and saves the results."""
     try:
@@ -245,7 +163,9 @@ def predict_emotion_level(file_path, model, output_csv_path , output_json_path):
             proba = np.max(prediction)
 
             # Emotion scores
-            emotion_scores = {emotion: prediction[0][i] for i, emotion in enumerate(le.classes_)}
+            # emotion_scores = {emotion: prediction[0][i] for i, emotion in enumerate(le.classes_)}
+            prediction_array = np.array(prediction[0])  # Ensure it's an array
+            emotion_scores = {emotion: prediction_array[i] for i, emotion in enumerate(le.classes_)}    
 
             # # Sentiment Analysis (VADER)
             vader_score = analyze_sentiment_vader(text)
