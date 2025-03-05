@@ -1,2 +1,14 @@
-models
+models/base.pt
+models/tinyllama-1.1b-chat-v1.0.Q2_K.gguf
+models/base.pt
+models/IT20629144_TextBased_03.keras
 __pycache__
+recorded_audio.wav
+logs/logs.log
+transcriptions/full_transcript/full_transcript.csv
+transcriptions/temp_transcript/temp_transcript.csv
+audios/temp_audio/recorded_audio.wav
+db/Audio/audio.json
+db/Text/temp_prediction.json
+db/Result/temp_prediction.json
+result/Text/temp_prediction.csv
