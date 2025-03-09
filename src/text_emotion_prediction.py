@@ -190,11 +190,12 @@ def predict_emotion_level(file_path, model, output_csv_path , output_json_path):
             document = {
                 "transcription": text,
                 "timestamp": timestamp,
-                "Prediction": f"{result} ({proba:.2f})",
-                "Emotion Scores": emotion_scores,
-                "VADER Score": vader_score,
-                "Polarity": polarity,
-                "Subjectivity": subjectivity,
+                "prediction": result,
+                "prediction_score": f"{proba:.2f}",
+                "emotionScores": emotion_scores,
+                "vaderScore": vader_score,
+                "polarity": polarity,
+                "subjectivity": subjectivity,
             }
 
             # Insert the document into MongoDB using the singleton connection

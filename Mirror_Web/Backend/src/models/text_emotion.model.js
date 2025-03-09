@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const connection = mongoose.connection.useDb('emotionDB');
 
 const predictionSchema = new mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId, 
@@ -12,6 +13,10 @@ const predictionSchema = new mongoose.Schema({
     },
     prediction: {
         type: String,
+        required: true
+    },
+    prediction_score: {
+        type: Number,
         required: true
     },
     emotionScores: {
@@ -29,9 +34,13 @@ const predictionSchema = new mongoose.Schema({
     polarity: {
         type: Number,
         required: true
+    },
+    subjectivity: {
+        type: Number,
+        required: true
     }
 }, { timestamps: true });
 
-const Prediction = mongoose.model('text-emotion-predictions', predictionSchema);
+const Text_Emotion_Prediction = connection.model('text-emotion-predictions', predictionSchema);
 
-module.exports = Prediction;
+module.exports = Text_Emotion_Prediction;
