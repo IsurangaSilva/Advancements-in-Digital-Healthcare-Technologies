@@ -23,11 +23,11 @@ class ChatbotApp(tb.Window):
 
         icon_size = (30, 30)
         self.user_icon = ImageTk.PhotoImage(
-            Image.open("assets/user_icon.png").resize(icon_size, Image.LANCZOS)
-        ) if os.path.exists("assets/user_icon.png") else None
+            Image.open("../assets/user_icon.png").resize(icon_size, Image.LANCZOS)
+        ) if os.path.exists("../assets/user_icon.png") else None
         self.ai_icon = ImageTk.PhotoImage(
-            Image.open("assets/robot_icon.png").resize(icon_size, Image.LANCZOS)
-        ) if os.path.exists("assets/robot_icon.png") else None
+            Image.open("../assets/robot_icon.png").resize(icon_size, Image.LANCZOS)
+        ) if os.path.exists("../assets/robot_icon.png") else None
 
         self.message_count = 0
         self.conversation_history = []   
