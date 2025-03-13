@@ -12,3 +12,4 @@ db/Audio/audio.json
 db/Text/temp_prediction.json
 db/Result/temp_prediction.json
 result/Text/temp_prediction.csv
+models/unsloth.Q4_K_M.gguf

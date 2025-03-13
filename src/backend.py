@@ -7,7 +7,7 @@ import uvicorn
 app = FastAPI()
 
 # Path to the GGUF model
-MODEL_PATH = os.path.abspath("models/tinyllama-1.1b-chat-v1.0.Q2_K.gguf")
+MODEL_PATH = os.path.abspath("models/unsloth.Q4_K_M.gguf")
 
 # Load the model on startup
 llm = Llama(model_path=MODEL_PATH, use_mmap=True, verbose=False)
@@ -32,7 +32,6 @@ async def chat(request: ChatRequest):
     prompt = f"[SYSTEM]: {system_prompt}\n"
     for item in request.history:
         prompt += item + "\n"
-        
     prompt += f"[USER]: {request.message}\n[ASSISTANT]:"
 
     response = llm(
