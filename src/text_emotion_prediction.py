@@ -17,9 +17,14 @@ from nltk.stem import WordNetLemmatizer
 import nltk
 import os
 import sys
-from config import TRAIN_TEXT_DATASET,TEST_TEXT_DATASET,VAL_TEXT_DATASET,TEXT_MODEL_PATH
+from config import TRAIN_TEXT_DATASET,TEST_TEXT_DATASET,VAL_TEXT_DATASET,TEXT_MODEL_PATH 
 import json
 import logging
+from db_connection import MongoDBConnection  # Import the MongoDB connection
+
+# MongoDB connection (singleton)
+mongo_connection = MongoDBConnection()
+collection = mongo_connection.get_collection("text-emotion-predictions")
 
 # Download NLTK data
 # nltk.download('punkt')
@@ -164,9 +169,9 @@ def predict_emotion_level(file_path, model, output_csv_path , output_json_path):
 
             # Emotion scores
             # emotion_scores = {emotion: prediction[0][i] for i, emotion in enumerate(le.classes_)}
-            prediction_array = np.array(prediction[0])  # Ensure it's an array
-            emotion_scores = {emotion: prediction_array[i] for i, emotion in enumerate(le.classes_)}    
-
+            prediction_array = np.array(prediction[0])  
+            # emotion_scores = {emotion: prediction_array[i] for i, emotion in enumerate(le.classes_)}    
+            emotion_scores = {emotion: float(prediction_array[i]) for i, emotion in enumerate(le.classes_)} 
             # # Sentiment Analysis (VADER)
             vader_score = analyze_sentiment_vader(text)
 
@@ -180,6 +185,22 @@ def predict_emotion_level(file_path, model, output_csv_path , output_json_path):
             # Collect results for the current row
             predictions.append(f"{result} ({proba:.2f})")
             emotion_scores_list.append(emotion_scores)
+
+            # Create a document to insert into MongoDB
+            document = {
+                "transcription": text,
+                "timestamp": timestamp,
+                "prediction": result,
+                "prediction_score": f"{proba:.2f}",
+                "emotionScores": emotion_scores,
+                "vaderScore": vader_score,
+                "polarity": polarity,
+                "subjectivity": subjectivity,
+            }
+
+            # Insert the document into MongoDB using the singleton connection
+            collection.insert_one(document)
+            logging.info(f"Inserted document for row {idx + 1} into MongoDB.")
 
             # Log prediction result with timestamp
             logging.info(f"Row {idx + 1}:")

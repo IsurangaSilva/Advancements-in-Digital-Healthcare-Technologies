@@ -7,3 +7,5 @@ scikit-learn
 numpy
 textblob
 vaderSentiment
+pymongo
+python-dotenv
