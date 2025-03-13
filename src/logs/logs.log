@@ -1,87 +1,24 @@
-2025-03-08 22:55:38,585 - DEBUG - Starting new HTTP connection (1): 127.0.0.1:8000
-2025-03-08 22:55:38,590 - DEBUG - http://127.0.0.1:8000 "GET /chat HTTP/1.1" 405 31
-2025-03-08 22:55:38,949 - DEBUG - STREAM b'IHDR' 16 13
-2025-03-08 22:55:38,949 - DEBUG - STREAM b'pHYs' 41 9
-2025-03-08 22:55:38,949 - DEBUG - STREAM b'IDAT' 62 1231
-2025-03-08 22:55:38,960 - DEBUG - STREAM b'IHDR' 16 13
-2025-03-08 22:55:38,960 - DEBUG - STREAM b'pHYs' 41 9
-2025-03-08 22:55:38,960 - DEBUG - STREAM b'IDAT' 62 2630
-2025-03-08 22:55:39,594 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 22:55:39,596 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 22:55:39,853 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 22:55:39,853 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 23:13:01,857 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 23:13:01,858 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 23:13:08,116 - INFO - Row 1:
-2025-03-08 23:13:08,117 - INFO - Text: Error: Could not understand the audio.
-2025-03-08 23:13:08,117 - INFO - Prediction: neutral (0.94)
-2025-03-08 23:13:08,117 - INFO - Emotion Scores:
-2025-03-08 23:13:08,117 - INFO -   anger: 0.0003
-2025-03-08 23:13:08,117 - INFO -   fear: 0.0042
-2025-03-08 23:13:08,117 - INFO -   joy: 0.0010
-2025-03-08 23:13:08,118 - INFO -   neutral: 0.9439
-2025-03-08 23:13:08,118 - INFO -   sadness: 0.0011
-2025-03-08 23:13:08,118 - INFO -   surprise: 0.0495
-2025-03-08 23:13:08,118 - INFO - VADER Score: -0.4019
-2025-03-08 23:13:08,118 - INFO - Polarity: 0.0
-2025-03-08 23:13:08,118 - INFO - Subjectivity: 0.0
-2025-03-08 23:13:08,119 - INFO - Timestamp: 2025-03-08 23:13:07
-2025-03-08 23:13:08,119 - INFO - --------------------------------------------------
-2025-03-08 23:13:08,124 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 23:13:08,125 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 23:13:08,244 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 23:13:08,245 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 23:13:08,360 - DEBUG - Starting new HTTP connection (1): 127.0.0.1:8000
-2025-03-08 23:13:12,945 - DEBUG - http://127.0.0.1:8000 "POST /chat HTTP/1.1" 200 383
-2025-03-08 23:13:12,947 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 23:13:12,947 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 23:18:54,680 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 23:18:54,681 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 23:18:58,728 - INFO - Row 1:
-2025-03-08 23:18:58,729 - INFO - Text: Error: Could not understand the audio.
-2025-03-08 23:18:58,729 - INFO - Prediction: neutral (0.94)
-2025-03-08 23:18:58,729 - INFO - Emotion Scores:
-2025-03-08 23:18:58,729 - INFO -   anger: 0.0003
-2025-03-08 23:18:58,730 - INFO -   fear: 0.0042
-2025-03-08 23:18:58,730 - INFO -   joy: 0.0010
-2025-03-08 23:18:58,730 - INFO -   neutral: 0.9439
-2025-03-08 23:18:58,730 - INFO -   sadness: 0.0011
-2025-03-08 23:18:58,730 - INFO -   surprise: 0.0495
-2025-03-08 23:18:58,731 - INFO - VADER Score: -0.4019
-2025-03-08 23:18:58,731 - INFO - Polarity: 0.0
-2025-03-08 23:18:58,731 - INFO - Subjectivity: 0.0
-2025-03-08 23:18:58,731 - INFO - Timestamp: 2025-03-08 23:18:58
-2025-03-08 23:18:58,731 - INFO - --------------------------------------------------
-2025-03-08 23:18:58,736 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 23:18:58,736 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 23:18:58,877 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 23:18:58,877 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 23:18:58,998 - DEBUG - Starting new HTTP connection (1): 127.0.0.1:8000
-2025-03-08 23:19:02,813 - DEBUG - http://127.0.0.1:8000 "POST /chat HTTP/1.1" 200 378
-2025-03-08 23:19:02,814 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 23:19:02,814 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 23:20:12,056 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 23:20:12,056 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 23:20:17,887 - INFO - Row 1:
-2025-03-08 23:20:17,887 - INFO - Text: hello hello
-2025-03-08 23:20:17,887 - INFO - Prediction: neutral (0.61)
-2025-03-08 23:20:17,888 - INFO - Emotion Scores:
-2025-03-08 23:20:17,888 - INFO -   anger: 0.0155
-2025-03-08 23:20:17,888 - INFO -   fear: 0.0560
-2025-03-08 23:20:17,888 - INFO -   joy: 0.0165
-2025-03-08 23:20:17,888 - INFO -   neutral: 0.6105
-2025-03-08 23:20:17,889 - INFO -   sadness: 0.0685
-2025-03-08 23:20:17,889 - INFO -   surprise: 0.2330
-2025-03-08 23:20:17,889 - INFO - VADER Score: 0.0
-2025-03-08 23:20:17,889 - INFO - Polarity: 0.0
-2025-03-08 23:20:17,889 - INFO - Subjectivity: 0.0
-2025-03-08 23:20:17,889 - INFO - Timestamp: 2025-03-08 23:20:17
-2025-03-08 23:20:17,889 - INFO - --------------------------------------------------
-2025-03-08 23:20:17,893 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 23:20:17,893 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 23:20:18,028 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 23:20:18,029 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
-2025-03-08 23:20:18,169 - DEBUG - Starting new HTTP connection (1): 127.0.0.1:8000
-2025-03-08 23:20:19,694 - DEBUG - http://127.0.0.1:8000 "POST /chat HTTP/1.1" 200 49
-2025-03-08 23:20:19,696 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
-2025-03-08 23:20:19,696 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
+2025-03-13 21:48:16,483 - DEBUG - Starting new HTTP connection (1): 127.0.0.1:8000
+2025-03-13 21:48:16,498 - DEBUG - http://127.0.0.1:8000 "GET /chat HTTP/1.1" 405 31
+2025-03-13 21:48:16,788 - DEBUG - STREAM b'IHDR' 16 13
+2025-03-13 21:48:16,803 - DEBUG - STREAM b'pHYs' 41 9
+2025-03-13 21:48:16,803 - DEBUG - STREAM b'IDAT' 62 1231
+2025-03-13 21:48:16,803 - DEBUG - STREAM b'IHDR' 16 13
+2025-03-13 21:48:16,803 - DEBUG - STREAM b'pHYs' 41 9
+2025-03-13 21:48:16,803 - DEBUG - STREAM b'IDAT' 62 2630
+2025-03-13 21:48:17,404 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-03-13 21:48:17,404 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
+2025-03-13 21:48:17,727 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-03-13 21:48:17,727 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
+2025-03-13 21:48:31,675 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-03-13 21:48:31,677 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
+2025-03-13 21:48:31,827 - DEBUG - Starting new HTTP connection (1): 127.0.0.1:8000
+2025-03-13 21:48:39,197 - DEBUG - http://127.0.0.1:8000 "POST /chat HTTP/1.1" 200 92
+2025-03-13 21:48:39,204 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-03-13 21:48:39,204 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
+2025-03-13 21:48:47,078 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-03-13 21:48:47,078 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".
+2025-03-13 21:48:47,261 - DEBUG - Starting new HTTP connection (1): 127.0.0.1:8000
+2025-03-13 21:48:50,119 - DEBUG - http://127.0.0.1:8000 "POST /chat HTTP/1.1" 200 240
+2025-03-13 21:48:50,119 - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-03-13 21:48:50,119 - DEBUG - Successfully loaded extension "markdown.extensions.tables.TableExtension".

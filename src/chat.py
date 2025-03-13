@@ -12,6 +12,7 @@ from api import send_to_backend
 from audio_handler import AudioHandler
 from text_prediction import TextualPrediction
 from chat_ui import create_widgets, update_scroll_region, bind_mouse_scroll  
+from FER.emotion_background import EmotionBackgroundProcessor
 
 class ChatbotApp(tb.Window):
     def __init__(self):
@@ -42,6 +43,37 @@ class ChatbotApp(tb.Window):
 
         self.add_message("AI", "Hello! How can I help you today?")
         threading.Thread(target=self.load_model, daemon=True).start()
+
+        # ---------------------------------------
+
+        # Create a small canvas for the emotion status dot (placed at a suitable location)
+        self.dot_canvas = tk.Canvas(self, width=30, height=30, bg='black', highlightthickness=0)
+        # Position the dot (e.g., top-left corner; adjust x and y as needed)
+        self.dot_canvas.place(x=10, y=10)
+
+        # Define a method to update the dot color based on system status.
+        def update_dot(status):
+            # Schedule the GUI update in the main thread.
+            self.after(0, lambda: self._update_dot(status))
+
+        # Start the emotion background processor in a separate thread.
+        self.emotion_processor = EmotionBackgroundProcessor(status_update_callback=update_dot)
+        self.emotion_thread = threading.Thread(target=self.emotion_processor.run, daemon=True)
+        self.emotion_thread.start()
+
+        # Set the initial dot status (red indicates not yet confirmed working)
+        self._update_dot(False)
+
+        # Set the protocol for window close event
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
+
+        # ---------------------------------------
+
+    def _update_dot(self, status):
+        # Update the dot indicator color: green if working, red otherwise.
+        color = "green" if status else "red"
+        self.dot_canvas.delete("all")
+        self.dot_canvas.create_oval(5, 5, 25, 25, fill=color, outline=color)
 
     def add_message(self, sender, message):
         """Creates a chat bubble with Markdown rendering and updates conversation history."""
@@ -119,3 +151,8 @@ class ChatbotApp(tb.Window):
             self.after(0, lambda: messagebox.showerror("Error", f"Failed to connect: {str(e)}"))
         finally:
             self.after(0, lambda: self.user_input.config(state=tk.NORMAL))
+
+    def on_close(self):
+        # Stop the emotion background processor.
+        self.emotion_processor.stop()
+        self.destroy()
