@@ -14,3 +14,9 @@ db/Result/temp_prediction.json
 result/Text/temp_prediction.csv
 env
 models/unsloth.Q4_K_M.gguf
+models/IT20629144_TextBased_03.keras
+models/IT21126574_VoiceBased_02.h5
+models/IT21126574_VoiceBased_03.h5
+models/IT21126574_VoiceBased_04.h5
+result/Audio/voice_prediction.csv
+result/Audio/voice_prediction.json
