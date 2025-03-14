@@ -1,103 +1,112 @@
 import React from "react";
-import { Grid, Typography, IconButton } from "@mui/material";
-import { Facebook, Twitter, Instagram, LinkedIn } from "@mui/icons-material";
-import { useTheme } from "@mui/material/styles";
+import { Grid, Typography } from "@mui/material";
+import { Link } from "react-router-dom";
+import Logo from "../assets/logo.png";
 
 const Footer = () => {
-  const theme = useTheme();
-
   return (
     <footer
       style={{
-        backgroundColor: theme.palette.primary.main,
+        backgroundColor: "#000080",
         color: "white",
         padding: "50px 20px",
+        fontFamily: "Arial, sans-serif",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
       }}
     >
-      <Grid container spacing={4}>
-        <Grid item xs={12} sm={6} md={3}>
-          <div style={{ display: "flex", alignItems: "center" }}>
+      <Grid
+        container
+        spacing={4}
+        style={{ display: "flex", justifyContent: "center" }}
+      >
+        {/* Logo & Description */}
+        <Grid item xs={12} sm={6} md={4} style={{ textAlign: "left" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "10px",
+            }}
+          >
             <img
-              src="logo-icon.jpg"
+              src={Logo}
               alt="Logo Icon"
-              style={{ width: "50px", marginRight: "10px" }}
+              style={{
+                width: "50px",
+                marginRight: "10px",
+                borderRadius: "50%",
+              }}
             />
-            <Typography variant="h6">MENTALCARE</Typography>
+            <Typography variant="h6" style={{ fontWeight: "bold" }}>
+              MENTALCARE
+            </Typography>
           </div>
-          <Typography variant="body2">
+          <Typography variant="body2" style={{ lineHeight: 1.5 }}>
             We are an experienced team of psychologists.
           </Typography>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Typography variant="h6">Pages</Typography>
-          <ul style={{ listStyle: "none", padding: 0 }}>
+
+        {/* Pages Section */}
+        <Grid item xs={12} sm={6} md={4} style={{ textAlign: "left" }}>
+          <Typography variant="h6" style={{ marginBottom: "15px" }}>
+            Pages
+          </Typography>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {[
-              "About Us",
-              "Our Services",
-              "Contact",
-              "Shop",
-              "Image Gallery",
+              { name: "Home", route: "/" },
+              { name: "About Us", route: "/about" },
+              { name: "Contact", route: "/contact" },
             ].map((page, index) => (
-              <li key={index}>
-                <a href="#" style={{ color: "white", textDecoration: "none" }}>
-                  {page}
-                </a>
+              <li key={index} style={{ marginBottom: "10px" }}>
+                <Link
+                  to={page.route}
+                  style={{
+                    color: "white",
+                    textDecoration: "none",
+                    transition: "color 0.3s",
+                  }}
+                  onMouseOver={(e) => (e.target.style.color = "#fcda98")}
+                  onMouseOut={(e) => (e.target.style.color = "white")}
+                >
+                  {page.name}
+                </Link>
               </li>
             ))}
           </ul>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Typography variant="h6">Services</Typography>
-          <ul style={{ listStyle: "none", padding: 0 }}>
-            {["Relationship", "Depression", "Anxiety", "ADHD", "Stress"].map(
-              (service, index) => (
-                <li key={index}>
-                  <a
-                    href="#"
-                    style={{ color: "white", textDecoration: "none" }}
-                  >
-                    {service}
-                  </a>
-                </li>
-              )
-            )}
-          </ul>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Typography variant="h6">Therapists</Typography>
-          <ul style={{ listStyle: "none", padding: 0 }}>
+
+        {/* Services Section */}
+        <Grid item xs={12} sm={6} md={4} style={{ textAlign: "left" }}>
+          <Typography variant="h6" style={{ marginBottom: "15px" }}>
+            Services
+          </Typography>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {[
-              "Max Hoffmann",
-              "Amy Peterson",
-              "Lisa Anderson",
-              "John Doe",
-              "Katie Smith",
-            ].map((therapist, index) => (
-              <li key={index}>
-                <a href="#" style={{ color: "white", textDecoration: "none" }}>
-                  {therapist}
-                </a>
+              { name: "Download", route: "/download" },
+              { name: "Register", route: "/register" },
+              { name: "Contact", route: "/contact" },
+            ].map((service, index) => (
+              <li key={index} style={{ marginBottom: "10px" }}>
+                <Link
+                  to={service.route}
+                  style={{
+                    color: "white",
+                    textDecoration: "none",
+                    transition: "color 0.3s",
+                  }}
+                  onMouseOver={(e) => (e.target.style.color = "#fcda98")}
+                  onMouseOut={(e) => (e.target.style.color = "white")}
+                >
+                  {service.name}
+                </Link>
               </li>
             ))}
           </ul>
         </Grid>
       </Grid>
-      <div
-        style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}
-      >
-        <IconButton href="#" style={{ color: "white" }}>
-          <Facebook />
-        </IconButton>
-        <IconButton href="#" style={{ color: "white" }}>
-          <Twitter />
-        </IconButton>
-        <IconButton href="#" style={{ color: "white" }}>
-          <Instagram />
-        </IconButton>
-        <IconButton href="#" style={{ color: "white" }}>
-          <LinkedIn />
-        </IconButton>
-      </div>
+
       <Typography variant="body2" align="center" style={{ marginTop: "20px" }}>
         © 2023 MentalCare. All Rights Reserved.
       </Typography>

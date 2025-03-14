@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Header from "./components/Header";
 import LoggedInHeader from "./components/LoggedInHeader";
+import Register from "./pages/Register";
 
 const App = () => {
   //--------------------Delete this part after creating the login functionality (Begin)--------------------
@@ -33,6 +34,7 @@ const App = () => {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
           </>
         )}
 
