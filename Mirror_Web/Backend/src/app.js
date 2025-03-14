@@ -7,6 +7,7 @@ const bodyParser = require("body-parser");
 const cors = require('cors');
 // const { notFound, errorHandler } = require("./middlewares/errorHandler");
 const textEmotionRoute = require("./routes/textEmotion.route");
+const userRoute = require("./routes/user.route");
 
 dbConnect();
 
@@ -17,6 +18,7 @@ app.use(cors());
 // app.use(errorHandler);
 
 app.use("/api/text", textEmotionRoute);
+app.use("/api/user", userRoute);
 
 app.listen(PORT, () => {
   console.log(`Server is running on PORT ${PORT}`);
