@@ -1,6 +1,6 @@
 const express = require("express");
-const dbConnect = require("./config/dbConnect");
 const dotenv = require("dotenv").config();
+const dbConnect = require("./config/dbConnect");
 const app = express();
 const PORT = process.env.PORT || 4000;
 const bodyParser = require("body-parser");
