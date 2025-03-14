@@ -14,7 +14,7 @@ const getAllTextEmotions = async (req, res) => {
 
 const getEmotionsByTimestampFilter = async (req, res) => {
     try {
-        const { filter } = req.query; // filter can be "15min", "1hour", "day", "week", or "month"
+        const { filter } = req.query; 
         const now = new Date();
         let startTime;
 
