@@ -3,13 +3,19 @@ import os
 import pyaudio
 import wave
 import speech_recognition as sr 
+import numpy as np
 from config import AUDIO_FILE, RATE, CHUNK, FORMAT, CHANNELS ,TRANSCRIPTION_FILE
+import time
 
 class AudioHandler:
     def __init__(self):
         self.is_recording = False
         self.recognizer = sr.Recognizer() 
         self.csv_file = TRANSCRIPTION_FILE
+        self.silence_threshold = 500  
+        self.silence_duration = 5  
+        self.frames = []
+        self.silence_counter = 0
 
     def record_audio(self):
         """Records audio at 16kHz, 16-bit Mono and saves it as a WAV file."""
@@ -17,9 +23,13 @@ class AudioHandler:
         try:
             stream = mic.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
             frames = []
-            while self.is_recording:
+            start_time = time.time()
+            while self.is_recording:                
                 data = stream.read(CHUNK, exception_on_overflow=False)
                 frames.append(data)
+
+                if time.time() - start_time >= 5:
+                  self.is_recording = False
             stream.stop_stream()
             stream.close()
             mic.terminate()
