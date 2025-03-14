@@ -13,3 +13,4 @@ db/Text/temp_prediction.json
 db/Result/temp_prediction.json
 result/Text/temp_prediction.csv
 env
+models/IT21126574_VoiceBased_03.h5
