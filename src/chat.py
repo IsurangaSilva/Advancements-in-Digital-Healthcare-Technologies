@@ -11,7 +11,8 @@ from config import AUDIO_FILE
 from api import send_to_backend
 from audio_handler import AudioHandler
 from text_prediction import TextualPrediction
-from chat_ui import create_widgets, update_scroll_region, bind_mouse_scroll  
+from chat_ui import create_widgets, update_scroll_region, bind_mouse_scroll 
+from voice_emotion_prediction import analyze_audio, load_emotion_model 
 
 class ChatbotApp(tb.Window):
     def __init__(self):
@@ -86,6 +87,9 @@ class ChatbotApp(tb.Window):
             self.recording_thread.join()
             self.speak_btn.config(text="🎤 Speak")
             if os.path.exists(AUDIO_FILE):
+                model = load_emotion_model()  
+            if model:
+                analyze_audio(model, AUDIO_FILE)
                 text = self.audio_handler.transcribe_audio(AUDIO_FILE) 
                 self.text_prediction.prediction(text) 
                 if text.strip():
