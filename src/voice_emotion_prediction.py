@@ -14,7 +14,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('emotion_analysis.log'),
+        logging.FileHandler('logs/voice_emotion_analysis.log'),
         logging.StreamHandler()
     ]
 )
