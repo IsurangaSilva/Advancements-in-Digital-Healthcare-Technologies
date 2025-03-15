@@ -21,7 +21,7 @@ TEMP_TEXT_PREDICTION_RESULT_CSV = 'result/Text/temp_prediction.csv'
 TEMP_TEXT_PREDICTION_RESULT_JSON = 'db/Text/temp_prediction.json'
 
 # Emotion file paths
-EMOTION_FILE = "result/Audio/voice_prediction.json"
+EMOTION_FILE = "db/Audio/voice_prediction.json"
 TEMP_VOICE_PREDICTION_RESULT_CSV = 'result/Audio/voice_prediction.csv'
 
 
