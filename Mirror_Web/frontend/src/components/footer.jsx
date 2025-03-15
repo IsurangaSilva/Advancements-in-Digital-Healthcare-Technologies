@@ -1,67 +1,88 @@
-import React from 'react';
+import { Box, Typography, Grid, TextField, Button, Divider, IconButton } from "@mui/material";
+import { Facebook, Twitter, Instagram } from "@mui/icons-material";
 
 const Footer = () => {
   return (
-    <footer style={{ background: '#2c3e50', color: 'white', padding: '40px 20px', marginTop: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-around', maxWidth: '1200px', margin: '0 auto', flexWrap: 'wrap', gap: '20px' }}>
-        <div>
-          <h3 style={{ fontSize: '20px', marginBottom: '10px' }}>MIRROR</h3>
-          <p>Start your path to psychological wellness with our thoroughly selected specialists.</p>
-          <div style={{ display: 'flex', marginTop: '10px' }}>
-            <input
-              type="email"
-              placeholder="Email"
-              style={{ padding: '10px', border: 'none', borderRadius: '5px 0 0 5px', flex: 1 }}
+    <Box sx={{ backgroundColor: "#2c3e50", color: "white", py: 5, px: { xs: 3, md: 10 }, mt: "auto" }}>
+      <Grid container spacing={4} justifyContent="center">
+        {/* Branding & Newsletter */}
+        <Grid item xs={12} md={4}>
+          <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
+            MIRROR
+          </Typography>
+          <Typography variant="body2" sx={{ opacity: 0.8, mb: 2 }}>
+            Start your path to psychological wellness with our thoroughly selected specialists.
+          </Typography>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Enter your email"
+              size="small"
+              sx={{ bgcolor: "white", borderRadius: "5px" }}
             />
-            <button style={{ background: '#4a90e2', color: 'white', border: 'none', padding: '10px', borderRadius: '0 5px 5px 0', cursor: 'pointer' }}>
-              →
-            </button>
-          </div>
-        </div>
-        <div>
-          <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>Pages</h4>
-          <ul style={{ listStyle: 'none' }}>
-            <li style={{ margin: '5px 0' }}><a href="#about" style={{ color: '#fff', textDecoration: 'none' }}>About Us</a></li>
-            <li style={{ margin: '5px 0' }}><a href="#blog" style={{ color: '#fff', textDecoration: 'none' }}>Blog</a></li>
-            <li style={{ margin: '5px 0' }}><a href="#contacts" style={{ color: '#fff', textDecoration: 'none' }}>Contacts</a></li>
-            <li style={{ margin: '5px 0' }}><a href="#shop" style={{ color: '#fff', textDecoration: 'none' }}>Shop</a></li>
-            <li style={{ margin: '5px 0' }}><a href="#credits" style={{ color: '#fff', textDecoration: 'none' }}>Image Credits</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>Services</h4>
-          <ul style={{ listStyle: 'none' }}>
-            <li style={{ margin: '5px 0' }}>Anxiety</li>
-            <li style={{ margin: '5px 0' }}>Relationships</li>
-            <li style={{ margin: '5px 0' }}>Eating Disorders</li>
-            <li style={{ margin: '5px 0' }}>Depression</li>
-            <li style={{ margin: '5px 0' }}>ADHD</li>
-            <li style={{ margin: '5px 0' }}>Childhood Abuse</li>
-            <li style={{ margin: '5px 0' }}>OCD</li>
-            <li style={{ margin: '5px 0' }}>Trauma</li>
-          </ul>
-        </div>
-        <div>
-          <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>Therapists</h4>
-          <ul style={{ listStyle: 'none' }}>
-            <li style={{ margin: '5px 0' }}>Mark Hoffman</li>
-            <li style={{ margin: '5px 0' }}>Anne Middleton</li>
-            <li style={{ margin: '5px 0' }}>Whitney Pratt</li>
-            <li style={{ margin: '5px 0' }}>Jane Goodman</li>
-            <li style={{ margin: '5px 0' }}>Martha Ruz</li>
-            <li style={{ margin: '5px 0' }}>Kate Adams</li>
-          </ul>
-        </div>
-      </div>
-      <div style={{ textAlign: 'center', marginTop: '20px', borderTop: '1px solid #444', paddingTop: '10px' }}>
-        <p>This is a sample website - ©masters 2025 - All Rights Reserved</p>
-        <div>
-          <a href="#facebook" style={{ color: 'white', margin: '0 10px', fontSize: '20px' }}><i className="fab fa-facebook-f"></i></a>
-          <a href="#twitter" style={{ color: 'white', margin: '0 10px', fontSize: '20px' }}><i className="fab fa-twitter"></i></a>
-          <a href="#instagram" style={{ color: 'white', margin: '0 10px', fontSize: '20px' }}><i className="fab fa-instagram"></i></a>
-        </div>
-      </div>
-    </footer>
+            <Button variant="contained" sx={{ bgcolor: "#4a90e2", "&:hover": { bgcolor: "#357ABD" } }}>
+              Subscribe
+            </Button>
+          </Box>
+        </Grid>
+
+        {/* Quick Links */}
+        <Grid item xs={6} md={2}>
+          <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
+            Pages
+          </Typography>
+          {["Home", "About Us", "Blog", "Contact",  "Recommendations"].map((page, index) => (
+            <Typography key={index} variant="body2" sx={{ opacity: 0.8, mb: 1, cursor: "pointer", "&:hover": { color: "#4a90e2" } }}>
+              {page}
+            </Typography>
+          ))}
+        </Grid>
+
+        {/* Services */}
+        <Grid item xs={6} md={2}>
+          <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
+            Services
+          </Typography>
+          {["Anxiety", "Relationships", "Eating Disorders", "Depression", "ADHD", "OCD", "Trauma"].map((service, index) => (
+            <Typography key={index} variant="body2" sx={{ opacity: 0.8, mb: 1 }}>
+              {service}
+            </Typography>
+          ))}
+        </Grid>
+
+        <Grid item xs={6} md={2}>
+          <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
+            Care Givers
+          </Typography>
+          {["Mark Hoffman", "Anne Middleton", "Whitney Pratt", "Jane Goodman", "Martha Ruz", "Kate Adams"].map((name, index) => (
+            <Typography key={index} variant="body2" sx={{ opacity: 0.8, mb: 1 }}>
+              {name}
+            </Typography>
+          ))}
+        </Grid>
+      </Grid>
+
+      <Divider sx={{ my: 3, bgcolor: "#444" }} />
+
+      {/* Footer Bottom Section */}
+      <Box sx={{ textAlign: "center" }}>
+        <Typography variant="body2" sx={{ opacity: 0.7 }}>
+          This is a Healthcare website - ©SLIIT 2025 - All Rights Reserved
+        </Typography>
+        <Box sx={{ mt: 2 }}>
+          <IconButton href="#facebook" sx={{ color: "white", mx: 1, "&:hover": { color: "#1877F2" } }}>
+            <Facebook />
+          </IconButton>
+          <IconButton href="#twitter" sx={{ color: "white", mx: 1, "&:hover": { color: "#1DA1F2" } }}>
+            <Twitter />
+          </IconButton>
+          <IconButton href="#instagram" sx={{ color: "white", mx: 1, "&:hover": { color: "#C13584" } }}>
+            <Instagram />
+          </IconButton>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 
