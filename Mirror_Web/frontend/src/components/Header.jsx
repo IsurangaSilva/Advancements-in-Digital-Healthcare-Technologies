@@ -1,9 +1,20 @@
-import React from "react";
+import React,{useState} from "react";
 import { AppBar, Toolbar, Typography, Box, Button } from "@mui/material";
 import { Link } from "react-router-dom";
 import Logo from "../assets/logo.png";
 
 const Header = () => {
+
+  const [activeLink, setActiveLink] = useState("/");
+
+  const activeStyle = {
+    textDecoration: "none", 
+    color: "#1E88E5", 
+    fontWeight: "bold",
+    // borderBottom: "2px solid #1E88E5", 
+    paddingBottom: "3px", 
+    transition: "border-bottom 0.3s", 
+  };
   return (
     <AppBar
       position="static"
@@ -38,38 +49,100 @@ const Header = () => {
 
         {/* Navigation */}
         <Box sx={{ display: "flex", gap: "20px" }}>
-          <Link to="/" style={linkStyle}>
+          <Link
+            to="/"
+            style={
+              activeLink === "/" ? { ...linkStyle, ...activeStyle } : linkStyle
+            }
+            onClick={() => setActiveLink("/")}
+          >
             Home
           </Link>
-          <Link to="/contact" style={linkStyle}>
+          <Link
+            to="/blog"
+            style={
+              activeLink === "/blog"
+                ? { ...linkStyle, ...activeStyle }
+                : linkStyle
+            }
+            onClick={() => setActiveLink("/blog")}
+          >
+            Blog
+          </Link>
+          <Link
+            to="/contact"
+            style={
+              activeLink === "/contact"
+                ? { ...linkStyle, ...activeStyle }
+                : linkStyle
+            }
+            onClick={() => setActiveLink("/contact")}
+          >
             Contact
           </Link>
-          <Link to="/about" style={linkStyle}>
+          <Link
+            to="/about"
+            style={
+              activeLink === "/about"
+                ? { ...linkStyle, ...activeStyle }
+                : linkStyle
+            }
+            onClick={() => setActiveLink("/about")}
+          >
             About Us
           </Link>
         </Box>
 
-        {/* Modern Login Button */}
-        <a href="/login" style={{ textDecoration: "none" }}>
-          <Button
-            variant="contained"
-            sx={{
-              background: "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)",
-              color: "white",
-              padding: "8px 20px",
-              borderRadius: "25px",
-              fontSize: "14px",
-              fontWeight: "bold",
-              textTransform: "none",
-              boxShadow: "0px 3px 5px rgba(0, 0, 0, 0.2)",
-              "&:hover": {
-                background: "linear-gradient(45deg, #1976D2 30%, #2196F3 90%)",
-              },
-            }}
-          >
-            LOGIN →
-          </Button>
-        </a>
+        <div
+          style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}
+        >
+          {/* Login Button */}
+          <a href="/login" style={{ textDecoration: "none" }}>
+            <Button
+              variant="contained"
+              sx={{
+                background: "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)",
+                color: "white",
+                padding: "6px 15px",
+                borderRadius: "25px",
+                fontSize: "11px",
+                fontWeight: "bold",
+                textTransform: "none",
+                boxShadow: "0px 3px 5px rgba(0, 0, 0, 0.2)",
+                "&:hover": {
+                  background:
+                    "linear-gradient(45deg, #1976D2 30%, #2196F3 90%)",
+                },
+              }}
+            >
+              LOGIN
+            </Button>
+          </a>
+
+          {/* Register Button */}
+          <a href="/register" style={{ textDecoration: "none" }}>
+            <Button
+              variant="contained"
+              sx={{
+                background: "linear-gradient(45deg, #FFA726 30%, #FFCC80 90%)",
+
+                color: "white",
+                padding: "6px 15px",
+                borderRadius: "25px",
+                fontSize: "11px",
+                fontWeight: "bold",
+                textTransform: "none",
+                boxShadow: "0px 3px 5px rgba(0, 0, 0, 0.2)",
+                "&:hover": {
+                  background:
+                    "linear-gradient(45deg, #FF7043 30%, #FFAB91 90%)",
+                },
+              }}
+            >
+              Get Started
+            </Button>
+          </a>
+        </div>
       </Toolbar>
     </AppBar>
   );
