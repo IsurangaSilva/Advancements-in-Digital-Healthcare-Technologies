@@ -186,7 +186,7 @@ def predict_emotion_level(file_path, model, output_csv_path , output_json_path):
             predictions.append(f"{result} ({proba:.2f})")
             emotion_scores_list.append(emotion_scores)
 
-            # Create a document to insert into MongoDB
+           ## Create a document to insert into MongoDB
             document = {
                 "transcription": text,
                 "timestamp": timestamp,
