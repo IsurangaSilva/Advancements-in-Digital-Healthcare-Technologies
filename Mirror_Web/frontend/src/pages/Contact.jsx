@@ -3,7 +3,8 @@ import Contacts from "../assets/contact.jpg";
 
 const Contact = () => {
   return (
-    <div style={{ background: '#f0f4f8', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{  background:
+      "linear-gradient(to right, rgba(243, 232, 222, 0.5), rgba(231, 245, 247, 0.5))", minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <main>
         <section style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '50px 20px' }}>
           <div style={{ background: '#fff', padding: '40px', borderRadius: '15px', boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)', textAlign: 'center', maxWidth: '600px', width: '100%' }}>
@@ -33,7 +34,7 @@ const Contact = () => {
               ></textarea>
               <button
                 type="submit"
-                style={{ background: '#f4a261', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '5px', cursor: 'pointer', width: '100%' }}
+                style={{ background: "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)", color: 'white', padding: '10px 20px', border: 'none', borderRadius: '5px', cursor: 'pointer', width: '100%' }}
               >
                 Send Message
               </button>
