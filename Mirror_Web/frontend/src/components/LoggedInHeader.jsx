@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { AppBar, Toolbar, Typography, Box,MenuItem } from "@mui/material";
 import { Link,useNavigate } from "react-router-dom";
 import Logo from "../assets/logo.png";
@@ -15,6 +15,16 @@ const logoutHandler = () => {
 };
 
 const LoggedInHeader = () => {
+  const [activeLink, setActiveLink] = useState("/");
+
+  const activeStyle = {
+    textDecoration: "none",
+    color: "#1E88E5",
+    fontWeight: "bold", 
+    // borderBottom: "2px solid #1E88E5",
+    paddingBottom: "3px", 
+    transition: "border-bottom 0.3s", 
+  };
   return (
     <AppBar
       position="static"
@@ -46,18 +56,60 @@ const LoggedInHeader = () => {
             </Typography>
           </Box>
         </a>
-
         <Box sx={{ display: "flex", gap: "20px" }}>
-          <Link to="/" style={linkStyle}>
-            Predctions
+        <Link
+            to="/"
+            style={
+              activeLink === "/"
+                ? { ...linkStyle, ...activeStyle }
+                : linkStyle
+            }
+            onClick={() => setActiveLink("/")}
+          >
+            Dashboard
           </Link>
-          <Link to="/" style={linkStyle}>
+          <Link
+            to="/predictions"
+            style={
+              activeLink === "/predictions"
+                ? { ...linkStyle, ...activeStyle }
+                : linkStyle
+            }
+            onClick={() => setActiveLink("/predictions")}
+          >
+            Predictions
+          </Link>
+          <Link
+            to="/recommendations"
+            style={
+              activeLink === "/recommendations"
+                ? { ...linkStyle, ...activeStyle }
+                : linkStyle
+            }
+            onClick={() => setActiveLink("/recommendations")}
+          >
             Recommendations
           </Link>
-          <Link to="/contact" style={linkStyle}>
+          <Link
+            to="/contact"
+            style={
+              activeLink === "/contact"
+                ? { ...linkStyle, ...activeStyle }
+                : linkStyle
+            }
+            onClick={() => setActiveLink("/contact")}
+          >
             Contact
           </Link>
-          <Link to="/about" style={linkStyle}>
+          <Link
+            to="/about"
+            style={
+              activeLink === "/about"
+                ? { ...linkStyle, ...activeStyle }
+                : linkStyle
+            }
+            onClick={() => setActiveLink("/about")}
+          >
             About Us
           </Link>
         </Box>
