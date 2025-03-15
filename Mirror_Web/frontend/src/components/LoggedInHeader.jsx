@@ -47,11 +47,33 @@ const LoggedInHeader = () => {
           </Box>
         </a>
 
+        <Box sx={{ display: "flex", gap: "20px" }}>
+          <Link to="/" style={linkStyle}>
+            Predctions
+          </Link>
+          <Link to="/" style={linkStyle}>
+            Recommendations
+          </Link>
+          <Link to="/contact" style={linkStyle}>
+            Contact
+          </Link>
+          <Link to="/about" style={linkStyle}>
+            About Us
+          </Link>
+        </Box>
+
         {/* Navigation (Profile & Status) */}
         <Box sx={{ display: "flex", gap: "20px" }}>
-          <div style={{ display: "flex", alignItems: "center" }}>           
+          <div style={{ display: "flex", alignItems: "center" }}>
             <Link to="/profile" style={linkStyle}>
-               <AccountCircle style={{ marginRight: 5, backgroundColour:"black",color:"black",fontSize:"28px" }} />
+              <AccountCircle
+                style={{
+                  marginRight: 5,
+                  backgroundColour: "black",
+                  color: "black",
+                  fontSize: "28px",
+                }}
+              />
             </Link>
           </div>
           <MenuItem
@@ -82,7 +104,8 @@ const LoggedInHeader = () => {
 const linkStyle = {
   textDecoration: "none",
   color: "#333",
-  fontSize: "16px",
+  fontFamily: "Arial, sans-serif",
+  fontSize: "14px",
   fontWeight: "500",
   transition: "color 0.3s",
 };
