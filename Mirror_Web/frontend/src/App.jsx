@@ -8,6 +8,8 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Header from "./components/Header";
 import LoggedInHeader from "./components/LoggedInHeader";
+import Footer from "./components/footer";
+
 
 const App = () => {
   //--------------------Delete this part after creating the login functionality (Begin)--------------------
@@ -33,6 +35,7 @@ const App = () => {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/profile" element={<Profile />} />
           </>
         )}
 
@@ -45,13 +48,14 @@ const App = () => {
           <>
             {/* Redirect users trying to access protected routes */}
             <Route path="/dashboard" element={<Navigate to="/login" replace />} />
-            <Route path="/profile" element={<Navigate to="/login" replace />} />
+            <Route path="/profile" element={<Navigate to="/profile" replace />} />
           </>
         )}
 
         {/* Redirect unknown routes */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+      <Footer />
     </>
   );
 };
