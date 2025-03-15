@@ -11,7 +11,8 @@ from config import AUDIO_FILE
 from api import send_to_backend
 from audio_handler import AudioHandler
 from text_prediction import TextualPrediction
-from chat_ui import create_widgets, update_scroll_region, bind_mouse_scroll  
+from chat_ui import create_widgets, update_scroll_region, bind_mouse_scroll 
+from voice_emotion_prediction import analyze_audio, load_emotion_model 
 
 class ChatbotApp(tb.Window):
     def __init__(self):
@@ -42,6 +43,34 @@ class ChatbotApp(tb.Window):
 
         self.add_message("AI", "Hello! How can I help you today?")
         threading.Thread(target=self.load_model, daemon=True).start()
+        self.start_background_recording()
+
+    def start_background_recording(self):
+        """Starts background recording and checks for user speech."""
+        self.audio_handler.is_recording = True
+        self.recording_thread = threading.Thread(target=self.audio_handler.record_audio, daemon=True)
+        self.recording_thread.start()
+        self.check_recording_status()    
+
+    def check_recording_status(self):
+        """Checks if the recording has stopped and processes the audio."""
+        if not self.recording_thread.is_alive():
+            if os.path.exists(AUDIO_FILE):               
+                    text = self.audio_handler.transcribe_audio(AUDIO_FILE)
+                    if text.strip() and text != "Error: Could not understand the audio.":
+                        model = load_emotion_model()
+                        analyze_audio(model, AUDIO_FILE)
+                        self.text_prediction.prediction(text)
+                        self.user_input.delete(0, tk.END)
+                        self.user_input.insert(0, text)
+                        self.send_message()
+   
+            # Restart recording
+            self.start_background_recording()
+        else:
+            # Check again after 1 second
+            self.after(1000, self.check_recording_status)
+    
 
     def add_message(self, sender, message):
         """Creates a chat bubble with Markdown rendering and updates conversation history."""
@@ -86,6 +115,9 @@ class ChatbotApp(tb.Window):
             self.recording_thread.join()
             self.speak_btn.config(text="🎤 Speak")
             if os.path.exists(AUDIO_FILE):
+                model = load_emotion_model()  
+            if model:
+                analyze_audio(model, AUDIO_FILE)
                 text = self.audio_handler.transcribe_audio(AUDIO_FILE) 
                 self.text_prediction.prediction(text) 
                 if text.strip():
