@@ -1,21 +1,18 @@
 const mongoose = require('mongoose');
 const connection = mongoose.connection.useDb('emotionDB');
 
-const contactSchema = new mongoose.Schema({
+const feedbackSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true
+   
     },
-    email: {
-        type: String, 
-        required: true
-    },
-    message: {
+    feedback: {
         type: String,
         required: true
     },
   
 });
-const contact = connection.model('contact', contactSchema);
+const feedback = connection.model('feedback',feedbackSchema);
 
-module.exports = contact;
+module.exports = feedback;
