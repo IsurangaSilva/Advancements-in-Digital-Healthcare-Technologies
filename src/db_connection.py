@@ -12,10 +12,7 @@ class MongoDBConnection:
         if cls._instance is None:
             cls._instance = super(MongoDBConnection, cls).__new__(cls)
             mongo_uri = os.getenv("MONGO_URI")
-            db_name = os.getenv("MONGO_DB_NAME")
-            print("Helll........................................................................")
-            print("Helll........................................................................",mongo_uri)
-            print("Helll........................................................................",db_name)
+            db_name = os.getenv("MONGO_DB_NAME")           
             cls._instance.client = MongoClient(mongo_uri)
             cls._instance.db = cls._instance.client[db_name]
         return cls._instance
