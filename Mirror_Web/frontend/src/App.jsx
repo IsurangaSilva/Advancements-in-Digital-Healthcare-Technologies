@@ -7,7 +7,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
-import TextPrediction from "./pages/Text_Dashboard";
+import TextPrediction from "./pages/TextPrediction";
 import Header from "./components/Header";
 import LoggedInHeader from "./components/LoggedInHeader";
 import Footer from "./components/footer";
@@ -57,7 +57,7 @@ const App = () => {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/contact" element={<TextPrediction />} />
+            <Route path="/text-prediction" element={<TextPrediction />} />
           </>
         ) : (
           <>
