@@ -48,7 +48,7 @@ class ChatbotApp(tb.Window):
     def start_background_recording(self):
         """Starts background recording and checks for user speech."""
         self.audio_handler.is_recording = True
-        self.recording_thread = threading.Thread(target=self.audio_handler.record_audio, daemon=True)
+        self.recording_thread = threading.Thread(target=self.audio_handler.record_audio(), daemon=True)
         self.recording_thread.start()
         self.check_recording_status()    
 
@@ -66,7 +66,7 @@ class ChatbotApp(tb.Window):
                         self.send_message()
    
             # Restart recording
-            self.start_background_recording()
+            self.start_background_recording() 
         else:
             # Check again after 1 second
             self.after(1000, self.check_recording_status)
