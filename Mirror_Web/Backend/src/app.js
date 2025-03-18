@@ -12,6 +12,8 @@ const userRoute = require("./routes/user.route");
 const contactRoute = require("./routes/contact.routes");
 const feedbackRoute = require("./routes/feedback.routes");
 const ferEmotionsRoute = require("./routes/ferEmotion.route");
+const audioEmotionRoute = require("./routes/audioEmotion.route");
+const depressionRoute = require("./routes/depression.route");
 
 dbConnect();
 
@@ -27,6 +29,8 @@ app.use("/api/user", userRoute);
 app.use("/api/contact", contactRoute);
 app.use("/api/feedback", feedbackRoute);
 app.use("/api/fer", ferEmotionsRoute);
+app.use("/api/audio", audioEmotionRoute);
+app.use("/api/depression", depressionRoute);
 
 app.listen(PORT, () => {
   console.log(`Server is running on PORT ${PORT}`);

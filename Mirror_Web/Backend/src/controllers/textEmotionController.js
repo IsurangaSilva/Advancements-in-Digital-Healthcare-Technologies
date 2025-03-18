@@ -115,6 +115,51 @@ const getTextAggregateEmotions = async (req, res) => {
     }
 };
 
+//5min Aggregation
+const getTextAggregateEmotions5min = async (req, res) => {
+    try {
+        const emotions = await Text_Emotion_Aggregate.find();
+        
+        const formattedEmotions = emotions.map(emotion => {
+            const date = new Date(emotion.timestamp);
+            const formattedTimestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+            return {
+                ...emotion._doc,
+                timestamp: formattedTimestamp
+            };
+        });
+
+        res.json({ success: true, emotions: formattedEmotions });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+//1hour Aggregation
+const getTextAggregateEmotionshourly = async (req, res) => {
+    try {
+        const emotionshouraggregate = await Text_Emotion_60Aggregate.find();
+        
+        const formattedhourEmotions = emotionshouraggregate.map(emotion => {
+            const date = new Date(emotion.timestamp);
+            const formattedTimestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+            return {
+                ...emotion._doc,
+                timestamp: formattedTimestamp
+            };
+        });
+
+        
+
+        res.json({ success: true, emotionshourly: formattedhourEmotions });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+
 // Get Text Aggregation Emotions
 const getTextAggregateEmotions60min = async (req, res) => {
     try {
@@ -223,5 +268,7 @@ module.exports = {
     getEmotionsByTimestampFilter,
     getTextAggregateEmotions,
     getAllTextEmotionsPrecentages,
-    getTextAggregateEmotions60min
+    getTextAggregateEmotions60min,
+    getTextAggregateEmotions5min,
+    getTextAggregateEmotionshourly
 };
