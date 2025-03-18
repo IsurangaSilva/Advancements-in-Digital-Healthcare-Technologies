@@ -26,4 +26,9 @@ chat_history.json
 db/Text/text_emotion_data.json
 db/Text/text_session_summary_60.json
 db/Text/text_session_summary.json
+db/Audio/aggregated_last_three.json
+db/Audio/voice_prediction.json
+db/Audio/voice_session_summary_hourly.json
+db/Audio/voice_session_summary_minute.json
+models/_voice_analysis_Model.h5
 

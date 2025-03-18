@@ -36,7 +36,7 @@ async def chat(request: ChatRequest):
 
     response = llm(
         prompt,
-        max_tokens=10000,
+        max_tokens=2000,
         temperature=0.5,
         top_p=0.5,
         top_k=50,
@@ -49,5 +49,6 @@ async def chat(request: ChatRequest):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
+
 
 
