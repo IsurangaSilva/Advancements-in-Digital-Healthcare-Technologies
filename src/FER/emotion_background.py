@@ -44,12 +44,15 @@ class EmotionBackgroundProcessor:
             self.reference_embedding = np.zeros(512)
         self.similarity_threshold = 0.6
 
-        # Initiate session aggregator in a separate daemon thread.
-        self.session_aggregator = SessionAggregator(interval_seconds=300,
-                                                    emotion_file=self.save_path)
+        # Initiate session aggregator in separate daemon threads.
+        self.session_aggregator = SessionAggregator(interval_seconds=300, emotion_file=self.save_path)
         self.session_thread = threading.Thread(target=self.session_aggregator.run, daemon=True)
         self.session_thread.start()
         print("Session aggregator thread started.")
+
+        self.hour_session_thread = threading.Thread(target=self.session_aggregator.run_hour, daemon=True)
+        self.hour_session_thread.start()
+        print("Hour session aggregator thread started.")
 
     def get_face_embedding(self, pil_image):
         try:
