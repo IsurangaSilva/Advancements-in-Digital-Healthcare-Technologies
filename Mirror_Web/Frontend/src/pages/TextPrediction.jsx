@@ -6,8 +6,10 @@ import EmotionPercentageChart from "./TextEmotionPercenatge";
 
 const TextPrediction = () => {
   const [emotions, setEmotions] = useState([]);
+  const [aggreagationsHourly, setAggreagationsHourly] = useState([]);
   const [emotionsPercentage, setEmotionsPercentage] = useState({});
   const [emotionsCount, setEmotionsCount] = useState({});
+  const [lastEmotion, setLastEmotion] = useState({});
   const [aggreagations, setAggreagations] = useState([]);
 
   useEffect(() => {
@@ -24,6 +26,8 @@ const TextPrediction = () => {
     axios.get("http://localhost:4000/api/text/textaggregateemotions")
       .then((response) => {
         setAggreagations(response.data.emotions)
+        setAggreagationsHourly(response.data.emotionshourly)
+        console.log("res",response.data.emotionshourly)
       })
       .catch((error) => { 
         console.error("Error fetching emotions:", error);
@@ -35,8 +39,15 @@ const TextPrediction = () => {
       .then((response) => {
         const percentages = response.data.percentages;
         const counts = response.data.counts;
+        const lastpercentage = response.data.emotionLastPercentages;
         const formattedPercentages = Object.fromEntries(
           Object.entries(percentages).map(([emotion, value]) => [
+            emotion,
+            parseFloat(value) 
+          ])
+        );
+        const formattedLastPercentages = Object.fromEntries(
+          Object.entries(lastpercentage).map(([emotion, value]) => [
             emotion,
             parseFloat(value) 
           ])
@@ -49,7 +60,7 @@ const TextPrediction = () => {
         );
         setEmotionsPercentage(formattedPercentages);
         setEmotionsCount(formattedCounts);
-
+        setLastEmotion(formattedLastPercentages)
       })
       .catch((error) => {
         console.error("Error fetching emotions percentages:", error);
@@ -67,15 +78,30 @@ const TextPrediction = () => {
       console.log("Emotion Counts state:", emotionsCount);
     }
   }, [emotionsCount]); 
+  useEffect(() => {
+    if (Object.keys(lastEmotion).length > 0) {
+      console.log("Emotion Counts state:", lastEmotion);
+    }
+  }, [lastEmotion]); 
 
 
   return (
     <div>
-       {aggreagations.length > 0 && <EmotionAggregationChart emotions={aggreagations} />}
-       {Object.keys(emotionsPercentage).length > 0 && Object.keys(emotionsCount).length > 0 && (
-      <EmotionPercentageChart emotions={emotionsPercentage} emotionCount={emotionsCount} />
-    )}
-       {emotions.length > 0 && <EmotionChart emotions={emotions} />}
+      {aggreagations.length > 0 && (
+        <EmotionAggregationChart
+          emotions={aggreagations}
+          emotionsHourly={aggreagationsHourly}
+        />
+      )}
+      {Object.keys(emotionsPercentage).length > 0 &&
+        Object.keys(emotionsCount).length > 0 && Object.keys(emotionsCount).length > 0 && Object.keys(lastEmotion).length > 0 && (
+          <EmotionPercentageChart
+            emotions={emotionsPercentage}
+            emotionCount={emotionsCount}
+            lastEmotion={lastEmotion}
+          />
+        )}
+      {emotions.length > 0 && <EmotionChart emotions={emotions} />}
     </div>
   );
 };
