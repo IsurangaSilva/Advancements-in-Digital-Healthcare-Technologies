@@ -8,6 +8,7 @@ import H1 from "../assets/images/H1.jpg";
 import H2 from "../assets/images/H2.png";
 import H6 from "../assets/images/H6.jpg";
 import H5 from "../assets/images/H5.png";
+import H8 from "../assets/images/H8.jpg";
 
 // Define color palette
 const theme = {
@@ -82,7 +83,7 @@ const HeroSection = () => (
         {/* Left Column: Hero Image */}
         <Grid item xs={12} md={6}>
           <img
-            src={H1}
+            src={H8}
             alt="Mental Well-being"
             style={{ width: "100%", borderRadius: "10px" }}
           />

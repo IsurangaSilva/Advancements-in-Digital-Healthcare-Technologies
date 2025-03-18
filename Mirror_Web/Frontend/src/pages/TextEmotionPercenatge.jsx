@@ -6,7 +6,8 @@ import { Card, CardContent, Typography,Grid } from "@mui/material";
 // Register the necessary Chart.js components
 ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, LinearScale);
 
-const TextEmotionPercenatge = ({ emotions, emotionCount }) => {
+const TextEmotionPercenatge = ({ emotions, emotionCount,lastEmotion }) => {
+  console.log("Last Emotion:",lastEmotion)
   if (Object.keys(emotions).length === 0) {
     return (
       <div>
@@ -23,6 +24,7 @@ const TextEmotionPercenatge = ({ emotions, emotionCount }) => {
 
   const emotionLabels = ["anger", "fear", "joy", "neutral", "sadness", "surprise"];
   const emotionData = emotionLabels.map((emotion) => parseFloat(emotions[emotion] || 0)); 
+  const emotionLastData = emotionLabels.map((emotion) => parseFloat(lastEmotion[emotion] || 0)); 
   const emotionCountData = emotionLabels.map((emotion) => parseInt(emotionCount[emotion] || 0));
   
   const chartData = {
@@ -51,6 +53,34 @@ const TextEmotionPercenatge = ({ emotions, emotionCount }) => {
       },
     ],
   };
+
+  const chartLastEmotionData = {
+    labels: emotionLabels,
+    datasets: [
+      {
+        label: "Emotion Percentages",
+        data: emotionLastData,
+        backgroundColor: [
+          "rgba(255, 99, 132, 0.6)", // anger - red
+          "rgba(255, 159, 64, 0.6)", // fear - orange
+          "rgba(255, 205, 86, 0.6)", // joy - yellow
+          "rgba(75, 192, 192, 0.6)", // neutral - teal
+          "rgba(54, 162, 235, 0.6)", // sadness - blue
+          "rgba(153, 102, 255, 0.6)", // surprise - purple
+        ],
+        borderColor: [
+          "rgba(255, 99, 132, 1)", // anger - red
+          "rgba(255, 159, 64, 1)", // fear - orange
+          "rgba(255, 205, 86, 1)", // joy - yellow
+          "rgba(75, 192, 192, 1)", // neutral - teal
+          "rgba(54, 162, 235, 1)", // sadness - blue
+          "rgba(153, 102, 255, 1)", // surprise - purple
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
 
   const countChartData = {
     labels: emotionLabels,
@@ -124,7 +154,7 @@ const TextEmotionPercenatge = ({ emotions, emotionCount }) => {
             <Typography sx={{ fontSize: "17px", marginLeft: 2, marginTop: "20px" }}>
               Last Emotion Percentages 
             </Typography>
-            <Pie data={chartData} options={chartOptions} />
+            <Pie data={chartLastEmotionData} options={chartOptions} />
           </CardContent>
         </Card>
       </Grid>

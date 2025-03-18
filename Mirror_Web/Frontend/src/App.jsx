@@ -33,6 +33,7 @@ const App = () => {
    };
  }, []);  
 
+ const isTextPredictionPage = location.pathname === "/predictions/text";
 
   return (
     <div style={{ background: "linear-gradient(to right, rgba(243, 232, 222, 0.5), rgba(231, 245, 247, 0.5))"}}>
@@ -62,7 +63,7 @@ const App = () => {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/text-prediction" element={<TextPrediction />} />
+            <Route path="/predictions/text" element={<TextPrediction />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/plans" element={<Plans />} />
             <Route path="/recommendation" element={<Recommendation />} />
@@ -78,7 +79,8 @@ const App = () => {
         {/* Redirect unknown routes */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
-      <Footer />
+      {/* <Footer /> */}
+       {!isTextPredictionPage && <Footer />}
     </>
     </div>
   );
