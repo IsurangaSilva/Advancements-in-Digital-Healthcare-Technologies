@@ -10,6 +10,7 @@ import time
 import requests
 from maintest import MainApplication
 from config import API_URL
+from FER.emotion_background import EmotionBackgroundProcessor
 import threading
 
 def run_session_text_aggregation():
@@ -59,6 +60,21 @@ if __name__ == "__main__":
         print("Error: Backend failed to start. Check logs.")
         exit(1)
         
+    
+    # Create the chat UI first.
     app = MainApplication()
+    
+    # Define a callback that updates the dot in the Chat UI.
+    def update_dot(status):
+        app.after(0, lambda: app._update_dot(status))
+    
+    # Create and start the emotion background processor in main.py.
+    emotion_processor = EmotionBackgroundProcessor(status_update_callback=update_dot)
+    emotion_thread = threading.Thread(target=emotion_processor.run, daemon=True)
+    emotion_thread.start()
+    
+    # Pass the emotion processor reference to ChatbotApp so it can stop it on exit.
+    app.emotion_processor = emotion_processor
+
     app.mainloop()
     backend_process.terminate()
