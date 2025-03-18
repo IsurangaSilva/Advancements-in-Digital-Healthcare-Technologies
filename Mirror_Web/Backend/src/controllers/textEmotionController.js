@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Text_Emotion_Prediction = require("../models/text_emotion.model"); 
 const Text_Emotion_Aggregate = require("../models/textAggregate.model"); 
+const Text_Emotion_60Aggregate = require("../models/text60Aggregate.model");
 
 // Get All Text Emotions
 const getAllTextEmotions = async (req, res) => {
@@ -22,8 +23,6 @@ const getAllTextEmotions = async (req, res) => {
 const getAllTextEmotionsPrecentages = async (req, res) => {
     try {
         const emotions = await Text_Emotion_Prediction.find();
-        console.log("Emotions:",emotions)
-        
         
         if (emotions.length === 0) {
             return res.json({ success: true, percentages: {} });
@@ -56,7 +55,21 @@ const getAllTextEmotionsPrecentages = async (req, res) => {
             ])
         );
 
-        res.json({ success: true, percentages: emotionPercentages, counts: emotionCounts });
+        const latestEmotion = await Text_Emotion_Prediction.findOne().sort({ timestamp: -1 });
+
+        if (!latestEmotion || !latestEmotion.emotionScores) {
+            return res.json({ success: true, message: "No data available", percentages: {} });
+        }
+
+        // Convert emotion scores to percentages
+        const emotionLastPercentages = Object.fromEntries(
+            Object.entries(latestEmotion.emotionScores).map(([emotion, score]) => [
+                emotion, (score * 100).toFixed(2) // Convert to percentage with 2 decimal places
+            ])
+        );
+
+
+        res.json({ success: true, percentages: emotionPercentages, counts: emotionCounts ,emotionLastPercentages:emotionLastPercentages});
     } catch (error) {
         res.status(500).json({ msg: "Internal Server Error", success: false });
     }
@@ -66,7 +79,8 @@ const getAllTextEmotionsPrecentages = async (req, res) => {
 // Get Text Aggregation Emotions
 const getTextAggregateEmotions = async (req, res) => {
     try {
-        const emotions = await Text_Emotion_Aggregate.find();
+
+         const emotions = await Text_Emotion_Aggregate.find();
         
         const formattedEmotions = emotions.map(emotion => {
             const date = new Date(emotion.timestamp);
@@ -78,7 +92,24 @@ const getTextAggregateEmotions = async (req, res) => {
             };
         });
 
-        res.json({ success: true, emotions: formattedEmotions });
+        // res.json({ success: true, emotions: formattedEmotions });
+
+        const emotionshouraggregate = await Text_Emotion_60Aggregate.find();
+        console.log("emotionshouraggregate",emotionshouraggregate)
+        
+        const formattedhourEmotions = emotionshouraggregate.map(emotion => {
+            const date = new Date(emotion.timestamp);
+            const formattedTimestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+            return {
+                ...emotion._doc,
+                timestamp: formattedTimestamp
+            };
+        });
+
+        
+
+        res.json({ success: true, emotions: formattedEmotions ,emotionshourly: formattedhourEmotions });
     } catch (error) {
         res.status(500).json({ msg: "Internal Server Error", success: false });
     }
@@ -99,7 +130,21 @@ const getTextAggregateEmotions60min = async (req, res) => {
             };
         });
 
-        res.json({ success: true, emotions: formattedEmotions });
+        const emotionshouraggregate = await Text_Emotion_Aggregate.find();
+        
+        const formattedhourEmotions = emotionshouraggregate.map(emotion => {
+            const date = new Date(emotion.timestamp);
+            const formattedTimestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+            return {
+                ...emotionshouraggregate._doc,
+                timestamp: formattedTimestamp
+            };
+        });
+
+        
+
+        res.json({ success: true, emotions: formattedEmotions, emotionshourly: formattedhourEmotions });
     } catch (error) {
         res.status(500).json({ msg: "Internal Server Error", success: false });
     }
