@@ -6,7 +6,7 @@ import librosa
 import logging
 from tensorflow.keras.models import load_model
 from tensorflow.keras.layers import Layer
-from config import AUDIO_FILE, VOICE_MODEL_PATH, TEMP_VOICE_PREDICTION_RESULT_CSV, EMOTION_FILE
+from config import AUDIO_FILE, VOICE_MODEL_PATH, TEMP_VOICE_PREDICTION_RESULT_CSV
 import tensorflow as tf
 from datetime import datetime
 
@@ -102,13 +102,12 @@ def save_results_to_csv(results, output_file=TEMP_VOICE_PREDICTION_RESULT_CSV):
 
 # Modified save_results_to_json function
 def save_results_to_json(results, output_file='db/Audio/voice_prediction.json'):
+    
     """Saves the emotion analysis results to a JSON file in db/Audio directory with 10 decimal precision."""
     try:
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         formatted_results = {
-            "timestamp": results["timestamp"],
-            "predicted_emotion": results["predicted_emotion"],
-            "emotion_scores": {emotion: float(f"{score:.10f}") for emotion, score in results["emotion_scores"].items()}
+            **results, "session_aggregate": False
         }
         existing_data = []
         if os.path.exists(output_file):
@@ -139,10 +138,13 @@ def analyze_audio(model, audio_path=AUDIO_FILE):
     results = {
         "timestamp": timestamp,
         "predicted_emotion": predicted_emotion,
-        "emotion_scores": {emotion: float(score) for emotion, score in zip(CAT6, predictions)}
+        "emotion_scores": { emotion: float(f"{score:.10f}") for emotion, score in zip(CAT6, predictions)}
+
+        # "emotion_scores": {emotion: float(score) for emotion, score in zip(CAT6, predictions)}
     }
     save_results_to_csv(results)
     save_results_to_json(results)
+
 
 if __name__ == "__main__":
     model = load_emotion_model()
