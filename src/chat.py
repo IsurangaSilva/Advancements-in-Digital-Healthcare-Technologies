@@ -123,22 +123,24 @@ class ChatbotApp(tk.Frame):
 
     def start_background_recording(self):
         self.audio_handler.is_recording = True
-        self.recording_thread = threading.Thread(target=self.audio_handler.record_audio, daemon=True)
+        self.recording_thread = threading.Thread(target=self.audio_handler.record_audio(), daemon=True)
         self.recording_thread.start()
         self.check_recording_status()
 
     def check_recording_status(self):
         if not self.recording_thread.is_alive():
-            if os.path.exists(AUDIO_FILE):
-                text = self.audio_handler.transcribe_audio(AUDIO_FILE)
-                if text.strip() and text != "Error: Could not understand the audio.":
-                    model = load_emotion_model()
-                    analyze_audio(model, AUDIO_FILE)
-                    self.text_prediction.prediction(text)
-                    self.user_input.delete(0, tk.END)
-                    self.user_input.insert(0, text)
-                    self.send_message()
-            self.start_background_recording()
+            if os.path.exists(AUDIO_FILE):               
+                    text = self.audio_handler.transcribe_audio(AUDIO_FILE)
+                    if text.strip() and text != "Error: Could not understand the audio.":
+                        model = load_emotion_model()
+                        analyze_audio(model, AUDIO_FILE)
+                        self.text_prediction.prediction(text)
+                        self.user_input.delete(0, tk.END)
+                        self.user_input.insert(0, text)
+                        self.send_message()
+   
+            # Restart recording
+            self.start_background_recording() 
         else:
             self.after(1000, self.check_recording_status)
 
