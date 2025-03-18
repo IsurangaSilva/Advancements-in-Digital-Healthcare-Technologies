@@ -35,7 +35,7 @@ class TextEmotionAggregator60:
             except Exception as e:
                 print("Error reading text emotion data:", e)
                 return
-            print(data)
+            
             # Get first entry with session_aggregated=False
             pending_entries = [entry for entry in data if not entry.get("session_aggregate60min", False)]
             if not pending_entries:
