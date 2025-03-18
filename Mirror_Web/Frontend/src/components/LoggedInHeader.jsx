@@ -112,7 +112,19 @@ const LoggedInHeader = () => {
           >
             About Us
           </Link>
+          <Link
+            to="/plans"
+            style={
+              activeLink === "/plans"
+                ? { ...linkStyle, ...activeStyle }
+                : linkStyle
+            }
+            onClick={() => setActiveLink("/plans")}
+          >
+            Our Plans
+          </Link>
         </Box>
+        
 
         {/* Navigation (Profile & Status) */}
         <Box sx={{ display: "flex", gap: "20px" }}>

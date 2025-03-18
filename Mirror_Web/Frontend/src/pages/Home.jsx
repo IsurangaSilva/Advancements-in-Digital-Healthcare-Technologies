@@ -228,6 +228,10 @@ const FeedbackSection = () => (
         </Grid>
       </Grid>
     </ContentWrapper>
+    <br />
+    <br />
+    <br />
+    <br />
   </Section>
 );
 

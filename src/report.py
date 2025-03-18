@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 class ReportPage(tk.Frame):
-    def __init__(self, parent, controller, chat_history_path="./chat_history.json"):
+    def __init__(self, parent, controller, ):
         super().__init__(parent, bg="#000D2E")
-        self.chat_history_file = chat_history_path 
+
 
        
         self.default_figsize = (0.5, 6)
@@ -75,7 +75,7 @@ class ReportPage(tk.Frame):
         avg_voice_frame = tk.Frame(scrollable_frame, bg="#1F2937", bd=2, relief=tk.GROOVE)
         avg_voice_frame.pack(fill="both", expand=True, padx=(220, 5), pady=5)
         fig_avg_voice, avg_emotion_scores = self.create_avg_emotion_chart(
-            "./db/Audio/voice_prediction.json", 
+            "./result/Audio/voice_prediction.json", 
             "Avg Voice-Based Emotion"
         )
         canvas_avg_voice = FigureCanvasTkAgg(fig_avg_voice, master=avg_voice_frame)
