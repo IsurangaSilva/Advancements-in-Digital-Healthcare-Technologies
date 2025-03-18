@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Blog from "./pages/blog";
 import Plans from "./pages/plans";
+import Recommendation from "./pages/recommendation";
 import TextPrediction from "./pages/TextPrediction";
 import Header from "./components/Header";
 import LoggedInHeader from "./components/LoggedInHeader";
@@ -64,6 +65,7 @@ const App = () => {
             <Route path="/text-prediction" element={<TextPrediction />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/plans" element={<Plans />} />
+            <Route path="/recommendation" element={<Recommendation />} />
           </>
         ) : (
           <>

@@ -80,13 +80,13 @@ const LoggedInHeader = () => {
             Predictions
           </Link>
           <Link
-            to="/recommendations"
+            to="/recommendation"
             style={
-              activeLink === "/recommendations"
+              activeLink === "/recommendation"
                 ? { ...linkStyle, ...activeStyle }
                 : linkStyle
             }
-            onClick={() => setActiveLink("/recommendations")}
+            onClick={() => setActiveLink("/recommendation")}
           >
             Recommendations
           </Link>
