@@ -1,3 +1,4 @@
+from datetime import datetime
 import time
 import logging
 import pandas as pd
@@ -186,10 +187,13 @@ def predict_emotion_level(file_path, model, output_csv_path , output_json_path):
             predictions.append(f"{result} ({proba:.2f})")
             emotion_scores_list.append(emotion_scores)
 
-            # Create a document to insert into MongoDB
+            timestampnew = datetime.now()
+
+           ## Create a document to insert into MongoDB
             document = {
                 "transcription": text,
-                "timestamp": timestamp,
+                # "timestamp": timestampnew.isoformat(), 
+                "timestamp": timestampnew.strftime("%Y-%m-%d %H:%M:%S"),
                 "prediction": result,
                 "prediction_score": f"{proba:.2f}",
                 "emotionScores": emotion_scores,
@@ -198,9 +202,24 @@ def predict_emotion_level(file_path, model, output_csv_path , output_json_path):
                 "subjectivity": subjectivity,
             }
 
+            save_results_to_json(document)
+
+             ## Create a document to insert into MongoDB
+            documentDB = {
+                "transcription": text,
+                "timestamp": timestampnew,
+                "prediction": result,
+                "prediction_score": f"{proba:.2f}",
+                "emotionScores": emotion_scores,
+                "vaderScore": vader_score,
+                "polarity": polarity,
+                "subjectivity": subjectivity,
+            }
+
+
             # Insert the document into MongoDB using the singleton connection
-            collection.insert_one(document)
-            logging.info(f"Inserted document for row {idx + 1} into MongoDB.")
+            collection.insert_one(documentDB)
+            logging.info(f"Inserted document for row {idx + 1} into MongoDB.")            
 
             # Log prediction result with timestamp
             logging.info(f"Row {idx + 1}:")
@@ -232,3 +251,30 @@ def predict_emotion_level(file_path, model, output_csv_path , output_json_path):
 
     except Exception as e:
         print(f"Error predicting emotions: {e}")
+
+
+def save_results_to_json(document, output_file="text_emotion_data.json"):
+    """Saves the emotion analysis results to a JSON file."""
+    try:
+        output_folder = "db/Text"
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+        
+        output_file_path = os.path.join(output_folder, output_file)
+        
+        if os.path.exists(output_file_path):
+            with open(output_file_path, "r") as f:
+                existing_data = json.load(f)
+        else:
+            existing_data = []
+            
+        document_with_session_aggregate = {**document, "session_aggregate": False}
+        
+        existing_data.append(document_with_session_aggregate)
+        
+        with open(output_file_path, "w") as f:
+            json.dump(existing_data, f, indent=4)
+            
+        logging.info(f"Results saved to {output_file_path}")
+    except Exception as e:
+        logging.error(f"Error saving results to JSON: {e}")

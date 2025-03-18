@@ -21,8 +21,14 @@ models/IT21126574_VoiceBased_04.h5
 result/Audio/voice_prediction.csv
 result/Audio/voice_prediction.json
 logs/voice_emotion_analysis.log
+src/profile_data.json
+chat_history.json
+db/Text/text_emotion_data.json
+db/Text/text_session_summary_60.json
+db/Text/text_session_summary.json
 db/Audio/aggregated_last_three.json
 db/Audio/voice_prediction.json
 db/Audio/voice_session_summary_hourly.json
 db/Audio/voice_session_summary_minute.json
 models/_voice_analysis_Model.h5
+
