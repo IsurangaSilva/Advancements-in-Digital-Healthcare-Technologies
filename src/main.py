@@ -1,8 +1,17 @@
+import os
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+import logging
+logging.getLogger('pymongo').setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
+
+
 import subprocess
 import time
 import requests
-from chat import ChatbotApp
+from maintest import MainApplication
 from config import API_URL
+
+
 
 if __name__ == "__main__":
     backend_process = subprocess.Popen(["python", "src/backend.py"])
@@ -22,6 +31,7 @@ if __name__ == "__main__":
     if not backend_ready:
         print("Error: Backend failed to start. Check logs.")
         exit(1)
-    app = ChatbotApp()
+        
+    app = MainApplication()
     app.mainloop()
     backend_process.terminate()
