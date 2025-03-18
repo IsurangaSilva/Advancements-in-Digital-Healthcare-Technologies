@@ -1,10 +1,5 @@
 import os
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 import logging
-logging.getLogger('pymongo').setLevel(logging.INFO)
-logging.basicConfig(level=logging.INFO)
-
-
 import subprocess
 import time
 import requests
@@ -13,6 +8,11 @@ from config import API_URL
 from FER.emotion_background import EmotionBackgroundProcessor
 import threading
 
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+
+logging.getLogger('pymongo').setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
+
 def run_session_text_aggregation():
     while True:
         try:
@@ -20,27 +20,23 @@ def run_session_text_aggregation():
             subprocess.run(["python", "src/sessionTextAggregate.py"], check=True)
         except subprocess.CalledProcessError as e:
             print(f"Error running sessionTextAggregation.py: {e}")
-        # Wait for 5 minutes (300 seconds) before running again
         # time.sleep(20)
 
 def run_session_text_aggregation60():
     while True:
         try:
-            # Run the sessionTextAggregation.py script
+            # Run the sessionTextAggregation60.py script
             subprocess.run(["python", "src/sessionTextAggregate60.py"], check=True)
         except subprocess.CalledProcessError as e:
-            print(f"Error running sessionTextAggregation.py: {e}")
-        # Wait for 5 minutes (300 seconds) before running again
-        # time.sleep(20)  
-
-
+            print(f"Error running sessionTextAggregation60.py: {e}")
+        # time.sleep(20)
 
 if __name__ == "__main__":
-    # Start the sessionTextAggregation script in a separate thread
-    aggregation_thread = threading.Thread(target=run_session_text_aggregation, daemon=True)
-    aggregation60_thread = threading.Thread(target=run_session_text_aggregation60, daemon=True)
-    aggregation_thread.start()
-    aggregation60_thread.start()
+    # Start the session text aggregation scripts in separate threads
+    # aggregation_thread = threading.Thread(target=run_session_text_aggregation, daemon=True)
+    # aggregation60_thread = threading.Thread(target=run_session_text_aggregation60, daemon=True)
+    # aggregation_thread.start()
+    # aggregation60_thread.start()
 
     backend_process = subprocess.Popen(["python", "src/backend.py"])
     print("Waiting for backend to start...")
@@ -60,20 +56,18 @@ if __name__ == "__main__":
         print("Error: Backend failed to start. Check logs.")
         exit(1)
         
-    
     # Create the chat UI first.
     app = MainApplication()
     
-    # Define a callback that updates the dot in the Chat UI.
-    def update_dot(status):
-        app.after(0, lambda: app._update_dot(status))
+    # Use a dummy callback since the dot functionality is removed.
+    dummy_callback = lambda status: None
     
-    # Create and start the emotion background processor in main.py.
-    emotion_processor = EmotionBackgroundProcessor(status_update_callback=update_dot)
+    # Create and start the emotion background processor.
+    emotion_processor = EmotionBackgroundProcessor(status_update_callback=dummy_callback)
     emotion_thread = threading.Thread(target=emotion_processor.run, daemon=True)
     emotion_thread.start()
     
-    # Pass the emotion processor reference to ChatbotApp so it can stop it on exit.
+    # Pass the emotion processor reference to ChatbotApp so it can stop on exit.
     app.emotion_processor = emotion_processor
 
     app.mainloop()

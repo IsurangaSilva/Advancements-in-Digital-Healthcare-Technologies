@@ -1,25 +1,37 @@
 [
     {
-        "timestamp": "2025-03-18 13:41:15",
+        "timestamp": "2025-03-17 20:59:00",
         "session_aggregate": {
-            "Anger": 0.05723078944047102,
-            "Fear": 0.13554336095580027,
-            "Happy": 0.00083071946540254,
-            "Neutral": 0.5086290539955318,
-            "Sad": 0.16853582373645337,
-            "Surprise": 0.12923025723767442
+            "Anger": 0.12,
+            "Fear": 0.11,
+            "Happy": 0.1,
+            "Neutral": 0.097,
+            "Sad": 0.47,
+            "Surprise": 0.103
         },
         "db_status": true
     },
     {
-        "timestamp": "2025-03-18 13:45:12",
+        "timestamp": "2025-03-17 21:59:00",
         "session_aggregate": {
-            "Anger": 0.02195564533985541,
-            "Fear": 0.03199557939054406,
-            "Happy": 0.00038030997189388786,
-            "Neutral": 0.8446556027662842,
-            "Sad": 0.0771844816765083,
-            "Surprise": 0.023828374410953073
+            "Anger": 0.095,
+            "Fear": 0.078,
+            "Happy": 0.099,
+            "Neutral": 0.089,
+            "Sad": 0.556,
+            "Surprise": 0.083
+        },
+        "db_status": true
+    },
+    {
+        "timestamp": "2025-03-17 22:59:00",
+        "session_aggregate": {
+            "Anger": 0.084,
+            "Fear": 0.072,
+            "Happy": 0.053,
+            "Neutral": 0.079,
+            "Sad": 0.665,
+            "Surprise": 0.047
         },
         "db_status": true
     }

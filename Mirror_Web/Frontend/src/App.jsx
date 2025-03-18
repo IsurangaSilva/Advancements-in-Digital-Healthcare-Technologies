@@ -7,10 +7,14 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
+import Blog from "./pages/blog";
+import Plans from "./pages/plans";
 import TextPrediction from "./pages/TextPrediction";
+import FERPredictions from "./pages/FERPredictions";
 import Header from "./components/Header";
 import LoggedInHeader from "./components/LoggedInHeader";
 import Footer from "./components/footer";
+import DepressionPredictions from "./pages/DepressionPredictions";
 
 
 const App = () => {
@@ -30,8 +34,10 @@ const App = () => {
    };
  }, []);  
 
+ const isTextPredictionPage = location.pathname === "/predictions/text";
 
   return (
+    <div style={{ background: "linear-gradient(to right, rgba(243, 232, 222, 0.5), rgba(231, 245, 247, 0.5))"}}>
     <>
       {isLogged ? <LoggedInHeader /> : <Header />}
 
@@ -46,6 +52,7 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/blog" element={<Blog />} />
 
           </>
         )}
@@ -57,7 +64,11 @@ const App = () => {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/text-prediction" element={<TextPrediction />} />
+            <Route path="/predictions/text" element={<TextPrediction />} />
+            <Route path="/predictions/fer" element={<FERPredictions />} />
+            <Route path="/predictions/dep" element={<DepressionPredictions />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/plans" element={<Plans />} />
           </>
         ) : (
           <>
@@ -70,8 +81,10 @@ const App = () => {
         {/* Redirect unknown routes */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
-      <Footer />
+      {/* <Footer /> */}
+       {!isTextPredictionPage && <Footer />}
     </>
+    </div>
   );
 };
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { AppBar, Toolbar, Typography, Box,MenuItem } from "@mui/material";
-import { Link,useNavigate } from "react-router-dom";
+import { AppBar, Toolbar, Typography, Box,MenuItem,Button,Menu } from "@mui/material";
+import { Link,useNavigate  } from "react-router-dom";
 import Logo from "../assets/logo.png";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 
@@ -16,6 +16,22 @@ const logoutHandler = () => {
 
 const LoggedInHeader = () => {
   const [activeLink, setActiveLink] = useState("/");
+  const [anchorEl, setAnchorEl] = useState(null);
+  const navigate = useNavigate();
+
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget); 
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null); 
+  };
+
+  const handleOptionClick = (option) => {
+    setActiveLink(`/predictions/${option}`); 
+    navigate(`/predictions/${option}`);
+    handleClose();   
+  };
 
   const activeStyle = {
     textDecoration: "none",
@@ -68,7 +84,7 @@ const LoggedInHeader = () => {
           >
             Dashboard
           </Link>
-          <Link
+          {/* <Link
             to="/predictions"
             style={
               activeLink === "/predictions"
@@ -78,7 +94,32 @@ const LoggedInHeader = () => {
             onClick={() => setActiveLink("/predictions")}
           >
             Predictions
-          </Link>
+          </Link> */}
+           <Link
+        aria-controls="predictions-menu"
+        aria-haspopup="true"
+        onClick={handleClick}
+        style={
+          activeLink.startsWith("/predictions")
+            ? { ...linkStyle, ...activeStyle }
+            : linkStyle
+        }
+      >
+        Predictions
+      </Link>
+
+      {/* Dropdown Menu */}
+      <Menu
+        id="predictions-menu"
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleClose}
+      >
+        <MenuItem onClick={() => handleOptionClick("text")}>Text</MenuItem>
+        <MenuItem onClick={() => handleOptionClick("voice")}>Voice</MenuItem>
+        <MenuItem onClick={() => handleOptionClick("fer")}>Face</MenuItem>
+        <MenuItem onClick={() => handleOptionClick("dep")}>Depression Probability</MenuItem>
+      </Menu>
           <Link
             to="/recommendations"
             style={
@@ -112,7 +153,19 @@ const LoggedInHeader = () => {
           >
             About Us
           </Link>
+          <Link
+            to="/plans"
+            style={
+              activeLink === "/plans"
+                ? { ...linkStyle, ...activeStyle }
+                : linkStyle
+            }
+            onClick={() => setActiveLink("/plans")}
+          >
+            Our Plans
+          </Link>
         </Box>
+        
 
         {/* Navigation (Profile & Status) */}
         <Box sx={{ display: "flex", gap: "20px" }}>
