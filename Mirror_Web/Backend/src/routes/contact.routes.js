@@ -1,9 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { getAllTextEmotions,getEmotionsByTimestampFilter } = require("../controllers/contact.controller");
+const { createContact } = require("../controllers/contact.controller");
 
-//Get All Text Emotions An User
-router.post("/readContact", getAllTextEmotions);
-
+router.post("/createContact", createContact);
 
 module.exports = router;

@@ -1,53 +1,82 @@
+# chat_ui.py
 import tkinter as tk
-import ttkbootstrap as tb
-from ttkbootstrap.constants import *
 
-def create_widgets(self):
-    """Creates the chat UI."""
-    main_frame = tk.Frame(self, bg='#2d2d2d')
-    main_frame.pack(fill='both', expand=True)
+def create_widgets(app, main_frame):
+    """Creates the chat UI using only standard tkinter widgets."""
+    app.chat_container = tk.Frame(main_frame, bg='#000D2E', width=app.min_chat_width)
+    app.chat_container.pack(fill='both', expand=True)
+    app.chat_container.pack_propagate(False)
 
-    self.scrollbar = tb.Scrollbar(main_frame, orient='vertical')
-    self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    app.scrollbar = tk.Scrollbar(main_frame, orient='vertical')
+    app.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-    self.chat_container = tk.Frame(main_frame, bg='#2d2d2d', width=self.min_chat_width)
-    self.chat_container.place(relx=0.5, rely=0, anchor='n', relheight=1.0)
-    self.chat_container.pack_propagate(False)
-
-    self.chat_canvas = tk.Canvas(
-        self.chat_container,
-        bg='#2d2d2d',
+    app.chat_canvas = tk.Canvas(
+        app.chat_container,
+        bg='#000D2E',
         highlightthickness=0,
         bd=0,
-        yscrollcommand=self.scrollbar.set
+        yscrollcommand=app.scrollbar.set,
+        
     )
-    self.chat_canvas.pack(fill=tk.BOTH, expand=True)
-    self.scrollbar.config(command=self.chat_canvas.yview)
+    app.chat_canvas.pack(fill=tk.BOTH, expand=True)
+    app.scrollbar.config(command=app.chat_canvas.yview)
 
-    self.messages_frame = tk.Frame(self.chat_canvas, bg='#2d2d2d')
-    self.canvas_window = self.chat_canvas.create_window((0, 0), window=self.messages_frame, anchor='n')
-    self.messages_frame.bind("<Configure>", lambda event: self.chat_canvas.configure(scrollregion=self.chat_canvas.bbox("all")))
-    self.messages_frame.grid_columnconfigure(0, minsize=self.min_chat_width)
+    app.messages_frame = tk.Frame(app.chat_canvas, bg='#000D2E')
+    app.canvas_window = app.chat_canvas.create_window((0, 0), window=app.messages_frame, anchor='n')
+    app.messages_frame.bind(
+        "<Configure>", 
+        lambda event: app.chat_canvas.configure(scrollregion=app.chat_canvas.bbox("all"))
+    )
+    app.messages_frame.grid_columnconfigure(0, minsize=app.min_chat_width)
 
-    input_frame = tk.Frame(self.chat_container, bg='#2d2d2d')
+    input_frame = tk.Frame(app.chat_container, bg='#000D2E')
     input_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(0, 10), padx=10)
 
-    self.user_input = tb.Entry(input_frame, font=('Arial', 12), bootstyle="light")
-    self.user_input.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
-    self.user_input.bind("<Return>", lambda e: self.send_message())
+    app.user_input = tk.Entry(
+        input_frame, 
+        font=('Arial',15), 
+        bg='#1E1E2E', 
+        fg='white', 
+        insertbackground='white',
+        width=75
+    )
+    app.user_input.pack(side=tk.LEFT, padx=(0, 5)) 
+    app.user_input.bind("<Return>", lambda e: app.send_message())
 
-    self.speak_btn = tb.Button(input_frame, text="🎤 Speak", command=self.recognize_speech, bootstyle="warning")
-    self.speak_btn.pack(side=tk.RIGHT, padx=(5, 0))
 
-    send_btn = tb.Button(input_frame, text="Send", command=self.send_message, bootstyle="primary")
-    send_btn.pack(side=tk.RIGHT)
+    app.speak_btn = tk.Button(
+        input_frame, 
+        text="🎤 Speak", 
+        font=('Arial', 12),
+        command=app.recognize_speech, 
+        bg='#EAC94F', 
+        fg='white', 
+        bd=0,
+        activebackground='#EAC94F'
+    )
+    app.speak_btn.pack(side=tk.LEFT, padx=(0, 5))
 
-def update_scroll_region(self, event=None):
+    send_btn = tk.Button(
+        input_frame, 
+        text="Send", 
+        font=('Arial', 12),
+        command=app.send_message, 
+        bg='#4CAF50', 
+        fg='white', 
+        bd=0,
+        activebackground='#4CAF50'
+    )
+    send_btn.pack(side=tk.LEFT, padx=(0, 5))
+
+def update_scroll_region(app, event=None):
     """Updates the scroll region of the chat canvas."""
-    self.chat_canvas.configure(scrollregion=self.chat_canvas.bbox("all"))
+    app.chat_canvas.configure(scrollregion=app.chat_canvas.bbox("all"))
 
-def bind_mouse_scroll(self):
+def bind_mouse_scroll(app):
     """Ensures smooth scrolling across platforms."""
-    self.chat_canvas.bind_all("<MouseWheel>", lambda e: self.chat_canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
-    self.chat_canvas.bind_all("<Button-4>", lambda e: self.chat_canvas.yview_scroll(-1, "units"))
-    self.chat_canvas.bind_all("<Button-5>", lambda e: self.chat_canvas.yview_scroll(1, "units"))
+    app.chat_canvas.bind_all(
+        "<MouseWheel>", 
+        lambda e: app.chat_canvas.yview_scroll(int(-1*(e.delta/120)), "units")
+    )
+    app.chat_canvas.bind_all("<Button-4>", lambda e: app.chat_canvas.yview_scroll(-1, "units"))
+    app.chat_canvas.bind_all("<Button-5>", lambda e: app.chat_canvas.yview_scroll(1, "units"))

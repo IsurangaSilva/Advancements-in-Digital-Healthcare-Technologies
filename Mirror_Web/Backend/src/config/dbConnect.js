@@ -1,10 +1,12 @@
 const { default: mongoose } = require("mongoose");
+const dotenv = require("dotenv").config();
+
 
 const dbConnect = () => {
     try {
         // Fetch MongoDB URI and DB name from environment variables
-        const mongoURI = process.env.MONGODB_URL; 
-        const dbName = process.env.MONGO_DB_NAME; 
+        const mongoURI =  "mongodb+srv://ravindunirmal099:9skEfhr02gOJSmnE@depressiondetection.qpzzs.mongodb.net/?retryWrites=true&w=majority&appName=DepressionDetection"; 
+        const dbName =   "emotionDB";
         
         // Connect to the MongoDB server and specify the database name
         const conn = mongoose.connect(`${mongoURI}/${dbName}`);

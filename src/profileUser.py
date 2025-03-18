@@ -1,50 +1,89 @@
 import tkinter as tk
 from PIL import Image, ImageTk
+import os
+import json
 
 class ProfilePage(tk.Frame):
     def __init__(self, parent, controller):
-        super().__init__(parent, bg="#1a2a44")
-        self.controller = controller  # Reference to main UI controller
+        super().__init__(parent, bg="#000D2E")
+        self.json_file_path = "./src/profile_data.json"
+        
 
-        # Title "Profile" at the top
-        title_label = tk.Label(self, text="Profile", font=("Arial", 20, "bold"), bg="#1a2a44", fg="white")
-        title_label.pack(pady=20)
+        self.image_dir = "profile_pictures"
+        os.makedirs(self.image_dir, exist_ok=True)
+        self.image_path = os.path.join(self.image_dir, "profile.jpg")
 
-        # Profile Picture and Details (Horizontal Layout)
-        content_frame = tk.Frame(self, bg="#1a2a44")
-        content_frame.pack(pady=20)
+       
+        title_label = tk.Label(self, text="User Profile", font=("Helvetica", 36, "bold"), bg="#000D2E", fg="#FFFFFF")
+        title_label.pack(pady=(60, 30))
+        self.profile_pic_frame = tk.Frame(self, bg="#000D2E")
+        self.profile_pic_frame.pack(pady=(20, 40))
 
-        # Profile Picture
-        profile_pic_label = tk.Label(content_frame, bg="#1a2a44")
-        profile_pic = self.load_image("user.png", (160, 160))  
-        if profile_pic:
-            profile_pic_label.config(image=profile_pic)
-            profile_pic_label.image = profile_pic  # Keep reference
-        else:
-            profile_pic_label.config(text="Profile Picture", fg="white", font=("Arial", 16))
-        profile_pic_label.pack(side=tk.LEFT, padx=20)
+       
+        self.load_profile_picture()
 
-        # Profile Details
-        details_frame = tk.Frame(content_frame, bg="#1a2a44")
-        details_frame.pack(side=tk.LEFT, padx=20)
+      
+        self.display_profile_details()
 
-        profile_data = [
-            ("Name", "Sadaruwan Attanaya"),
-            ("Gender", "Male"),
-            ("Age", "35"),
-            ("Email", "SadaruwanAttanaya1212@gmail.com")
-        ]
+    def display_profile_details(self):
+    
+        profile_data = self.get_profile_data()
+        
+        
+        self.create_profile_detail("Full Name", profile_data.get("Name", "Not Available"))
+        
+        
+        self.create_profile_detail("Email", profile_data.get("Email", "Not Available"))
+        
+        
+        self.create_profile_detail("Phone", profile_data.get("Phone", "Not Available"))
+        
+        
+        self.create_profile_detail("Role", profile_data.get("Role", "Not Available"))
 
-        for label, value in profile_data:
-            detail_label = tk.Label(details_frame, text=f"{label} : {value}", font=("Arial", 14), bg="#1a2a44", fg="white")
-            detail_label.pack(anchor="w", pady=5)
+    def create_profile_detail(self, label_text, value_text):
+        detail_frame = tk.Frame(self, bg="#000D2E")
+        detail_frame.pack(fill=tk.X, padx=40, pady=(10, 5))
 
-    def load_image(self, path, size=(100, 100)):
-        """Loads and resizes an image with Pillow"""
+        label = tk.Label(detail_frame, text=f"{label_text}: {value_text}", font=("Helvetica", 18), bg="#000D2E", fg="#F1F1F1")
+        label.pack(fill=tk.X)
+
+    def load_profile_picture(self):
         try:
-            img = Image.open(path)
-            img = img.resize(size, Image.Resampling.LANCZOS)
-            return ImageTk.PhotoImage(img)
-        except IOError:
-            print(f"Warning: Cannot open '{path}'. Using placeholder.")
-            return None
+            image = Image.open(self.image_path).convert("RGB")
+            image = image.resize((150, 150), Image.LANCZOS)
+            photo = ImageTk.PhotoImage(image)
+        except:
+            photo = None
+
+        for widget in self.profile_pic_frame.winfo_children():
+            widget.destroy()
+        
+        if photo:
+            profile_pic = tk.Label(self.profile_pic_frame, image=photo, bg="#1F2739")
+            profile_pic.image = photo  
+            profile_pic.pack()
+        else:
+            profile_pic = tk.Label(self.profile_pic_frame, text="Profile Picture", font=("Helvetica", 16), bg="#1F2739", fg="#FFFFFF")
+            profile_pic.pack()
+
+    def get_profile_data(self):
+        if os.path.exists(self.json_file_path):
+            with open(self.json_file_path, "r") as json_file:
+                try:
+                    data = json.load(json_file)
+                    return data
+                except json.JSONDecodeError:
+                    print("Error decoding JSON file.")
+        else:
+            print(f"JSON file does not exist at: {self.json_file_path}")
+        return {}
+
+if __name__ == '__main__':
+    root = tk.Tk()
+    root.geometry("1920x1080")
+    root.title("Profile Settings")
+    root.config(bg="#000D2E")
+    app = ProfilePage(root, None)
+    app.pack(fill=tk.BOTH, expand=True)
+    root.mainloop()

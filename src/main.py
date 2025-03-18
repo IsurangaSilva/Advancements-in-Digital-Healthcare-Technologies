@@ -1,7 +1,14 @@
+import os
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+import logging
+logging.getLogger('pymongo').setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
+
+
 import subprocess
 import time
 import requests
-from chat import ChatbotApp
+from maintest import MainApplication
 from config import API_URL
 import threading
 
@@ -24,6 +31,8 @@ def run_session_text_aggregation60():
             print(f"Error running sessionTextAggregation.py: {e}")
         # Wait for 5 minutes (300 seconds) before running again
         # time.sleep(20)  
+
+
 
 if __name__ == "__main__":
     # Start the sessionTextAggregation script in a separate thread
@@ -49,6 +58,7 @@ if __name__ == "__main__":
     if not backend_ready:
         print("Error: Backend failed to start. Check logs.")
         exit(1)
-    app = ChatbotApp()
+        
+    app = MainApplication()
     app.mainloop()
     backend_process.terminate()

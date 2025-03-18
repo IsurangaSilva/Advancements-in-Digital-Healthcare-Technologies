@@ -1,9 +1,12 @@
 import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
+import logging
 
 # Load environment variables from the root folder
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "env"))
+logging.getLogger('pymongo').setLevel(logging.INFO)
+
 
 class MongoDBConnection:
     _instance = None
