@@ -58,7 +58,7 @@ class EmotionAggregator:
             "timestamp": timestamp,
             "aggregated_emotions": aggregated_data,
             "session_used": False,
-            "session_used_hour": True
+            "session_used_hour": False
         }
         directory = os.path.dirname(self.save_path)
         if not os.path.exists(directory):

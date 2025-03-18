@@ -13,10 +13,11 @@ from audio_handler import AudioHandler
 from text_prediction import TextualPrediction
 from chat_ui import create_widgets, update_scroll_region, bind_mouse_scroll 
 from voice_emotion_prediction import analyze_audio, load_emotion_model 
-from FER.emotion_background import EmotionBackgroundProcessor
+# Do not import EmotionBackgroundProcessor here to start it,
+# it will be created in main.py and then passed to ChatbotApp.
 
 class ChatbotApp(tb.Window):
-    def __init__(self):
+    def __init__(self, emotion_processor=None):
         super().__init__(themename="darkly")
         self.title("Mirror Chat 🤖")
         self.geometry("1920x1080")
@@ -48,26 +49,18 @@ class ChatbotApp(tb.Window):
 
         # Create a small canvas for the emotion status dot
         self.dot_canvas = tk.Canvas(self, width=30, height=30, bg='black', highlightthickness=0)
-        # Position the dot (e.g., top-left corner; adjust x and y as needed)
         self.dot_canvas.place(x=10, y=10)
-
-        # Method to update the dot color based on FER system status.
-        def update_dot(status):
-            self.after(0, lambda: self._update_dot(status))
-
-        # Start the emotion background processor in a separate thread.
-        self.emotion_processor = EmotionBackgroundProcessor(status_update_callback=update_dot)
-        self.emotion_thread = threading.Thread(target=self.emotion_processor.run, daemon=True)
-        self.emotion_thread.start()
-
-        # Set the initial dot status (red indicates not yet confirmed working)
+        # Set initial dot to red (not working)
         self._update_dot(False)
+
+        # Store emotion_processor if provided (will be assigned from main.py)
+        self.emotion_processor = emotion_processor
 
         # Set the protocol for window close event
         self.protocol("WM_DELETE_WINDOW", self.on_close)
     
     def _update_dot(self, status):
-        # Update the dot indicator color: green if working, red otherwise.
+        # Update the dot indicator: green if working, red otherwise.
         color = "green" if status else "red"
         self.dot_canvas.delete("all")
         self.dot_canvas.create_oval(5, 5, 25, 25, fill=color, outline=color)
@@ -83,22 +76,20 @@ class ChatbotApp(tb.Window):
         """Checks if the recording has stopped and processes the audio."""
         if not self.recording_thread.is_alive():
             if os.path.exists(AUDIO_FILE):               
-                    text = self.audio_handler.transcribe_audio(AUDIO_FILE)
-                    if text.strip() and text != "Error: Could not understand the audio.":
-                        model = load_emotion_model()
-                        analyze_audio(model, AUDIO_FILE)
-                        self.text_prediction.prediction(text)
-                        self.user_input.delete(0, tk.END)
-                        self.user_input.insert(0, text)
-                        self.send_message()
-   
+                text = self.audio_handler.transcribe_audio(AUDIO_FILE)
+                if text.strip() and text != "Error: Could not understand the audio.":
+                    model = load_emotion_model()
+                    analyze_audio(model, AUDIO_FILE)
+                    self.text_prediction.prediction(text)
+                    self.user_input.delete(0, tk.END)
+                    self.user_input.insert(0, text)
+                    self.send_message()
             # Restart recording
             self.start_background_recording()
         else:
             # Check again after 1 second
             self.after(1000, self.check_recording_status)
     
-
     def add_message(self, sender, message):
         """Creates a chat bubble with Markdown rendering and updates conversation history."""
         html_content = markdown.markdown(message, extensions=["fenced_code", "tables"])
@@ -124,7 +115,7 @@ class ChatbotApp(tb.Window):
         self.chat_canvas.yview_moveto(1.0)
 
     def load_model(self):
-        """Loads the Speech Identify model from the local models/ folder asynchronously."""
+        """Loads the Speech Identify model asynchronously."""
         self.add_message("AI", "Loading Speech Identify model... Please wait.")
         result = self.audio_handler.load_model()  
         self.add_message("AI", result)
@@ -143,22 +134,22 @@ class ChatbotApp(tb.Window):
             self.speak_btn.config(text="🎤 Speak")
             if os.path.exists(AUDIO_FILE):
                 model = load_emotion_model()  
-            if model:
-                analyze_audio(model, AUDIO_FILE)
-                text = self.audio_handler.transcribe_audio(AUDIO_FILE) 
-                self.text_prediction.prediction(text) 
-                if text.strip():
-                    self.add_message("User", text)
-                    self.user_input.delete(0, tk.END)
-                    self.user_input.insert(0, text)
-                    self.send_message()
+                if model:
+                    analyze_audio(model, AUDIO_FILE)
+                    text = self.audio_handler.transcribe_audio(AUDIO_FILE) 
+                    self.text_prediction.prediction(text) 
+                    if text.strip():
+                        self.add_message("User", text)
+                        self.user_input.delete(0, tk.END)
+                        self.user_input.insert(0, text)
+                        self.send_message()
+                    else:
+                        self.add_message("AI", "I couldn't understand. Please try again.")
                 else:
-                    self.add_message("AI", "I couldn't understand. Please try again.")
-            else:
-                self.add_message("AI", "Error: Audio file not saved properly.")
+                    self.add_message("AI", "Error: Audio file not saved properly.")
 
     def send_message(self):
-        """Sends user message along with conversation history to the backend and updates history."""
+        """Sends user message and conversation history to the backend."""
         user_text = self.user_input.get().strip()
         if not user_text:
             return
@@ -169,7 +160,7 @@ class ChatbotApp(tb.Window):
         threading.Thread(target=self.get_ai_response, args=(user_text,), daemon=True).start()
 
     def get_ai_response(self, user_text):
-        """Sends conversation history and the latest message to the backend and appends the assistant response to history."""
+        """Fetches assistant response from the backend and updates chat."""
         try:
             ai_text = send_to_backend(self.conversation_history, user_text)
             self.after(0, self.add_message, "AI", ai_text)
@@ -180,6 +171,7 @@ class ChatbotApp(tb.Window):
             self.after(0, lambda: self.user_input.config(state=tk.NORMAL))
 
     def on_close(self):
-        # Stop the emotion background processor.
-        self.emotion_processor.stop()
+        # Stop the emotion background processor if it exists.
+        if self.emotion_processor:
+            self.emotion_processor.stop()
         self.destroy()
