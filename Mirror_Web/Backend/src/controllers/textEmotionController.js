@@ -1,11 +1,105 @@
 const mongoose = require("mongoose");
 const Text_Emotion_Prediction = require("../models/text_emotion.model"); 
+const Text_Emotion_Aggregate = require("../models/textAggregate.model"); 
 
 // Get All Text Emotions
 const getAllTextEmotions = async (req, res) => {
     try {
         const emotions = await Text_Emotion_Prediction.find();
-        res.json({ success: true, emotions });
+        
+        const formattedEmotions = emotions.map(emotion => ({
+            ...emotion._doc, 
+            timestamp: new Date(emotion.timestamp).toISOString().replace("T", " ").split(".")[0] 
+        }));
+
+        res.json({ success: true, emotions: formattedEmotions });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+// Get All Text Emotions Precentages
+const getAllTextEmotionsPrecentages = async (req, res) => {
+    try {
+        const emotions = await Text_Emotion_Prediction.find();
+        console.log("Emotions:",emotions)
+        
+        
+        if (emotions.length === 0) {
+            return res.json({ success: true, percentages: {} });
+        }
+
+        // Count occurrences of each prediction
+        const emotionCounts = {
+            anger: 0,
+            fear: 0,
+            joy: 0,
+            neutral: 0,
+            sadness: 0,
+            surprise: 0
+        };
+
+        emotions.forEach(({ prediction }) => {
+            if (emotionCounts.hasOwnProperty(prediction)) {
+                emotionCounts[prediction]++;
+            }
+        });
+
+        // Total predictions
+        const total = emotions.length;
+
+        // Calculate percentages
+        const emotionPercentages = Object.fromEntries(
+            Object.entries(emotionCounts).map(([emotion, count]) => [
+                emotion,
+                ((count / total) * 100).toFixed(2)
+            ])
+        );
+
+        res.json({ success: true, percentages: emotionPercentages, counts: emotionCounts });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+
+// Get Text Aggregation Emotions
+const getTextAggregateEmotions = async (req, res) => {
+    try {
+        const emotions = await Text_Emotion_Aggregate.find();
+        
+        const formattedEmotions = emotions.map(emotion => {
+            const date = new Date(emotion.timestamp);
+            const formattedTimestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+            return {
+                ...emotion._doc,
+                timestamp: formattedTimestamp
+            };
+        });
+
+        res.json({ success: true, emotions: formattedEmotions });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+// Get Text Aggregation Emotions
+const getTextAggregateEmotions60min = async (req, res) => {
+    try {
+        const emotions = await Text_Emotion_Aggregate.find();
+        
+        const formattedEmotions = emotions.map(emotion => {
+            const date = new Date(emotion.timestamp);
+            const formattedTimestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+            return {
+                ...emotion._doc,
+                timestamp: formattedTimestamp
+            };
+        });
+
+        res.json({ success: true, emotions: formattedEmotions });
     } catch (error) {
         res.status(500).json({ msg: "Internal Server Error", success: false });
     }
@@ -81,5 +175,8 @@ const getEmotionsByTimestampFilter = async (req, res) => {
 
 module.exports = {
     getAllTextEmotions,
-    getEmotionsByTimestampFilter
+    getEmotionsByTimestampFilter,
+    getTextAggregateEmotions,
+    getAllTextEmotionsPrecentages,
+    getTextAggregateEmotions60min
 };
