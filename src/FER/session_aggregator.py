@@ -55,7 +55,8 @@ class SessionAggregator:
                 sessions = []
             session_summary = {
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "session_aggregate": session_aggregate
+                "session_aggregate": session_aggregate,
+                "db_status": False
             }
             sessions.append(session_summary)
             with open(self.session_file, "w") as f:
@@ -116,7 +117,8 @@ class SessionAggregator:
                 sessions = []
             session_summary = {
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "session_aggregate": session_aggregate
+                "session_aggregate": session_aggregate,
+                "db_status": False
             }
             sessions.append(session_summary)
             with open(hour_session_file, "w") as f:

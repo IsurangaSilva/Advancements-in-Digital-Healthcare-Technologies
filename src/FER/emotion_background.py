@@ -10,6 +10,7 @@ from .aggregator import EmotionAggregator
 from .emotion_detector import EmotionDetector
 from .facenet_pytorch import InceptionResnetV1
 from .session_aggregator import SessionAggregator
+from .session_db_sender import SessionDBSender
 
 class EmotionBackgroundProcessor:
     def __init__(self, status_update_callback, capture_interval=1.0):
@@ -45,7 +46,7 @@ class EmotionBackgroundProcessor:
         self.similarity_threshold = 0.6
 
         # Initiate session aggregator in separate daemon threads.
-        self.session_aggregator = SessionAggregator(interval_seconds=300, emotion_file=self.save_path)
+        self.session_aggregator = SessionAggregator(interval_seconds=310, emotion_file=self.save_path)
         self.session_thread = threading.Thread(target=self.session_aggregator.run, daemon=True)
         self.session_thread.start()
         print("Session aggregator thread started.")
@@ -53,6 +54,12 @@ class EmotionBackgroundProcessor:
         self.hour_session_thread = threading.Thread(target=self.session_aggregator.run_hour, daemon=True)
         self.hour_session_thread.start()
         print("Hour session aggregator thread started.")
+
+        # Start the background database sender thread to push unsent aggregates every 350 seconds.
+        self.db_sender = SessionDBSender(interval_seconds=10)
+        self.db_sender_thread = threading.Thread(target=self.db_sender.run, daemon=True)
+        self.db_sender_thread.start()
+        print("Session DB sender thread started.")
 
     def get_face_embedding(self, pil_image):
         try:
