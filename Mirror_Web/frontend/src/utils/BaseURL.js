@@ -1,1 +1,0 @@
-export const BASE_URL = "http://localhost:5000"; //The base URL of the backend server
