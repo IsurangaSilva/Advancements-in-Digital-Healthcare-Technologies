@@ -1,11 +1,13 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import pymongo 
-from bson.objectid import ObjectId
 from pymongo import MongoClient
+import bcrypt
+import os
+import subprocess
 
-MONGO_URI = "mongodb+srv://<username>:<password>@<your-cluster>.mongodb.net/?retryWrites=true&w=majority"
-DB_NAME = "your_database_name"
+MONGO_URI = "mongodb+srv://ravindunirmal099:9skEfhr02gOJSmnE@depressiondetection.qpzzs.mongodb.net/?retryWrites=true&w=majority&appName=DepressionDetection"
+DB_NAME = "emotionDB"
 COLLECTION_NAME = "users"
 
 class LoginPage(tk.Tk):
@@ -13,52 +15,83 @@ class LoginPage(tk.Tk):
         super().__init__()
 
         self.title("Mirror Chat - Login")
-        self.geometry("800x600")
-        self.configure(bg="#0E1628") 
+        self.geometry("900x700")
+        self.configure(bg="#0B1B3F") 
 
        
-        form_frame = tk.Frame(self, bg="#1F2937", bd=2, relief="ridge")
-        form_frame.place(relx=0.5, rely=0.5, anchor="center", width=400, height=400)
+        container = tk.Frame(self, bg="#1E2A44", bd=0)
+        container.place(relx=0.5, rely=0.5, anchor="center", width=450, height=550)
+        
+        
+        shadow_canvas = tk.Canvas(container, bg="#0B1B3F", highlightthickness=0)
+        shadow_canvas.place(x=-5, y=-5, width=460, height=560)
+        shadow_canvas.create_rectangle(5, 5, 455, 555, fill="#1E2A44", outline="")
 
        
-        title_label = tk.Label(form_frame, text="Mirror Chat", fg="white", bg="#1F2937", font=("Arial", 18, "bold"))
-        title_label.pack(pady=(20, 10))
+        header_frame = tk.Frame(container, bg="#0B1B3F")
+        header_frame.pack(fill="x")
+        tk.Label(header_frame, text="Mirror Chat", font=("Helvetica", 24, "bold"), fg="white", 
+                bg="#0B1B3F").pack(pady=20)
 
         
-        email_label = tk.Label(form_frame, text="Your email", fg="white", bg="#1F2937", font=("Arial", 12))
-        email_label.pack(pady=(10, 2))
-        self.email_entry = tk.Entry(form_frame, font=("Arial", 12), bg="#374151", fg="white", bd=1, relief="solid")
-        self.email_entry.pack(pady=(2, 10), ipadx=5, ipady=5, fill="x", padx=20)
+        form_frame = tk.Frame(container, bg="#1E2A44")
+        form_frame.pack(pady=30, padx=40, fill="both", expand=True)
+
+        
+        email_label = tk.Label(form_frame, text="Email Address", fg="#A3BFFA", bg="#1E2A44", 
+                             font=("Helvetica", 12, "bold"))
+        email_label.pack(pady=(20, 5))
+        self.email_entry = tk.Entry(form_frame, font=("Helvetica", 12), bg="#2D3B55", fg="white", 
+                                  insertbackground="white", bd=0, relief="flat")
+        self.email_entry.pack(pady=5, ipady=8, fill="x")
+        tk.Frame(form_frame, bg="#A3BFFA", height=2).pack(fill="x")  
 
        
-        password_label = tk.Label(form_frame, text="Password", fg="white", bg="#1F2937", font=("Arial", 12))
-        password_label.pack(pady=(10, 2))
-        self.password_entry = tk.Entry(form_frame, font=("Arial", 12), bg="#374151", fg="white", bd=1, relief="solid", show="•")
-        self.password_entry.pack(pady=(2, 10), ipadx=5, ipady=5, fill="x", padx=20)
-
-       
+        password_label = tk.Label(form_frame, text="Password", fg="#A3BFFA", bg="#1E2A44", 
+                                font=("Helvetica", 12, "bold"))
+        password_label.pack(pady=(20, 5))
+        self.password_entry = tk.Entry(form_frame, font=("Helvetica", 12), bg="#2D3B55", fg="white", 
+                                     show="•", insertbackground="white", bd=0, relief="flat")
+        self.password_entry.pack(pady=5, ipady=8, fill="x")
+        tk.Frame(form_frame, bg="#A3BFFA", height=2).pack(fill="x")  
+        
+        options_frame = tk.Frame(form_frame, bg="#1E2A44")
+        options_frame.pack(pady=15, fill="x")
+        
         self.remember_var = tk.BooleanVar()
-        remember_check = tk.Checkbutton(form_frame, text="Remember me", variable=self.remember_var, fg="white", 
-                                        bg="#1F2937", font=("Arial", 10), selectcolor="#1F2937", activebackground="#1F2937", 
-                                        activeforeground="white")
-        remember_check.pack(pady=5)
-
+        remember_check = tk.Checkbutton(options_frame, text="Remember me", variable=self.remember_var, 
+                                      fg="#D1D5DB", bg="#1E2A44", font=("Helvetica", 10), 
+                                      selectcolor="#2D3B55", activebackground="#1E2A44", 
+                                      activeforeground="#D1D5DB")
+        remember_check.pack(side="left")
         
-        forgot_password_label = tk.Label(form_frame, text="Forgot password?", fg="#3B82F6", bg="#1F2937", font=("Arial", 10, "underline"), cursor="hand2")
-        forgot_password_label.pack(pady=5)
+        forgot_password_label = tk.Label(options_frame, text="Forgot Password?", fg="#60A5FA", 
+                                       bg="#1E2A44", font=("Helvetica", 10, "underline"), cursor="hand2")
+        forgot_password_label.pack(side="right")
         forgot_password_label.bind("<Button-1>", lambda e: messagebox.showinfo("Forgot Password", "Reset your password"))
 
-      
-        login_button = tk.Button(form_frame, text="Login", font=("Arial", 14, "bold"), bg="#3B82F6", fg="white", command=self.login)
-        login_button.pack(pady=15, ipadx=50, ipady=5)
+        
+        self.login_button = tk.Button(form_frame, text="Login", font=("Helvetica", 14, "bold"), 
+                                    bg="#3B82F6", fg="white", bd=0, relief="flat", 
+                                    activebackground="#2563EB", activeforeground="white", 
+                                    command=self.login)
+        self.login_button.pack(pady=30, ipady=10, ipadx=50)
+        self.login_button.bind("<Enter>", lambda e: self.login_button.config(bg="#2563EB"))
+        self.login_button.bind("<Leave>", lambda e: self.login_button.config(bg="#3B82F6"))
 
         
-        signup_label = tk.Label(form_frame, text="Don’t have an account yet? Sign up", fg="#3B82F6", bg="#1F2937", font=("Arial", 10, "underline"), cursor="hand2")
-        signup_label.pack(pady=5)
-        signup_label.bind("<Button-1>", lambda e: messagebox.showinfo("Sign Up", "Redirect to sign up page"))
+        signup_frame = tk.Frame(container, bg="#1E2A44")
+        signup_frame.pack(pady=10)
+        signup_label = tk.Label(signup_frame, text="Don’t have an account? ", fg="#D1D5DB", 
+                              bg="#1E2A44", font=("Helvetica", 10))
+        signup_label.pack(side="left")
+        signup_link = tk.Label(signup_frame, text="Sign Up", fg="#60A5FA", bg="#1E2A44", 
+                             font=("Helvetica", 10, "underline"), cursor="hand2")
+        signup_link.pack(side="left")
+        signup_link.bind("<Button-1>", lambda e: messagebox.showinfo("Sign Up", "Redirect to sign up page"))
 
     def login(self):
-        """Handles login button click."""
+        """Handles login button click with bcrypt authentication and navigation."""
         email = self.email_entry.get().strip()
         password = self.password_entry.get().strip()
 
@@ -66,24 +99,39 @@ class LoginPage(tk.Tk):
             messagebox.showwarning("Login Failed", "Please enter both email and password")
             return
 
-      
         try:
             client = MongoClient(MONGO_URI)
             db = client[DB_NAME]
             users_collection = db[COLLECTION_NAME]
 
-            user = users_collection.find_one({"email": email, "password": password, "role": "patient"})
+            
+            user = users_collection.find_one({"email": email, "role": "patient"})
 
             if user:
-                messagebox.showinfo("Login Successful", f"Welcome, {user['email']}!")
-            else:
-                messagebox.showerror("Login Failed", "Invalid email, password, or role is not patient")
         
+                stored_password = user["password"]
+                
+                if isinstance(stored_password, str):
+                    stored_password = stored_password.encode('utf-8')
+                elif not isinstance(stored_password, bytes):
+                    messagebox.showerror("Error", "Stored password format is invalid")
+                    return
+
+                if bcrypt.checkpw(password.encode('utf-8'), stored_password):
+                    messagebox.showinfo("Login Successful", f"Welcome, {user['email']}!")
+                    self.destroy()
+                    subprocess.run(["python", "src/main.py"])
+                else:
+                    messagebox.showerror("Login Failed", "Invalid email or password")
+            else:
+                messagebox.showerror("Login Failed", "Invalid email or user not found")
+
         except pymongo.errors.ConnectionFailure as e:
             messagebox.showerror("Database Error", f"Could not connect to MongoDB:\n{e}")
-
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred:\n{e}")
         finally:
-            client.close() 
+            client.close()
 
 if __name__ == "__main__":
     app = LoginPage()

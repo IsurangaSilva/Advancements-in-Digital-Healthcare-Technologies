@@ -5,11 +5,13 @@ from pymongo import MongoClient
 from bson import ObjectId
 import os
 import json
+import subprocess
 
 class SettingsPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="#000D2E")
         self.controller = controller
+        self.root = parent  # Store the root window reference explicitly
 
         # Create a canvas with scrollbar
         self.canvas = tk.Canvas(self, bg="#000D2E", highlightthickness=0)
@@ -40,24 +42,24 @@ class SettingsPage(tk.Frame):
         self.image_path = os.path.join(self.image_dir, "profile.jpg")
         self.json_file_path = "profile_data.json"
 
-    
+        # Title
         title_label = tk.Label(self.scrollable_frame, text="Settings", font=("Helvetica", 30, "bold"), bg="#000D2E", fg="#F1F1F1")
-        title_label.pack(pady=(60, 60),padx=(100, 0))
+        title_label.pack(pady=(60, 60), padx=(100, 0))
 
         # Profile Picture Frame
         self.profile_pic_frame = tk.Frame(self.scrollable_frame, bg="#2F3A4A")
-        self.profile_pic_frame.pack(pady=(20, 10) ,padx=(100, 0))
+        self.profile_pic_frame.pack(pady=(20, 10), padx=(100, 0))
         self.load_profile_picture()
 
         # Upload Image Button
         upload_btn = tk.Button(self.scrollable_frame, text="Change Profile Picture", command=self.upload_image,
                               bg="green", fg="white", font=("Helvetica", 10, "bold"), relief=tk.RAISED, bd=0,
                               activebackground="#DAA520", activeforeground="white", padx=15, pady=8)
-        upload_btn.pack(pady=(10, 40),padx=(100, 0))
+        upload_btn.pack(pady=(10, 40), padx=(100, 0))
 
         # Form frame for profile inputs
         form_frame = tk.Frame(self.scrollable_frame, bg="#1F2739", bd=2, relief="groove")
-        form_frame.pack(fill=tk.BOTH, expand=True, padx=(300,200), pady=60)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=(300, 200), pady=60)
 
         profile_data = self.get_profile_data()
         self.name_entry = self.create_form_entry(form_frame, "Full Name", profile_data.get("Name", ""))
@@ -65,8 +67,6 @@ class SettingsPage(tk.Frame):
         self.phone_entry = self.create_form_entry(form_frame, "Phone", profile_data.get("Phone", ""))
         self.role_entry = self.create_form_entry(form_frame, "Role", profile_data.get("Role", ""))
         self.role_entry.config(state="disabled")
-
-        
 
         # Update Profile Button
         update_btn = tk.Button(form_frame, text="Update Profile", command=self.update_profile,
@@ -80,11 +80,11 @@ class SettingsPage(tk.Frame):
         history_label = tk.Label(history_frame, text="Chat History", font=("Helvetica", 24), bg="#000D2E", fg="white", anchor="w")
         history_label.pack(side=tk.LEFT, padx=(300, 10))
         
-        clear_button = tk.Button(history_frame, text="Clear", bg="red", fg="white", command=self.confirm_clear_chat_history,font=("Helvetica", 15 ))
-        clear_button.pack(side=tk.LEFT, padx=(50,10))
+        clear_button = tk.Button(history_frame, text="Clear", bg="red", fg="white", command=self.confirm_clear_chat_history, font=("Helvetica", 15))
+        clear_button.pack(side=tk.LEFT, padx=(50, 10))
         
-        report_button = tk.Button(history_frame, text="Get Report", bg="GREEN", fg="white", command=self.download_chat_history ,font=("Helvetica", 15))
-        report_button.pack(side=tk.LEFT, padx=(0,650))
+        report_button = tk.Button(history_frame, text="Get Report", bg="GREEN", fg="white", command=self.download_chat_history, font=("Helvetica", 15))
+        report_button.pack(side=tk.LEFT, padx=(0, 650))
 
         # Personalization Section
         personalization_frame = tk.Frame(self.scrollable_frame, bg="#000D2E")
@@ -94,11 +94,11 @@ class SettingsPage(tk.Frame):
         personalization_input = tk.Entry(personalization_frame, bg="#444B5A", fg="white", width=30)
         personalization_input.pack(side=tk.LEFT, padx=(0, 10))
         add_button = tk.Button(personalization_frame, text="Add", bg="green", fg="white")
-        add_button.pack(side=tk.LEFT, padx=(0,10))
+        add_button.pack(side=tk.LEFT, padx=(0, 10))
 
         # FAQ Section
         faq_canvas = tk.Canvas(self.scrollable_frame, bg="#000D2E", height=300, bd=0, highlightthickness=0)
-        faq_canvas.pack(pady=(10, 0),padx=(280,10) ,fill=tk.X)
+        faq_canvas.pack(pady=(10, 0), padx=(280, 10), fill=tk.X)
         faq_canvas.create_oval(10, 10, 400, 190, outline="#444B5A", width=2)
         faq_label = tk.Label(faq_canvas, text="FAQ", font=("Helvetica", 24), bg="#000D2E", fg="white")
         faq_label.place(x=20, y=20)
@@ -116,7 +116,7 @@ class SettingsPage(tk.Frame):
 
         # Privacy Section
         privacy_canvas = tk.Canvas(self.scrollable_frame, bg="#000D2E", height=200, bd=0, highlightthickness=0)
-        privacy_canvas.pack(pady=(10, 20),padx=(280,10) , fill=tk.X)
+        privacy_canvas.pack(pady=(10, 20), padx=(280, 10), fill=tk.X)
         privacy_canvas.create_oval(10, 10, 400, 190, outline="#444B5A", width=2)
         privacy_label = tk.Label(privacy_canvas, text="Privacy", font=("Helvetica", 24), bg="#000D2E", fg="white")
         privacy_label.place(x=20, y=20)
@@ -248,7 +248,17 @@ class SettingsPage(tk.Frame):
             self.logout()
 
     def logout(self):
+        """Close the current window and open the login page."""
         print("Logging out...")
+        # Explicitly destroy the root window
+        self.root.destroy()
+        # Launch the login page script
+        try:
+            subprocess.run(["python", "src/login.py"], check=True)  # Adjust the path if needed
+        except subprocess.CalledProcessError as e:
+            print(f"Error launching login page: {e}")
+        except FileNotFoundError:
+            print("Login script not found. Ensure 'login.py' exists in the correct directory.")
 
     def download_chat_history(self):
         chat_history_file = "./chat_history.json"

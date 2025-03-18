@@ -6,7 +6,7 @@ import json
 class ProfilePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="#000D2E")
-        self.json_file_path = "./src/profile_data.json"
+        self.json_file_path = "profile_data.json"
         
 
         self.image_dir = "profile_pictures"

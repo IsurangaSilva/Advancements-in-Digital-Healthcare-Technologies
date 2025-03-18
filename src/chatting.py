@@ -2,6 +2,7 @@ import tkinter as tk
 import requests
 import json
 from concurrent.futures import ThreadPoolExecutor
+import re
 
 class ChattingPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -59,14 +60,14 @@ class ChattingPage(tk.Frame):
         try:
             url = "https://openrouter.ai/api/v1/chat/completions"
             headers = {
-                "Authorization": "Bearer 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", 
+                "Authorization": "Bearer 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", 
                 "Content-Type": "application/json",
                 "HTTP-Referer": "<YOUR_SITE_URL>", 
                 "X-Title": "<YOUR_SITE_NAME>",
             }
 
             payload = {
-                "model": "deepseek/deepseek-r1:free",
+                "model": "deepseek/deepseek-r1-distill-llama-70b:free",
                 "messages": [
                     {
                         "role": "user", 
@@ -81,13 +82,27 @@ class ChattingPage(tk.Frame):
             if response.status_code == 200:
                 data = response.json()
                 recommendation = data.get("choices", [{}])[0].get("message", {}).get("content", "Sorry, I couldn't process your request.")
-                self.update_chat_area(session_token, recommendation)
+                cleaned_recommendation = self.clean_markdown(recommendation)
+                self.update_chat_area(session_token, cleaned_recommendation)
             else:
                 self.update_chat_area(session_token, f"Error: {response.status_code} - {response.text}")
 
         except Exception as e:
             print(f"Error with OpenRouter API: {e}")
             self.update_chat_area(session_token, "Sorry, I couldn't process your request.")
+
+    def clean_markdown(self, text):
+        """
+        Clean markdown from the text.
+        This method removes markdown syntax and returns plain text.
+        """
+        text = re.sub(r'\*{1,2}(.*?)\*{1,2}', r'\1', text)  # Removes bold/italic markdown
+        text = re.sub(r'_(.*?)_', r'\1', text)  # Removes italic markdown
+        text = re.sub(r'`(.*?)`', r'\1', text)  # Removes inline code markdown
+        text = re.sub(r'^[#]+ (.*?)$', r'\1', text, flags=re.MULTILINE)  # Removes headings
+        text = re.sub(r'\[.*?\]\(.*?\)', '', text)  # Removes links
+        text = re.sub(r'\n+', '\n', text)  # Remove extra newlines
+        return text.strip()
 
     def update_chat_area(self, session_token, message):
         """
