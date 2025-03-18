@@ -197,7 +197,7 @@ class AudioHandler:
         self.chunk = 1024
         self.mic = pyaudio.PyAudio()
 
-    def record_audio(self,record_time=7):
+    def record_audio(self,record_time=5):
         """Records audio at 16kHz, 16-bit Mono and saves it as a WAV file."""
         mic = pyaudio.PyAudio()
         try:
