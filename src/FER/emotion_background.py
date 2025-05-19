@@ -35,7 +35,7 @@ class EmotionBackgroundProcessor:
 
         # Initialize the aggregator (using 60-second windows as before)
         self.save_path = os.path.join(BASE_DIR, "db", "FER", "emotion_data.json")
-        self.aggregator = EmotionAggregator(window_seconds=60, save_path=self.save_path)
+        self.aggregator = EmotionAggregator(window_seconds=60, save_path=self.save_path) # Change to 60 seconds after testing
         
         # Load reference embedding from file (if available); otherwise, use a dummy vector.
         ref_path = os.path.join(BASE_DIR, "db", "FER", "average_embedding.npy")
