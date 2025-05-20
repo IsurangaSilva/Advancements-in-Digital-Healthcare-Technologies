@@ -1,16 +1,28 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from llama_cpp import Llama
 import os
 import uvicorn
+import time
+import logging
+from model_manager import ModelManager
 
 app = FastAPI()
 
 # Path to the GGUF model
-MODEL_PATH = os.path.abspath("models/unsloth.Q4_K_M.gguf")
+MODEL_PATH = os.path.abspath("../models/unsloth.Q4_K_M.gguf")
 
-# Load the model on startup
-llm = Llama(model_path=MODEL_PATH, use_mmap=True, verbose=False)
+# Use lazy loading for model - don't load it yet
+model_manager = ModelManager()
+llm = None
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("backend")
+
+# Let startup be fast
+@app.on_event("startup")
+async def startup_event():
+    logger.info("FastAPI backend started")
 
 class ChatRequest(BaseModel):
     history: list[str] = []   # List of conversation history messages (e.g. "[USER]: Hi", "[ASSISTANT]: Hello")
@@ -18,6 +30,15 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
+    global llm
+    
+    # Lazy load model when needed
+    if llm is None:
+        logger.info("Loading LLM model on first use")
+        start_time = time.time()
+        llm = model_manager.get_model('llm', MODEL_PATH, use_mmap=True, verbose=False)
+        logger.info(f"Model loaded in {time.time() - start_time:.2f} seconds")
+    
     system_prompt = (
         "You are a helpful AI assistant. Provide clear and concise responses.\n"
         "Always give noice reduced answers.\n"

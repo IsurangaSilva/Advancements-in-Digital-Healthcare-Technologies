@@ -8,6 +8,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.layers import Layer
 from config import AUDIO_FILE, VOICE_MODEL_PATH, TEMP_VOICE_PREDICTION_RESULT_CSV
 import tensorflow as tf
+from model_manager import ModelManager
 
 # Configure logging
 logging.basicConfig(
@@ -58,11 +59,13 @@ class GetItem(Layer):
         return cls(index=index, **config)
 
 def load_emotion_model(model_path=VOICE_MODEL_PATH):
-    """Loads the emotion analysis model from the specified path."""
+    """Loads the emotion analysis model from the specified path using ModelManager."""
     try:
-        logging.info(f"Loading model from: {model_path}")
-        model = load_model(model_path, custom_objects={'GetItem': GetItem})
-        logging.info("Model loaded successfully")
+        logging.info(f"Getting voice emotion model from manager: {model_path}")
+        model_manager = ModelManager()
+        model = model_manager.get_model('voice', model_path)
+        if model is not None:
+            logging.info("Voice emotion model loaded successfully")
         return model
     except Exception as e:
         logging.error(f"Error loading model: {e}")
@@ -143,10 +146,16 @@ def save_results_to_json(results, output_file="voice_prediction.json"):
     except Exception as e:
         logging.error(f"Error saving results to JSON: {e}")
 
-def analyze_audio(model, audio_path=AUDIO_FILE):
+def analyze_audio(audio_path=AUDIO_FILE):
     """Analyzes the audio file for emotion and saves the results."""
     if not os.path.exists(audio_path):
         logging.error(f"Audio file not found at {audio_path}")
+        return
+        
+    # Lazy load the model only when needed
+    model = load_emotion_model()
+    if model is None:
+        logging.error("Failed to load voice emotion model")
         return
 
     predicted_emotion, predictions = predict_emotion(model, audio_path)

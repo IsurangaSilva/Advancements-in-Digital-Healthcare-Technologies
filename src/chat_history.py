@@ -5,7 +5,7 @@ import json
 import os
 
 class ChatHistoryPage(tk.Frame):
-    def __init__(self, parent, controller, chat_history_path="./chat_history.json"):
+    def __init__(self, parent, controller, chat_history_path="../chat_history.json"):
         super().__init__(parent, bg="#000D2E")
         self.controller = controller
         self.chat_history_file = chat_history_path
@@ -39,24 +39,25 @@ class ChatHistoryPage(tk.Frame):
         self.canvas.bind_all("<MouseWheel>", self.on_mouse_wheel)
 
         self.load_chat_history()
-
+        
     def on_canvas_configure(self, event):
         self.canvas.itemconfig(self.canvas.create_window((0, 0), window=self.chat_frame, anchor="nw"), 
                              width=event.width)
-
+                             
     def on_mouse_wheel(self, event):
         self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
+        
     def load_chat_history(self):
         if os.path.exists(self.chat_history_file):
             try:
                 with open(self.chat_history_file, "r") as f:
                     history = [json.loads(line) for line in f if line.strip() != ""]
+                
                 for entry in history:
                     sender = entry.get("sender", "Assistant")
                     message = entry.get("message", "")
                     timestamp = entry.get("timestamp", "")
-                    icon_path = "./profile_pictures/profile.jpg" if sender.lower() == "user" else "./assets/images/chatbot.png"
+                    icon_path = "../profile_pictures/profile.jpg" if sender.lower() == "user" else "../assets/images/chatbot.png"
                     self.add_chat_message(message, sender, timestamp, icon_path)
             except Exception as e:
                 print(f"Error loading chat history: {e}")

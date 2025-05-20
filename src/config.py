@@ -4,25 +4,25 @@ import os
 API_URL = "http://127.0.0.1:8000/chat"
 
 # Model paths and settings
-MODEL_PATH = os.path.join("models", "base.pt")
-TEXT_MODEL_PATH = os.path.join("models", "IT20629144_TextBased_03.keras")
-VOICE_MODEL_PATH = os.path.join("models", "IT21126574_VoiceBased_03.h5")
+MODEL_PATH = os.path.join("..", "models", "base.pt")
+TEXT_MODEL_PATH = os.path.join("..", "models", "IT20629144_TextBased_03.keras")
+VOICE_MODEL_PATH = os.path.join("..", "models", "IT21126574_VoiceBased_03.h5")
 
 #Audio File Paths
-AUDIO_FILE = "audios/temp_audio/recorded_audio.wav"
+AUDIO_FILE = os.path.join("..", "audios", "temp_audio", "recorded_audio.wav")
 
 #Text File Paths
-TRANSCRIPTION_FILE = "transcriptions/full_transcript/full_transcript.csv"
-TEMP_TRANSCRIPTION_FILE = "transcriptions/temp_transcript/temp_transcript.csv"
-TRAIN_TEXT_DATASET = 'datasets/Text_Based/2025_research_04.csv'
-TEST_TEXT_DATASET = 'datasets/Text_Based/test_final_dataset.csv'
-VAL_TEXT_DATASET = 'datasets/Text_Based/val_final_dataset.csv'
-TEMP_TEXT_PREDICTION_RESULT_CSV = 'result/Text/temp_prediction.csv'
-TEMP_TEXT_PREDICTION_RESULT_JSON = 'db/Text/temp_prediction.json'
+TRANSCRIPTION_FILE = os.path.join("..", "transcriptions", "full_transcript", "full_transcript.csv")
+TEMP_TRANSCRIPTION_FILE = os.path.join("..", "transcriptions", "temp_transcript", "temp_transcript.csv")
+TRAIN_TEXT_DATASET = os.path.join("..", 'datasets', 'Text_Based', '2025_research_04.csv')
+TEST_TEXT_DATASET = os.path.join("..", 'datasets', 'Text_Based', 'test_final_dataset.csv')
+VAL_TEXT_DATASET = os.path.join("..", 'datasets', 'Text_Based', 'val_final_dataset.csv')
+TEMP_TEXT_PREDICTION_RESULT_CSV = os.path.join("..", 'result', 'Text', 'temp_prediction.csv')
+TEMP_TEXT_PREDICTION_RESULT_JSON = os.path.join("..", 'db', 'Text', 'temp_prediction.json')
 
 # Emotion file paths
-EMOTION_FILE = "result/Audio/voice_prediction.json"
-TEMP_VOICE_PREDICTION_RESULT_CSV = 'result/Audio/voice_prediction.csv'
+EMOTION_FILE = os.path.join("..", "result", "Audio", "voice_prediction.json")
+TEMP_VOICE_PREDICTION_RESULT_CSV = os.path.join("..", 'result', 'Audio', 'voice_prediction.csv')
 
 
 # Audio recording settings

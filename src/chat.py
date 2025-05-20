@@ -40,14 +40,14 @@ class ChatbotApp(tk.Frame):
     
         self.right_frame = tk.Frame(self, bg='#000D2E')
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
-
+        
         icon_size = (50, 50)
         self.user_icon = ImageTk.PhotoImage(
-            Image.open("./profile_pictures/profile.jpg").resize(icon_size, Image.LANCZOS)
-        ) if os.path.exists("./profile_pictures/profile.jpg") else None
+            Image.open("../profile_pictures/profile.jpg").resize(icon_size, Image.LANCZOS)
+        ) if os.path.exists("../profile_pictures/profile.jpg") else None
         self.ai_icon = ImageTk.PhotoImage(
-            Image.open("assets/images/chatbot.png").resize(icon_size, Image.LANCZOS)
-        ) if os.path.exists("assets/images/chatbot.png") else None
+            Image.open("../assets/images/chatbot.png").resize(icon_size, Image.LANCZOS)
+        ) if os.path.exists("../assets/images/chatbot.png") else None
 
         self.message_count = 0
         self.conversation_history = []
@@ -222,9 +222,8 @@ class ChatbotApp(tk.Frame):
             self.recording_thread.join()
             self.speak_btn.config(text="🎤 Speak")
             if os.path.exists(AUDIO_FILE):
-                model = load_emotion_model()
-            if model:
-                analyze_audio(model, AUDIO_FILE)
+                # Use the updated analyze_audio that includes lazy loading
+                analyze_audio(AUDIO_FILE)
                 text = self.audio_handler.transcribe_audio(AUDIO_FILE)
                 self.text_prediction.prediction(text)
                 if text.strip():

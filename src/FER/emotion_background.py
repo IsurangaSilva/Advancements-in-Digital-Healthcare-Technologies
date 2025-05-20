@@ -11,62 +11,98 @@ from .emotion_detector import EmotionDetector
 from .facenet_pytorch import InceptionResnetV1
 from .session_aggregator import SessionAggregator
 from .session_db_sender import SessionDBSender
+import sys
+import logging
+
+# Add parent directory to path to import model_manager
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from model_manager import ModelManager
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("emotion_background")
 
 class EmotionBackgroundProcessor:
-    def __init__(self, status_update_callback, capture_interval=1.0):
+    def __init__(self, status_update_callback, capture_interval=1.0, lazy_load=True):
         """
         status_update_callback: function(status: bool) to update dot indicator (True=working, False=not working)
         capture_interval: seconds between webcam frame captures
+        lazy_load: if True, load models only when needed
         """
         self.status_update_callback = status_update_callback
         self.capture_interval = capture_interval
         self.running = False
+        self.lazy_load = lazy_load
+        self.detector = None
+        self.facenet = None
 
+        # Get base directory for model loading
+        self.BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        self.model_path = os.path.join(self.BASE_DIR, "models", "efficientnet_b2_emotion_model.pth")
+        
         # Initialize webcam capture
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
             raise ValueError("Unable to open webcam for emotion detection.")
 
-        # Load the emotion detector model.
-        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-        model_path = os.path.join(BASE_DIR, "models", "efficientnet_b2_emotion_model.pth")
-        self.detector = EmotionDetector(model_path)
-        self.facenet = InceptionResnetV1(pretrained="casia-webface").eval().to(self.detector.device)
-
-        # Initialize the aggregator (using 60-second windows as before)
-        self.save_path = os.path.join(BASE_DIR, "db", "FER", "emotion_data.json")
-        self.aggregator = EmotionAggregator(window_seconds=60, save_path=self.save_path) # Change to 60 seconds after testing
+        # Initialize the aggregator
+        self.save_path = os.path.join(self.BASE_DIR, "db", "FER", "emotion_data.json")
+        self.aggregator = EmotionAggregator(window_seconds=60, save_path=self.save_path)
         
-        # Load reference embedding from file (if available); otherwise, use a dummy vector.
-        ref_path = os.path.join(BASE_DIR, "db", "FER", "average_embedding.npy")
+        # Load reference embedding from file (if available); otherwise, use a dummy vector
+        ref_path = os.path.join(self.BASE_DIR, "db", "FER", "average_embedding.npy")
         if os.path.exists(ref_path):
             self.reference_embedding = np.load(ref_path)
         else:
             self.reference_embedding = np.zeros(512)
         self.similarity_threshold = 0.6
-
-        # Initiate session aggregator in separate daemon threads.
+        
+        # Load models if not using lazy loading
+        if not lazy_load:
+            self._load_models()
+            
+        # Initiate session aggregator in separate daemon threads
         self.session_aggregator = SessionAggregator(interval_seconds=310, emotion_file=self.save_path)
         self.session_thread = threading.Thread(target=self.session_aggregator.run, daemon=True)
         self.session_thread.start()
-        print("Session aggregator thread started.")
+        logger.info("Session aggregator thread started.")
 
         self.hour_session_thread = threading.Thread(target=self.session_aggregator.run_hour, daemon=True)
         self.hour_session_thread.start()
-        print("Hour session aggregator thread started.")
+        logger.info("Hour session aggregator thread started.")
 
-        # Start the background database sender thread to push unsent aggregates every 350 seconds.
+        # Start the background database sender thread to push unsent aggregates every 10 seconds.
         self.db_sender = SessionDBSender(interval_seconds=10)
         self.db_sender_thread = threading.Thread(target=self.db_sender.run, daemon=True)
         self.db_sender_thread.start()
-        print("Session DB sender thread started.")
+        logger.info("Session DB sender thread started.")
+    
+    def _load_models(self):
+        """Load the emotion detection and facenet models using ModelManager"""
+        if self.detector is None:
+            logger.info("Loading emotion detector model...")
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            model_manager = ModelManager()
+            
+            # For now, we'll create the detector directly since it has custom initialization
+            # In a future improvement, ModelManager could handle this too
+            self.detector = EmotionDetector(self.model_path, device)
+            
+            logger.info("Loading facenet model...")
+            self.facenet = InceptionResnetV1(pretrained="casia-webface").eval().to(device)
+            logger.info("Models loaded successfully")
 
     def get_face_embedding(self, pil_image):
+        # Make sure models are loaded
+        if self.detector is None or self.facenet is None:
+            logger.info("Lazy loading models for face embedding")
+            self._load_models()
+            
         try:
             img_cropped = self.detector.mtcnn(pil_image)
         except RuntimeError as e:
             if "torch.cat" in str(e):
-                print("[EmotionBackgroundProcessor] MTCNN detection error:", e)
+                logger.warning(f"[EmotionBackgroundProcessor] MTCNN detection error: {e}")
                 return None
             else:
                 raise e
@@ -82,10 +118,16 @@ class EmotionBackgroundProcessor:
         return embedding if embedding.shape[0] == 512 else None
 
     def process_frame(self):
+        # Make sure models are loaded
+        if self.detector is None or self.facenet is None:
+            logger.info("Lazy loading models for frame processing")
+            self._load_models()
+            
         ret, frame = self.cap.read()
         if not ret:
             self.status_update_callback(False)
             return
+            
         results = self.detector.detect_and_predict(frame)
         if results:
             best_face = None
@@ -111,11 +153,13 @@ class EmotionBackgroundProcessor:
 
     def run(self):
         self.running = True
+        logger.info("Starting emotion background processing")
         while self.running:
             self.process_frame()
             time.sleep(self.capture_interval)
 
     def stop(self):
         self.running = False
+        logger.info("Stopping emotion background processing")
         if self.cap.isOpened():
             self.cap.release()
