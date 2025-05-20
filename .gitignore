@@ -14,6 +14,7 @@ db/Text/temp_prediction.json
 db/Result/temp_prediction.json
 result/Text/temp_prediction.csv
 env
+src/db
 models/unsloth.Q4_K_M.gguf
 models/IT20629144_TextBased_03.keras
 models/IT21126574_VoiceBased_02.h5

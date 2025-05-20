@@ -1,3 +1,4 @@
+# filepath: e:\Temp_Repos\01\Advancements-in-Digital-Healthcare-Technologies\src\maintest_new.py
 import os
 import tkinter as tk
 from tkinter import PhotoImage
@@ -7,7 +8,6 @@ from chat_history import ChatHistoryPage
 from report import ReportPage
 from chat import ChatbotApp
 from chatting import ChattingPage
-import logging
 
 class MainApplication(tk.Tk):
     def __init__(self):
@@ -37,7 +37,9 @@ class MainApplication(tk.Tk):
         
         self.active_page = "dashboard"
         self.dashboard_page()
-        self.setup_menu_buttons()    def load_images(self):
+        self.setup_menu_buttons()
+
+    def load_images(self):
         """Load all image assets with robust error handling."""
         # Get the absolute path to the assets directory - try multiple locations
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -60,9 +62,6 @@ class MainApplication(tk.Tk):
             assets_dir = os.path.join(current_dir, "assets", "images")
             os.makedirs(assets_dir, exist_ok=True)
             print(f"Created images directory at: {assets_dir}")
-            
-        # Clear any previous images to avoid memory issues
-        self.images.clear()
 
         # Define image paths
         image_paths = {
@@ -76,15 +75,12 @@ class MainApplication(tk.Tk):
             'close': "close_btn_icon.png"
         }
         
-        # Store PhotoImages directly as instance attributes to prevent garbage collection
+        # Load images with error handling
         for key, filename in image_paths.items():
             try:
                 path = os.path.join(assets_dir, filename)
                 if os.path.exists(path):
-                    # Create and store the PhotoImage as an instance attribute directly
-                    setattr(self, f"{key}_img", PhotoImage(file=path))
-                    # Also store reference in dictionary
-                    self.images[key] = getattr(self, f"{key}_img")
+                    self.images[key] = PhotoImage(file=path)
                     print(f"Successfully loaded image: {path}")
                 else:
                     print(f"Image file not found: {path}")
@@ -93,7 +89,7 @@ class MainApplication(tk.Tk):
                 print(f"Error loading image {filename}: {e}")
                 self.images[key] = None
         
-        # Set convenient references for backward compatibility
+        # Set convenient references
         self.toggle_icon = self.images.get('toggle')
         self.dashboard_icon = self.images.get('dashboard')
         self.chat_icon = self.images.get('chat')
@@ -135,29 +131,27 @@ class MainApplication(tk.Tk):
                 bd=0,
                 command=self.extend_menu_bar
             )
-            self.toggle_menu_btn.place(x=4, y=10)    def create_menu_button(self, icon, y_pos, text, command):
+            self.toggle_menu_btn.place(x=4, y=10)
+
+    def create_menu_button(self, icon, y_pos, text, command):
         """Create menu button with active state highlighting and fallback for missing icons."""
         try:
             is_active = text.lower() == self.active_page.lower()
             button_bg = self.active_button_bg if is_active else self.inactive_button_bg
             
-            # Create a frame to hold the button (helps with preventing image garbage collection)
-            button_frame = tk.Frame(self.menu_bar_frame, bg=button_bg)
-            button_frame.place(x=9, y=y_pos, width=50, height=50)
-            
             # Create button
             btn_args = {
-                'master': button_frame,
+                'master': self.menu_bar_frame,
                 'bg': button_bg,
                 'bd': 0,
                 'activebackground': button_bg,
-                'command': command
+                'command': command,
+                'width': 50,
+                'height': 50
             }
 
             if icon is not None:
                 btn_args['image'] = icon
-                # Store reference to button with image to prevent garbage collection
-                setattr(self, f"button_{text.lower()}", icon)
             else:
                 # Fallback to text
                 btn_args['text'] = text[0].upper()  # First letter of menu item
@@ -165,7 +159,7 @@ class MainApplication(tk.Tk):
                 btn_args['fg'] = self.button_fg
 
             btn = tk.Button(**btn_args)
-            btn.pack(fill=tk.BOTH, expand=True)
+            btn.place(x=9, y=y_pos)
 
             # Create active state indicator
             indicator = tk.Frame(

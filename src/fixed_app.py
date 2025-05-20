@@ -20,10 +20,7 @@ class MainApplication(tk.Tk):
         self.inactive_button_bg = "#0B1B3F"  
         self.button_fg = "white"
 
-        # Initialize image storage
-        self.images = {}
-
-        # Create main frames before loading images
+        # Create main frames
         self.page_frame = tk.Frame(self, bg="#000D2E")
         self.page_frame.place(relwidth=1.0, relheight=1.0, x=65)
 
@@ -31,97 +28,143 @@ class MainApplication(tk.Tk):
         self.menu_bar_frame.pack(side=tk.LEFT, fill=tk.Y, padx=3, pady=4)
         self.menu_bar_frame.pack_propagate(False)
 
-        # Load images and create UI
+        # IMPORTANT: Store PhotoImages as instance attributes, not in a dictionary
+        # This prevents them from being garbage collected
         self.load_images()
+        
+        # Create UI after loading images
         self.create_toggle_button()
         
         self.active_page = "dashboard"
         self.dashboard_page()
-        self.setup_menu_buttons()    def load_images(self):
+        self.setup_menu_buttons()
+
+    def load_images(self):
         """Load all image assets with robust error handling."""
-        # Get the absolute path to the assets directory - try multiple locations
+        # Get the absolute path to the assets directory
         current_dir = os.path.dirname(os.path.abspath(__file__))
         
         # Try different possible paths where images might be located
         possible_paths = [
-            os.path.join(current_dir, "assets", "images"),  # src/assets/images
-            os.path.join(os.path.dirname(current_dir), "assets", "images"),  # ../assets/images
-            os.path.join(current_dir, "..", "assets", "images")  # src/../assets/images
+            os.path.join(current_dir, "assets", "images"),      # src/assets/images
+            os.path.join(os.path.dirname(current_dir), "assets", "images"), # ../assets/images
+            os.path.join(current_dir, "..", "assets", "images") # src/../assets/images
         ]
         
         assets_dir = None
         for path in possible_paths:
             if os.path.exists(path):
                 assets_dir = path
-                print(f"Found images directory at: {path}")
+                print(f"Found images directory at: {assets_dir}")
                 break
         
         if assets_dir is None:
+            # Create the directory if it doesn't exist
             assets_dir = os.path.join(current_dir, "assets", "images")
             os.makedirs(assets_dir, exist_ok=True)
             print(f"Created images directory at: {assets_dir}")
-            
-        # Clear any previous images to avoid memory issues
-        self.images.clear()
-
-        # Define image paths
-        image_paths = {
-            'toggle': "toggle_btn_icon.png",
-            'dashboard': "dashboard.png",
-            'chat': "chat.png",
-            'history': "history.png",
-            'report': "report.png",
-            'settings': "settings.png",
-            'profile': "profile.png",
-            'close': "close_btn_icon.png"
-        }
         
-        # Store PhotoImages directly as instance attributes to prevent garbage collection
-        for key, filename in image_paths.items():
-            try:
-                path = os.path.join(assets_dir, filename)
-                if os.path.exists(path):
-                    # Create and store the PhotoImage as an instance attribute directly
-                    setattr(self, f"{key}_img", PhotoImage(file=path))
-                    # Also store reference in dictionary
-                    self.images[key] = getattr(self, f"{key}_img")
-                    print(f"Successfully loaded image: {path}")
-                else:
-                    print(f"Image file not found: {path}")
-                    self.images[key] = None
-            except Exception as e:
-                print(f"Error loading image {filename}: {e}")
-                self.images[key] = None
-        
-        # Set convenient references for backward compatibility
-        self.toggle_icon = self.images.get('toggle')
-        self.dashboard_icon = self.images.get('dashboard')
-        self.chat_icon = self.images.get('chat')
-        self.history_icon = self.images.get('history')
-        self.report_icon = self.images.get('report')
-        self.settings_icon = self.images.get('settings')
-        self.profile_icon = self.images.get('profile')
-        self.close_btn_icon = self.images.get('close')
+        # CRITICAL: Store images as direct instance attributes to prevent garbage collection
+        try:
+            toggle_path = os.path.join(assets_dir, "toggle_btn_icon.png")
+            if os.path.exists(toggle_path):
+                self.toggle_icon = PhotoImage(file=toggle_path)
+                print(f"Successfully loaded image: {toggle_path}")
+            else:
+                self.toggle_icon = None
+                print(f"Image not found: {toggle_path}")
+                
+            dashboard_path = os.path.join(assets_dir, "dashboard.png")
+            if os.path.exists(dashboard_path):
+                self.dashboard_icon = PhotoImage(file=dashboard_path)
+                print(f"Successfully loaded image: {dashboard_path}")
+            else:
+                self.dashboard_icon = None
+                print(f"Image not found: {dashboard_path}")
+                
+            chat_path = os.path.join(assets_dir, "chat.png")
+            if os.path.exists(chat_path):
+                self.chat_icon = PhotoImage(file=chat_path)
+                print(f"Successfully loaded image: {chat_path}")
+            else:
+                self.chat_icon = None
+                print(f"Image not found: {chat_path}")
+                
+            history_path = os.path.join(assets_dir, "history.png")
+            if os.path.exists(history_path):
+                self.history_icon = PhotoImage(file=history_path)
+                print(f"Successfully loaded image: {history_path}")
+            else:
+                self.history_icon = None
+                print(f"Image not found: {history_path}")
+                
+            report_path = os.path.join(assets_dir, "report.png")
+            if os.path.exists(report_path):
+                self.report_icon = PhotoImage(file=report_path)
+                print(f"Successfully loaded image: {report_path}")
+            else:
+                self.report_icon = None
+                print(f"Image not found: {report_path}")
+                
+            settings_path = os.path.join(assets_dir, "settings.png")
+            if os.path.exists(settings_path):
+                self.settings_icon = PhotoImage(file=settings_path)
+                print(f"Successfully loaded image: {settings_path}")
+            else:
+                self.settings_icon = None
+                print(f"Image not found: {settings_path}")
+                
+            profile_path = os.path.join(assets_dir, "profile.png")
+            if os.path.exists(profile_path):
+                self.profile_icon = PhotoImage(file=profile_path)
+                print(f"Successfully loaded image: {profile_path}")
+            else:
+                self.profile_icon = None
+                print(f"Image not found: {profile_path}")
+                
+            close_path = os.path.join(assets_dir, "close_btn_icon.png")
+            if os.path.exists(close_path):
+                self.close_btn_icon = PhotoImage(file=close_path)
+                print(f"Successfully loaded image: {close_path}")
+            else:
+                self.close_btn_icon = None
+                print(f"Image not found: {close_path}")
+                
+        except Exception as e:
+            print(f"Error loading images: {e}")
+            # Initialize all icons to None if loading fails
+            self.toggle_icon = None
+            self.dashboard_icon = None
+            self.chat_icon = None
+            self.history_icon = None
+            self.report_icon = None
+            self.settings_icon = None
+            self.profile_icon = None
+            self.close_btn_icon = None
 
     def create_toggle_button(self):
         """Create toggle menu button with fallback if image is not available."""
         try:
-            btn_args = {
-                'master': self.menu_bar_frame,
-                'bg': self.inactive_button_bg,
-                'bd': 0,
-                'activebackground': self.inactive_button_bg,
-                'command': self.extend_menu_bar
-            }
-
             if self.toggle_icon is not None:
-                btn_args['image'] = self.toggle_icon
+                self.toggle_menu_btn = tk.Button(
+                    self.menu_bar_frame,
+                    image=self.toggle_icon,
+                    bg=self.inactive_button_bg,
+                    bd=0,
+                    activebackground=self.inactive_button_bg,
+                    command=self.extend_menu_bar
+                )
             else:
-                btn_args['text'] = "☰"
-                btn_args['font'] = ('Arial', 16)
-                btn_args['fg'] = self.button_fg
-
-            self.toggle_menu_btn = tk.Button(**btn_args)
+                self.toggle_menu_btn = tk.Button(
+                    self.menu_bar_frame,
+                    text="☰",
+                    font=('Arial', 16),
+                    fg=self.button_fg,
+                    bg=self.inactive_button_bg,
+                    bd=0,
+                    activebackground=self.inactive_button_bg,
+                    command=self.extend_menu_bar
+                )
             self.toggle_menu_btn.place(x=4, y=10)
         except Exception as e:
             print(f"Error creating toggle button: {e}")
@@ -130,42 +173,42 @@ class MainApplication(tk.Tk):
                 self.menu_bar_frame,
                 text="☰",
                 font=('Arial', 16),
-                bg=self.inactive_button_bg,
                 fg=self.button_fg,
+                bg=self.inactive_button_bg,
                 bd=0,
                 command=self.extend_menu_bar
             )
-            self.toggle_menu_btn.place(x=4, y=10)    def create_menu_button(self, icon, y_pos, text, command):
+            self.toggle_menu_btn.place(x=4, y=10)
+
+    def create_menu_button(self, icon, y_pos, text, command):
         """Create menu button with active state highlighting and fallback for missing icons."""
         try:
             is_active = text.lower() == self.active_page.lower()
             button_bg = self.active_button_bg if is_active else self.inactive_button_bg
             
-            # Create a frame to hold the button (helps with preventing image garbage collection)
-            button_frame = tk.Frame(self.menu_bar_frame, bg=button_bg)
-            button_frame.place(x=9, y=y_pos, width=50, height=50)
-            
-            # Create button
-            btn_args = {
-                'master': button_frame,
-                'bg': button_bg,
-                'bd': 0,
-                'activebackground': button_bg,
-                'command': command
-            }
-
             if icon is not None:
-                btn_args['image'] = icon
-                # Store reference to button with image to prevent garbage collection
-                setattr(self, f"button_{text.lower()}", icon)
+                btn = tk.Button(
+                    self.menu_bar_frame,
+                    image=icon,
+                    bg=button_bg,
+                    bd=0,
+                    activebackground=button_bg,
+                    command=command
+                )
             else:
                 # Fallback to text
-                btn_args['text'] = text[0].upper()  # First letter of menu item
-                btn_args['font'] = ('Arial', 14, 'bold')
-                btn_args['fg'] = self.button_fg
-
-            btn = tk.Button(**btn_args)
-            btn.pack(fill=tk.BOTH, expand=True)
+                btn = tk.Button(
+                    self.menu_bar_frame,
+                    text=text[0].upper(),  # First letter of menu item
+                    font=('Arial', 14, 'bold'),
+                    fg=self.button_fg,
+                    bg=button_bg,
+                    bd=0,
+                    activebackground=button_bg,
+                    command=command
+                )
+            
+            btn.place(x=9, y=y_pos, width=50, height=50)
 
             # Create active state indicator
             indicator = tk.Frame(
@@ -215,7 +258,7 @@ class MainApplication(tk.Tk):
         
         for icon, y_pos, text, command in menu_items:
             self.create_menu_button(icon, y_pos, text, command)
-            
+
     def extend_menu_bar(self):
         """Expands the sidebar menu with fallback for missing icons."""
         try:
@@ -310,7 +353,3 @@ class MainApplication(tk.Tk):
 
     def report_page(self):
         self.switch_page(ReportPage, "Report")
-
-if __name__ == "__main__":
-    app = MainApplication()
-    app.mainloop()

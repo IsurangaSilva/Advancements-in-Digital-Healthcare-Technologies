@@ -9,9 +9,14 @@ import torch
 from llama_cpp import Llama
 
 # Configure logging
+# Configure absolute path to logs directory
+current_dir = os.path.dirname(os.path.abspath(__file__))
+logs_dir = os.path.join(current_dir, "logs")
+os.makedirs(logs_dir, exist_ok=True)  # Create logs directory if it doesn't exist
+
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler(os.path.join("..", "logs", "model_manager.log")),
+                    handlers=[logging.FileHandler(os.path.join(logs_dir, "model_manager.log"), mode='a', encoding='utf-8'),
                               logging.StreamHandler()])
 logger = logging.getLogger("ModelManager")
 

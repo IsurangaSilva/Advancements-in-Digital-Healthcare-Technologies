@@ -26,16 +26,15 @@ os.makedirs(os.path.join("audios", "full_audio"), exist_ok=True)
 os.makedirs(os.path.join("transcriptions", "temp_transcript"), exist_ok=True)
 os.makedirs(os.path.join("transcriptions", "full_transcript"), exist_ok=True)
 
-class SplashScreen(tk.Toplevel):
+class SplashScreen(tk.Tk):
     """Splash screen shown during application startup"""
     
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self):
+        super().__init__()
         self.title("MIRROR APP - Loading")
         self.geometry("400x300")
         self.configure(bg="#0B1B3F")
         self.overrideredirect(True)  # Remove window decorations
-        self.attributes('-topmost', True)  # Keep on top of other windows
         
         # Center on screen
         self.update_idletasks()
@@ -65,6 +64,43 @@ class SplashScreen(tk.Toplevel):
         self.progress_var.set(value)
         self.status_var.set(status_text)
         self.update_idletasks()
+    
+    def initialize_app(self):
+        """Initialize the application"""
+        self.update_progress(60, "Creating user interface...")
+        
+        # Create the main application
+        app = MainApplication()
+        
+        # Set up emotion processor with lazy loading
+        self.update_progress(80, "Setting up emotion processing...")
+        dummy_callback = lambda status: None
+        emotion_processor = EmotionBackgroundProcessor(status_update_callback=dummy_callback, lazy_load=True)
+        emotion_thread = threading.Thread(target=emotion_processor.run, daemon=True)
+        
+        # Finish loading
+        self.update_progress(100, "Loading complete!")
+        app.emotion_processor = emotion_processor
+        
+        # Wait a moment to show 100% then destroy splash and show main app
+        self.after(500, lambda: self.finish_loading(app, emotion_thread))
+    
+    def finish_loading(self, app, emotion_thread):
+        """Close splash screen and show main app"""
+        emotion_thread.start()
+        self.destroy()
+        
+        # Handle application shutdown
+        app.protocol("WM_DELETE_WINDOW", lambda: self.on_close(app))
+        
+        # Show the application
+        app.mainloop()
+    
+    def on_close(self, app):
+        """Clean shutdown when closing the app"""
+        if hasattr(app, 'emotion_processor'):
+            app.emotion_processor.stop()
+        app.destroy()
 
 def start_backend():
     """Start the backend server"""
@@ -75,84 +111,49 @@ def start_backend():
     except Exception as e:
         logger.error(f"Backend server error: {e}")
 
-def check_backend_ready(app, splash):
+def check_backend_ready(splash):
     """Check if backend is ready and update splash screen"""
-    try:
-        r = requests.get(API_URL)
-        if r.status_code == 405:  # Method not allowed is a good sign - the server is responding
-            logger.info("Backend is ready!")
-            splash.update_progress(50, "Backend initialized successfully!")
-            finish_loading(app, splash)
-            return
-    except requests.ConnectionError:
-        # Still connecting - update progress
-        current_progress = splash.progress_var.get()
-        if current_progress < 45:  # Cap at 45% until backend is ready
-            splash.update_progress(current_progress + 2, f"Connecting to backend...")
+    backend_ready = False
+    for i in range(20):  # Try for 10 seconds
+        try:
+            r = requests.get(API_URL)
+            if r.status_code == 405:  # Method not allowed is a good sign - the server is responding
+                backend_ready = True
+                logger.info("Backend is ready!")
+                splash.update_progress(50, "Backend initialized successfully!")
+                break
+        except requests.ConnectionError:
+            splash.update_progress(20 + i*1.5, f"Connecting to backend ({i+1}/20)...")
+            time.sleep(0.5)
     
-    # Check again after a short delay (recursive with timeout check)
-    check_count = getattr(check_backend_ready, 'count', 0) + 1
-    setattr(check_backend_ready, 'count', check_count)
-    
-    if check_count > 20:  # Timeout after 10 seconds (20 * 500ms)
+    if not backend_ready:
         logger.error("Backend failed to start")
         splash.update_progress(100, "Error: Backend failed to start")
-        app.after(3000, lambda: (splash.destroy(), sys.exit(1)))
+        time.sleep(3)
+        splash.destroy()
+        sys.exit(1)
     else:
-        app.after(500, lambda: check_backend_ready(app, splash))
-
-def finish_loading(app, splash):
-    """Initialize the main application features and close splash screen"""
-    # Update progress
-    splash.update_progress(60, "Creating user interface...")
-    
-    # Set up emotion processor with lazy loading
-    splash.update_progress(80, "Setting up emotion processing...")
-    dummy_callback = lambda status: None
-    emotion_processor = EmotionBackgroundProcessor(status_update_callback=dummy_callback, lazy_load=True)
-    emotion_thread = threading.Thread(target=emotion_processor.run, daemon=True)
-    
-    # Finish loading
-    splash.update_progress(100, "Loading complete!")
-    app.emotion_processor = emotion_processor
-    
-    # Start emotion processor thread
-    emotion_thread.start()
-    
-    # Show main window
-    app.deiconify()
-    
-    # Wait a moment to show 100% then close splash screen
-    app.after(800, splash.destroy)
+        # Backend is ready, proceed to initialize the app
+        splash.initialize_app()
 
 if __name__ == "__main__":
     try:
-        # Create the main application (hidden initially)
-        app = MainApplication()
-        app.withdraw()  # Hide the main window initially
-        
         # Start backend in a separate thread
         backend_thread = threading.Thread(target=start_backend)
         backend_thread.daemon = True
         backend_thread.start()
         
+        # Allow backend a moment to initialize
+        time.sleep(0.5)
+        
         # Show splash screen
-        splash = SplashScreen(app)
+        splash = SplashScreen()
         
-        # Start backend check with timer
-        app.after(500, lambda: check_backend_ready(app, splash))
+        # Start backend check in a separate thread
+        threading.Thread(target=lambda: check_backend_ready(splash), daemon=True).start()
         
-        # Set up clean shutdown
-        def on_close():
-            if hasattr(app, 'emotion_processor'):
-                app.emotion_processor.stop()
-            app.destroy()
-            
-        app.protocol("WM_DELETE_WINDOW", on_close)
-        
-        # Start the main loop
-        app.mainloop()
-        
+        # Start mainloop
+        splash.mainloop()
     except Exception as e:
         logger.error(f"Failed to initialize: {e}")
         sys.exit(1)

@@ -11,11 +11,14 @@ import tensorflow as tf
 from model_manager import ModelManager
 
 # Configure logging
+log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+os.makedirs(log_dir, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/voice_emotion_analysis.log'),
+        logging.FileHandler(os.path.join(log_dir, 'voice_emotion_analysis.log'), mode='a', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
