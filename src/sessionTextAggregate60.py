@@ -8,7 +8,7 @@ from db_connection import MongoDBConnection
 file_lock = threading.Lock()
 
 mongo_connection = MongoDBConnection()
-collection = mongo_connection.get_collection("text-emotion-60minaggregate")
+collection = mongo_connection.get_collection("text-emotion-60minaggregates")
 
 class TextEmotionAggregator60:
     def __init__(self, interval_seconds=60, emotion_file=None, session_file=None):

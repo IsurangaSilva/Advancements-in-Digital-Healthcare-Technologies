@@ -107,3 +107,60 @@ const TextPrediction = () => {
 };
 
 export default TextPrediction;
+
+// import {useState, useEffect} from "react";
+// import axios from "axios";
+
+// const fetchDataComponent = () => {
+//   const [fetchTrigger,setFetchTrigger] = useState(false);
+//   const [data,setData] = useState(null);
+  
+//    useEffect(() => {
+//       if(fetchTrigger){
+//         axios.get("/url")
+//          .then((response) => setData(response.data))
+//          .ctach((error)=>console.error("Error:",error))
+//       } 
+//    },[fetchTrigger])
+
+//   const fetchData = () =>{
+//     setFetchTrigger((pre) => (!pre))
+//   }
+//    return(
+//     <div>
+//       <button onClick={fetchData}>Click Me!</button>
+//       <div>
+//         <h3>Data</h3>
+//         <pre>{data && (
+//           // <div>
+//             JSON.stringify(data,null)
+//             // <pre>{data && JSON.stringify(data, null, 2)}</pre>
+//           // </div>
+//         )}</pre>
+//       </div>
+//     </div>
+//    );
+// }
+
+// export default fetchDataComponent;
+
+
+
+// import {useState,useEffect} from "react";
+// import axios from "axios"
+
+// const FetchDataComponent = () => {
+
+// }
+
+// ex
+
+// import react from "react";
+// import { useState,useEffect } from "react";
+
+// const FetchDataComponent = () => {
+
+
+// }
+
+// export default FetchDataComponent;
