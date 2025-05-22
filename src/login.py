@@ -1,24 +1,39 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import pymongo 
-from bson.objectid import ObjectId
 from pymongo import MongoClient
+import bcrypt
+import os
+import subprocess
+import logging
+from db_connection import MongoDBConnection
 
-MONGO_URI = "mongodb+srv://<username>:<password>@<your-cluster>.mongodb.net/?retryWrites=true&w=majority"
-DB_NAME = "your_database_name"
-COLLECTION_NAME = "users"
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("login")
+
+# File to store login state
+LOGIN_STATE_FILE = os.path.join("src", "login_state.txt")
 
 class LoginPage(tk.Tk):
     def __init__(self):
         super().__init__()
 
         self.title("Mirror Chat - Login")
-        self.geometry("800x600")
-        self.configure(bg="#0E1628") 
+        self.geometry("900x700")
+        self.configure(bg="#0B1B3F") 
 
-       
-        form_frame = tk.Frame(self, bg="#1F2937", bd=2, relief="ridge")
-        form_frame.place(relx=0.5, rely=0.5, anchor="center", width=400, height=400)
+        # Center window on screen
+        self.update_idletasks()
+        width = self.winfo_width()
+        height = self.winfo_height()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry(f'{width}x{height}+{x}+{y}')
+
+        # Create container frame with shadow effect
+        container = tk.Frame(self, bg="#1E2A44", bd=0)
+        container.place(relx=0.5, rely=0.5, anchor="center", width=450, height=550)
 
        
         title_label = tk.Label(form_frame, text="Mirror Chat", fg="white", bg="#1F2937", font=("Arial", 18, "bold"))

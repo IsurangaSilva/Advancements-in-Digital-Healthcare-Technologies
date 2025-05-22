@@ -9,3 +9,4 @@ textblob
 vaderSentiment
 pymongo
 python-dotenv
+bcrypt
