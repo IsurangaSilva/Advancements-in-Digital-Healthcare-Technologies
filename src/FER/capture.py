@@ -193,7 +193,7 @@ class ReferenceCaptureWindow(tk.Toplevel):
 
         # Save the captured frame
         timestamp = int(time.time())
-        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         ref_folder = os.path.join(BASE_DIR, "db", "FER", "reference-face-frames-collect")
         if not os.path.exists(ref_folder):
             os.makedirs(ref_folder)
@@ -210,7 +210,7 @@ class ReferenceCaptureWindow(tk.Toplevel):
         if self.current_position_index >= len(self.positions):
             # Compute average embedding
             avg_embedding = np.mean(self.captured_embeddings, axis=0)
-            BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+            BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
             avg_file = os.path.join(BASE_DIR, "db", "FER", "average_embedding.npy")
             np.save(avg_file, avg_embedding)
             self.cap.release()

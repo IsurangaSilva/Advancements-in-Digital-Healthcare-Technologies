@@ -121,9 +121,7 @@ class MainApplication(tk.Tk):
         
         # Try different possible paths where images might be located
         possible_paths = [
-            os.path.join(current_dir, "assets", "images"),      # src/assets/images
-            os.path.join(os.path.dirname(current_dir), "assets", "images"), # ../assets/images
-            os.path.join(current_dir, "..", "assets", "images") # src/../assets/images
+            os.path.join(current_dir, "assets", "images")      # src/assets/images
         ]
         
         assets_dir = None

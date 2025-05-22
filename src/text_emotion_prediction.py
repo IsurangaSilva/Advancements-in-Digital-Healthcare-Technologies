@@ -27,7 +27,7 @@ from model_manager import ModelManager  # Import the model manager
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler(os.path.join("..", "logs", "text_prediction.log"), mode='a'),
+                    handlers=[logging.FileHandler(os.path.join("logs", "text_prediction.log"), mode='a'),
                               logging.StreamHandler()])
 logger = logging.getLogger("TextPrediction")
 
@@ -489,7 +489,7 @@ def predict_emotion_level(file_path, output_csv_path, output_json_path):
 def save_results_to_json(document, output_file="text_emotion_data.json"):
     """Saves the emotion analysis results to a JSON file."""
     try:
-        output_folder = os.path.join("..", "db", "Text")
+        output_folder = os.path.join("db", "Text")
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
         

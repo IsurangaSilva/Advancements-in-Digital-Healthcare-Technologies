@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 class ReportPage(tk.Frame):
-    def __init__(self, parent, controller, chat_history_path="../chat_history.json"):
+    def __init__(self, parent, controller, chat_history_path="chat_history.json"):
         super().__init__(parent, bg="#000D2E")
-        self.chat_history_file = chat_history_path 
+        self.chat_history_file = chat_history_path
 
        
         self.default_figsize = (0.5, 6)
@@ -51,8 +51,9 @@ class ReportPage(tk.Frame):
 
         text_frame = tk.Frame(scrollable_frame, bg="#1F2937", bd=2, relief=tk.GROOVE)
         text_frame.pack(fill="both", expand=True, padx=(220, 5), pady=5)
+        
         fig_text, emotion_scores_text = self.create_emotion_chart(
-            "../db/Text/temp_prediction.json", 
+            "src/db/Text/temp_prediction.json", 
             "Text-Based Emotion"
         )
         canvas_text = FigureCanvasTkAgg(fig_text, master=text_frame)
@@ -67,13 +68,11 @@ class ReportPage(tk.Frame):
             fg="#E5E7EB",
             font=label_font
         )
-        text_label.pack(side="bottom", pady=5)
-
-        # --- Average Voice-Based Emotion Chart ---
+        text_label.pack(side="bottom", pady=5)        # --- Average Voice-Based Emotion Chart ---
         avg_voice_frame = tk.Frame(scrollable_frame, bg="#1F2937", bd=2, relief=tk.GROOVE)
         avg_voice_frame.pack(fill="both", expand=True, padx=(220, 5), pady=5)
         fig_avg_voice, avg_emotion_scores = self.create_avg_emotion_chart(
-            "../db/Audio/voice_prediction.json", 
+            "src/db/Audio/voice_prediction.json", 
             "Avg Voice-Based Emotion"
         )
         canvas_avg_voice = FigureCanvasTkAgg(fig_avg_voice, master=avg_voice_frame)

@@ -43,12 +43,9 @@ class MainApplication(tk.Tk):
         """Load all image assets with robust error handling."""
         # Get the absolute path to the assets directory - try multiple locations
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # Try different possible paths where images might be located
+          # Try different possible paths where images might be located
         possible_paths = [
-            os.path.join(current_dir, "assets", "images"),  # src/assets/images
-            os.path.join(os.path.dirname(current_dir), "assets", "images"),  # ../assets/images
-            os.path.join(current_dir, "..", "assets", "images")  # src/../assets/images
+            os.path.join(current_dir, "assets", "images")  # src/assets/images
         ]
         
         assets_dir = None

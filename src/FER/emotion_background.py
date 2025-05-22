@@ -37,7 +37,7 @@ class EmotionBackgroundProcessor:
         self.facenet = None
 
         # Get base directory for model loading
-        self.BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        self.BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         self.model_path = os.path.join(self.BASE_DIR, "models", "efficientnet_b2_emotion_model.pth")
         
         # Initialize webcam capture

@@ -21,7 +21,7 @@ class SessionApp:
         self.master.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # Base directory computed relative to this file
-        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         self.BASE_DIR = BASE_DIR
 
         self.reference_embedding = reference_embedding
@@ -137,7 +137,7 @@ class SessionApp:
 
 if __name__ == "__main__":
     import numpy as np
-    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     ref_emb_path = os.path.join(BASE_DIR, "db", "FER", "average_embedding.npy")
     if not os.path.exists(ref_emb_path):
         raise ValueError("Reference embedding not found. Please run the capture process first.")

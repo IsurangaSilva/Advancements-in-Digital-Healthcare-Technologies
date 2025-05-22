@@ -16,7 +16,7 @@ logging.basicConfig(
 logger = logging.getLogger("main")
 
 # Create logs directory if it doesn't exist
-os.makedirs(os.path.join("..", "logs"), exist_ok=True)
+os.makedirs(os.path.join("logs"), exist_ok=True)
 
 def start_backend():
     """Start the backend server in a separate thread."""

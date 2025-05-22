@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("main")
 
 # Create necessary directories
-os.makedirs(os.path.join("..", "logs"), exist_ok=True)
+os.makedirs(os.path.join("logs"), exist_ok=True)
 os.makedirs(os.path.join("audios", "temp_audio"), exist_ok=True)
 os.makedirs(os.path.join("audios", "full_audio"), exist_ok=True)
 os.makedirs(os.path.join("transcriptions", "temp_transcript"), exist_ok=True)

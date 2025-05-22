@@ -7,7 +7,7 @@ from .aggregator import file_lock  # Use the shared file lock from aggregator
 
 class SessionDBSender:
     def __init__(self, interval_seconds=10, five_min_file=None, hour_file=None):
-        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         db_dir = os.path.join(BASE_DIR, "db", "FER")
         self.five_min_file = five_min_file or os.path.join(db_dir, "session_summery.json")
         self.hour_file = hour_file or os.path.join(db_dir, "session_summery1h.json")

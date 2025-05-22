@@ -9,7 +9,7 @@ from model_manager import ModelManager
 app = FastAPI()
 
 # Path to the GGUF model
-MODEL_PATH = os.path.abspath("../models/unsloth.Q4_K_M.gguf")
+MODEL_PATH = os.path.abspath("models/unsloth.Q4_K_M.gguf")
 
 # Use lazy loading for model - don't load it yet
 model_manager = ModelManager()

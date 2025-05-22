@@ -6,8 +6,8 @@ from .aggregator import file_lock
 
 class SessionAggregator:
     def __init__(self, interval_seconds=300, emotion_file=None, session_file=None):
-        # Compute the base directory two levels up and point to the db/FER folder.
-        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        # Compute the base directory one level up and point to the db/FER folder.
+        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         db_dir = os.path.join(BASE_DIR, "db", "FER")
         self.emotion_file = emotion_file or os.path.join(db_dir, "emotion_data.json")
         self.session_file = session_file or os.path.join(db_dir, "session_summery.json")
