@@ -9,11 +9,9 @@ from chat import ChatbotApp
 from chatting import ChattingPage
 import logging
 
-class MainApplication(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("MIRROR APP")
-        self.geometry("1920x1080")  # Default size before maximizing
+class MainApplication(tk.Tk):    def __init__(self):
+        super().__init__()        self.title("MIRROR APP")
+        self.geometry("1024x768")  # Default size before maximizing
         self.configure(bg="#0B1B3F")
         self.menu_bar_color = "#0B1B3F"
         self.active_button_bg = "#4CAF50"    
@@ -23,6 +21,13 @@ class MainApplication(tk.Tk):
         # Maximize window on startup
         self.state('zoomed')  # For Windows systems
         
+        # Maximize window on startup
+        self.state('zoomed')  # This is for Windows
+        
+        # For Linux/Mac compatibility (if needed)
+        # self.attributes('-zoomed', True)  # Linux
+        # self.attributes('-fullscreen', True)  # Mac alternative
+
         # Create main frames
         self.page_frame = tk.Frame(self, bg="#000D2E")
         self.page_frame.place(relwidth=1.0, relheight=1.0, x=65)
@@ -30,13 +35,9 @@ class MainApplication(tk.Tk):
         self.menu_bar_frame = tk.Frame(self, bg=self.menu_bar_color, width=68)
         self.menu_bar_frame.pack(side=tk.LEFT, fill=tk.Y, padx=3, pady=4)
         self.menu_bar_frame.pack_propagate(False)
-        
-        # Create status indicators for models
-        self.create_status_indicators()
 
         # IMPORTANT: Store PhotoImages as instance attributes, not in a dictionary
-        # This prevents them from being garbage collection
-        self.image_references = []
+        # This prevents them from being garbage collected
         self.load_images()
         
         # Create UI after loading images
@@ -45,74 +46,6 @@ class MainApplication(tk.Tk):
         self.active_page = "dashboard"
         self.dashboard_page()
         self.setup_menu_buttons()
-    
-    def create_status_indicators(self):
-        """Create status indicators for the three models: Voice, FER, Audio"""
-        # Create a frame to hold the indicators
-        self.status_frame = tk.Frame(self, bg="#0B1B3F")
-        self.status_frame.place(relx=1.0, y=10, anchor="ne", width=120, height=50)
-        
-        # Create the indicators
-        # Voice model indicator
-        self.voice_indicator = tk.Canvas(self.status_frame, width=20, height=20, bg="#0B1B3F", 
-                                        highlightthickness=0)
-        self.voice_indicator.create_oval(4, 4, 16, 16, fill="red", tags="voice_dot")
-        self.voice_indicator.grid(row=0, column=0, padx=5)
-        
-        # FER model indicator
-        self.fer_indicator = tk.Canvas(self.status_frame, width=20, height=20, bg="#0B1B3F",
-                                      highlightthickness=0)
-        self.fer_indicator.create_oval(4, 4, 16, 16, fill="red", tags="fer_dot")
-        self.fer_indicator.grid(row=0, column=1, padx=5)
-        
-        # Audio model indicator
-        self.audio_indicator = tk.Canvas(self.status_frame, width=20, height=20, bg="#0B1B3F",
-                                       highlightthickness=0)
-        self.audio_indicator.create_oval(4, 4, 16, 16, fill="red", tags="audio_dot")
-        self.audio_indicator.grid(row=0, column=2, padx=5)
-        
-        # Add labels below each indicator
-        tk.Label(self.status_frame, text="Voice", bg="#0B1B3F", fg="white", font=("Helvetica", 8)).grid(row=1, column=0)
-        tk.Label(self.status_frame, text="FER", bg="#0B1B3F", fg="white", font=("Helvetica", 8)).grid(row=1, column=1)
-        tk.Label(self.status_frame, text="Audio", bg="#0B1B3F", fg="white", font=("Helvetica", 8)).grid(row=1, column=2)
-        
-        # Schedule periodic status checks
-        self.after(2000, self.update_model_status)
-    
-    def update_model_status(self):
-        """Update the status indicators based on model availability"""
-        # This function would check if models are running and update indicators
-        # For now, we'll simulate status with a placeholder implementation
-        
-        # Check Voice model status
-        try:
-            # This is a placeholder - in real implementation, check if the voice model is loaded
-            voice_status = True  # Replace with actual status check
-            self.voice_indicator.itemconfig("voice_dot", fill="green" if voice_status else "red")
-        except Exception as e:
-            print(f"Error checking voice model status: {e}")
-            self.voice_indicator.itemconfig("voice_dot", fill="red")
-        
-        # Check FER model status
-        try:
-            # This is a placeholder - in real implementation, check if the FER model is loaded
-            fer_status = hasattr(self, 'emotion_processor') and self.emotion_processor is not None
-            self.fer_indicator.itemconfig("fer_dot", fill="green" if fer_status else "red")
-        except Exception as e:
-            print(f"Error checking FER model status: {e}")
-            self.fer_indicator.itemconfig("fer_dot", fill="red")
-        
-        # Check Audio model status
-        try:
-            # This is a placeholder - in real implementation, check if the audio model is loaded
-            audio_status = True  # Replace with actual status check
-            self.audio_indicator.itemconfig("audio_dot", fill="green" if audio_status else "red")
-        except Exception as e:
-            print(f"Error checking audio model status: {e}")
-            self.audio_indicator.itemconfig("audio_dot", fill="red")
-        
-        # Schedule the next update
-        self.after(5000, self.update_model_status)
 
     def load_images(self):
         """Load all image assets with robust error handling."""
@@ -140,13 +73,10 @@ class MainApplication(tk.Tk):
             print(f"Created images directory at: {assets_dir}")
         
         # CRITICAL: Store images as direct instance attributes to prevent garbage collection
-        # Store all image references in a collection to prevent garbage collection
-        # This is important for Tkinter PhotoImage objects
         try:
             toggle_path = os.path.join(assets_dir, "toggle_btn_icon.png")
             if os.path.exists(toggle_path):
                 self.toggle_icon = PhotoImage(file=toggle_path)
-                self.image_references.append(self.toggle_icon)  # Keep reference
                 print(f"Successfully loaded image: {toggle_path}")
             else:
                 self.toggle_icon = None
@@ -155,7 +85,6 @@ class MainApplication(tk.Tk):
             dashboard_path = os.path.join(assets_dir, "dashboard.png")
             if os.path.exists(dashboard_path):
                 self.dashboard_icon = PhotoImage(file=dashboard_path)
-                self.image_references.append(self.dashboard_icon)  # Keep reference
                 print(f"Successfully loaded image: {dashboard_path}")
             else:
                 self.dashboard_icon = None
@@ -164,7 +93,6 @@ class MainApplication(tk.Tk):
             chat_path = os.path.join(assets_dir, "chat.png")
             if os.path.exists(chat_path):
                 self.chat_icon = PhotoImage(file=chat_path)
-                self.image_references.append(self.chat_icon)  # Keep reference
                 print(f"Successfully loaded image: {chat_path}")
             else:
                 self.chat_icon = None
@@ -173,7 +101,6 @@ class MainApplication(tk.Tk):
             history_path = os.path.join(assets_dir, "history.png")
             if os.path.exists(history_path):
                 self.history_icon = PhotoImage(file=history_path)
-                self.image_references.append(self.history_icon)  # Keep reference
                 print(f"Successfully loaded image: {history_path}")
             else:
                 self.history_icon = None
@@ -182,7 +109,6 @@ class MainApplication(tk.Tk):
             report_path = os.path.join(assets_dir, "report.png")
             if os.path.exists(report_path):
                 self.report_icon = PhotoImage(file=report_path)
-                self.image_references.append(self.report_icon)  # Keep reference
                 print(f"Successfully loaded image: {report_path}")
             else:
                 self.report_icon = None
@@ -191,7 +117,6 @@ class MainApplication(tk.Tk):
             settings_path = os.path.join(assets_dir, "settings.png")
             if os.path.exists(settings_path):
                 self.settings_icon = PhotoImage(file=settings_path)
-                self.image_references.append(self.settings_icon)  # Keep reference
                 print(f"Successfully loaded image: {settings_path}")
             else:
                 self.settings_icon = None
@@ -200,7 +125,6 @@ class MainApplication(tk.Tk):
             profile_path = os.path.join(assets_dir, "profile.png")
             if os.path.exists(profile_path):
                 self.profile_icon = PhotoImage(file=profile_path)
-                self.image_references.append(self.profile_icon)  # Keep reference
                 print(f"Successfully loaded image: {profile_path}")
             else:
                 self.profile_icon = None
@@ -209,7 +133,6 @@ class MainApplication(tk.Tk):
             close_path = os.path.join(assets_dir, "close_btn_icon.png")
             if os.path.exists(close_path):
                 self.close_btn_icon = PhotoImage(file=close_path)
-                self.image_references.append(self.close_btn_icon)  # Keep reference
                 print(f"Successfully loaded image: {close_path}")
             else:
                 self.close_btn_icon = None
