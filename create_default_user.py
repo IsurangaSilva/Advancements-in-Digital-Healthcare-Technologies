@@ -9,8 +9,9 @@ import os
 import sys
 import logging
 
-# Since we're already in the src directory, we don't need to import from src
-from db_connection import MongoDBConnection
+# Add src directory to path to make imports work
+sys.path.insert(0, os.path.abspath("."))
+from src.db_connection import MongoDBConnection
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -27,7 +28,7 @@ def create_default_user(email="patient@example.com", password="password123", rol
         existing_user = users_collection.find_one({"email": email})
         if existing_user:
             logger.info(f"User with email {email} already exists")
-            return {"success": True, "created": False, "user": existing_user}  # Return info about existing user
+            return True  # Return True since the user exists and can be used
         
         # Generate a unique username
         base_username = email.split('@')[0]
@@ -54,16 +55,14 @@ def create_default_user(email="patient@example.com", password="password123", rol
         result = users_collection.insert_one(user)
         
         logger.info(f"Created user {email} with role {role}")
-        return {"success": True, "created": True, "user": user}
-    except pymongo.errors.DuplicateKeyError as e:
+        return True
+          except pymongo.errors.DuplicateKeyError as e:
         # Handle the case where we tried to create a user with a duplicate field
         logger.warning(f"User with this {str(e).split('key:')[1].strip()} already exists")
-        # Find the existing user and return it
-        existing_user = users_collection.find_one({"email": email}) or users_collection.find_one({"username": user["username"]})
-        return {"success": True, "created": False, "user": existing_user}
+        return True  # Return True since we can use the existing user
     except Exception as e:
         logger.error(f"Error creating user: {e}")
-        return {"success": False, "created": False, "error": str(e)}
+        return False
 
 if __name__ == "__main__":
     print("Creating default user account...")
@@ -72,15 +71,12 @@ if __name__ == "__main__":
     email = input("Enter email (default: patient@example.com): ").strip() or "patient@example.com"
     password = input("Enter password (default: password123): ").strip() or "password123"
     
-    result = create_default_user(email, password)
+    success = create_default_user(email, password)
     
-    if result["success"]:
+    if success:
         print(f"User account {email} is ready to use.")
         print("You can log in with these credentials:")
         print(f"  Email: {email}")
         print(f"  Password: {password if password == 'password123' else '*' * len(password)}")
-        if not result["created"]:
-            print("(Note: This user already existed in the database)")
     else:
-        print(f"Failed to create user: {result.get('error', 'Unknown error')}")
-        print("Check the logs for details.")
+        print("Failed to create user. Check the logs for details.")

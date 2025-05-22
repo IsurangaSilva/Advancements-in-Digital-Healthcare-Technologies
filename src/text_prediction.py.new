@@ -1,0 +1,79 @@
+import os
+import pandas as pd
+import json
+import datetime
+from text_emotion_prediction import predict_emotion_level
+from tensorflow.keras.models import load_model
+from config import TEXT_MODEL_PATH, TEMP_TRANSCRIPTION_FILE, TEMP_TEXT_PREDICTION_RESULT_CSV, TEMP_TEXT_PREDICTION_RESULT_JSON
+from model_manager import ModelManager
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("text_prediction")
+
+class TextualPrediction:
+    def __init__(self, lazy_load=True):
+        # Initialize output paths
+        self.output_csv_path = TEMP_TEXT_PREDICTION_RESULT_CSV
+        self.output_json_path = TEMP_TEXT_PREDICTION_RESULT_JSON
+        self.model_path = TEXT_MODEL_PATH
+        self.loaded_model = None
+        
+        # If not using lazy loading, load the model now
+        if not lazy_load:
+            self.loaded_model = self.load_model()
+            
+    def load_model(self):
+        """Loads the pre-trained emotion detection model using ModelManager."""
+        try:
+            model_path = self.model_path
+            if not os.path.exists(model_path):
+                raise FileNotFoundError(f"Model file not found: {model_path}")
+                
+            logger.info(f"Getting text emotion model from manager: {model_path}")
+            model_manager = ModelManager()
+            return model_manager.get_model('text', model_path)
+        except Exception as e:
+            logger.error(f"Error loading text emotion model: {e}")
+            return None
+
+    def prediction(self, text):
+        """Analyzes the transcribed text for emotions and saves the results."""
+        try:
+            # Lazy load the model if not already loaded
+            if self.loaded_model is None:
+                logger.info("Lazy loading text emotion model")
+                self.loaded_model = self.load_model()
+                
+            # Create a temporary CSV file with the transcribed text
+            df = pd.DataFrame({
+                "transcription": [text],
+                "timestamp": [datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")]
+            })
+
+            # Save the DataFrame to a temporary CSV file
+            temp_csv_path = TEMP_TRANSCRIPTION_FILE
+            df.to_csv(temp_csv_path, index=False)
+
+            # Analyze the text for emotions
+            predict_emotion_level(temp_csv_path, self.loaded_model, self.output_csv_path, self.output_json_path)
+
+            # Notify the user that emotion analysis is complete
+            logger.info("Emotion analysis completed. Results saved.")
+
+            # Optionally, display the results
+            with open(self.output_json_path, "r") as f:
+                results = json.load(f)
+                for result in results:
+                    logger.debug(f"Emotion: {result['Prediction']}")
+                    logger.debug(f"VADER Score: {result['VADER Score']}")
+                    logger.debug(f"Polarity: {result['Polarity']}")
+                    logger.debug(f"Subjectivity: {result['Subjectivity']}")
+                    logger.debug("Emotion Scores:")
+                    for emotion, score in result['Emotion Scores'].items():
+                        logger.debug(f"{emotion}: {score}")
+                return results
+        except Exception as e:
+            logger.error(f"Error in text emotion prediction: {e}")
+            return None

@@ -1,19 +1,23 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import pymongo 
+from pymongo import MongoClient
 import bcrypt
 import os
 import sys
 import subprocess
 import logging
-from db_connection import MongoDBConnection
+
+# Add src directory to path to make imports work
+sys.path.insert(0, os.path.abspath("."))
+from src.db_connection import MongoDBConnection
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("login")
 
 # File to store login state
-LOGIN_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "login_state.txt")
+LOGIN_STATE_FILE = os.path.join("src", "login_state.txt")
 
 class LoginPage(tk.Tk):
     def __init__(self):
@@ -103,9 +107,10 @@ class LoginPage(tk.Tk):
                              font=("Helvetica", 10, "underline"), cursor="hand2")
         signup_link.pack(side="left")
         signup_link.bind("<Button-1>", self.open_signup)
-          # Check if we have a saved login
+        
+        # Check if we have a saved login
         self.check_saved_login()
-    
+
     def check_saved_login(self):
         """Check if there's a saved login state and auto-login if yes"""
         try:
@@ -117,13 +122,12 @@ class LoginPage(tk.Tk):
                         self.remember_var.set(True)
         except Exception as e:
             logger.error(f"Error checking saved login: {e}")
-    
+
     def save_login_state(self, email):
         """Save login state if remember me is checked"""
         try:
             if self.remember_var.get():
-                # Since LOGIN_STATE_FILE is just a filename with no directory path,
-                # we don't need to create directories
+                os.makedirs(os.path.dirname(LOGIN_STATE_FILE), exist_ok=True)
                 with open(LOGIN_STATE_FILE, "w") as f:
                     f.write(email)
             else:
@@ -149,14 +153,15 @@ class LoginPage(tk.Tk):
         try:
             # Use the project's MongoDB connection
             db_conn = MongoDBConnection()
-            users_collection = db_conn.get_collection("users")            # Find user by email (allowing any role)
-            user = users_collection.find_one({"email": email})
+            users_collection = db_conn.get_collection("users")
+
+            # Find user by email
+            user = users_collection.find_one({"email": email, "role": "patient"})
 
             if user:
                 # Verify password with bcrypt
                 stored_password = user["password"]
                 
-                # Handle different password formats
                 if isinstance(stored_password, str):
                     stored_password = stored_password.encode('utf-8')
                 elif not isinstance(stored_password, bytes):
@@ -169,7 +174,7 @@ class LoginPage(tk.Tk):
                     
                     messagebox.showinfo("Login Successful", f"Welcome, {user['email']}!")
                     self.destroy()                    # Start the main application
-                    main_path = "main.py"
+                    main_path = os.path.join("src", "main.py")
                     if os.path.exists(main_path):
                         try:
                             # Use current Python interpreter to run main.py

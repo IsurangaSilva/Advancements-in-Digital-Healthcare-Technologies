@@ -14,10 +14,10 @@ logger = logging.getLogger("test_flow")
 def test_login_flow():
     """Test the entire login flow"""
     print("---- Testing Login Flow ----")
-      # Step 1: Check env file
+    
+    # Step 1: Check env file
     print("\nStep 1: Checking environment file...")
-    # env is now in parent directory
-    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "env")
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "env")
     if os.path.exists(env_path):
         print(f"✓ Environment file found at {env_path}")
         with open(env_path, "r") as f:
@@ -28,11 +28,10 @@ def test_login_flow():
         print(f"✗ Environment file not found at {env_path}")
         print("  Running environment setup...")
         subprocess.run([sys.executable, "create_env_file.py"])
-      # Step 2: Check MongoDB connection
+    
+    # Step 2: Check MongoDB connection
     print("\nStep 2: Testing MongoDB connection...")
-    # Use the current file path to find test_db_connection.py
-    test_db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_db_connection.py")
-    result = subprocess.run([sys.executable, test_db_path], 
+    result = subprocess.run([sys.executable, "test_db_connection.py"], 
                           capture_output=True, text=True)
     if "connection is working" in result.stdout:
         print("✓ MongoDB connection successful")
@@ -40,39 +39,52 @@ def test_login_flow():
         print("✗ MongoDB connection failed")
         print(result.stdout)
         return False
-      # Step 3: Check default user
+    
+    # Step 3: Check default user
     print("\nStep 3: Checking default user...")
     try:
-        # Since we're already in the src directory
-        from db_connection import MongoDBConnection
+        # Add path for imports to work
+        sys.path.insert(0, os.path.abspath("."))
+        from src.db_connection import MongoDBConnection
         
         db_conn = MongoDBConnection()
-        users_collection = db_conn.get_collection("users")        # Use our improved create_default_user function
-        from create_default_user import create_default_user
+        users_collection = db_conn.get_collection("users")
         
-        result = create_default_user(email="patient@example.com", password="password123", role="patient")
-        
-        if result["success"]:
-            user = result["user"]
-            if result["created"]:
-                print("✓ Default user created successfully")
-            else:
-                print("✓ Default user already exists")
-            
-            print(f"  Username: {user.get('username')}")
-            print(f"  Email: {user.get('email')}")
-            print(f"  Role: {user.get('role')}")
-            print("  Password: password123 (default)")
+        default_user = users_collection.find_one({"email": "patient@example.com"})
+        if default_user:
+            print("✓ Default user found")
+            print(f"  Username: {default_user.get('username')}")
+            print(f"  Email: {default_user.get('email')}")
+            print(f"  Role: {default_user.get('role')}")
         else:
-            print(f"✗ Error with default user: {result.get('error', 'Unknown error')}")
-            return False
+            print("✗ Default user not found")
+            print("  Creating default user...")
+            # Create default user directly
+            hashed_password = bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt())
+            new_user = {
+                "email": "patient@example.com",
+                "username": "patient",
+                "password": hashed_password,
+                "role": "patient",
+                "phone": "123-456-7890"
+            }
+            try:
+                users_collection.insert_one(new_user)
+                print("✓ Default user created successfully")
+                print("  Email: patient@example.com")
+                print("  Password: password123")
+            except Exception as e:
+                print(f"✗ Error creating default user: {e}")
+                print("  Error details:", str(e))
+                return False
 
     except Exception as e:
         print(f"✗ Error checking default user: {e}")
         return False
-      # Step 4: Check login file
+    
+    # Step 4: Check login file
     print("\nStep 4: Checking login file...")
-    login_path = "login_new.py"
+    login_path = os.path.join("src", "login_new.py")
     if os.path.exists(login_path):
         print(f"✓ Login file found at {login_path}")
     else:
@@ -81,7 +93,7 @@ def test_login_flow():
     
     # Step 5: Check main file
     print("\nStep 5: Checking main application file...")
-    main_path = "main.py"
+    main_path = os.path.join("src", "main.py")
     if os.path.exists(main_path):
         print(f"✓ Main application file found at {main_path}")
     else:
