@@ -14,10 +14,10 @@ logger = logging.getLogger("test_flow")
 def test_login_flow():
     """Test the entire login flow"""
     print("---- Testing Login Flow ----")
-    
-    # Step 1: Check env file
+      # Step 1: Check env file
     print("\nStep 1: Checking environment file...")
-    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "env")
+    # env is now in parent directory
+    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "env")
     if os.path.exists(env_path):
         print(f"✓ Environment file found at {env_path}")
         with open(env_path, "r") as f:
@@ -28,10 +28,11 @@ def test_login_flow():
         print(f"✗ Environment file not found at {env_path}")
         print("  Running environment setup...")
         subprocess.run([sys.executable, "create_env_file.py"])
-    
-    # Step 2: Check MongoDB connection
+      # Step 2: Check MongoDB connection
     print("\nStep 2: Testing MongoDB connection...")
-    result = subprocess.run([sys.executable, "test_db_connection.py"], 
+    # Use the current file path to find test_db_connection.py
+    test_db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_db_connection.py")
+    result = subprocess.run([sys.executable, test_db_path], 
                           capture_output=True, text=True)
     if "connection is working" in result.stdout:
         print("✓ MongoDB connection successful")
@@ -39,13 +40,11 @@ def test_login_flow():
         print("✗ MongoDB connection failed")
         print(result.stdout)
         return False
-    
-    # Step 3: Check default user
+      # Step 3: Check default user
     print("\nStep 3: Checking default user...")
     try:
-        # Add path for imports to work
-        sys.path.insert(0, os.path.abspath("."))
-        from src.db_connection import MongoDBConnection
+        # Since we're already in the src directory
+        from db_connection import MongoDBConnection
         
         db_conn = MongoDBConnection()
         users_collection = db_conn.get_collection("users")
@@ -81,10 +80,9 @@ def test_login_flow():
     except Exception as e:
         print(f"✗ Error checking default user: {e}")
         return False
-    
-    # Step 4: Check login file
+      # Step 4: Check login file
     print("\nStep 4: Checking login file...")
-    login_path = os.path.join("src", "login_new.py")
+    login_path = "login_new.py"
     if os.path.exists(login_path):
         print(f"✓ Login file found at {login_path}")
     else:
@@ -93,7 +91,7 @@ def test_login_flow():
     
     # Step 5: Check main file
     print("\nStep 5: Checking main application file...")
-    main_path = os.path.join("src", "main.py")
+    main_path = "main.py"
     if os.path.exists(main_path):
         print(f"✓ Main application file found at {main_path}")
     else:

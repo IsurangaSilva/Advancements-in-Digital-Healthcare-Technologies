@@ -9,11 +9,9 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("test_connection")
 
-# Add src directory to path to make imports work
-sys.path.insert(0, os.path.abspath("."))
-
+# Since we're already in the src directory, we don't need to import from src
 try:
-    from src.db_connection import MongoDBConnection
+    from db_connection import MongoDBConnection
     
     # Test connection
     print("Attempting to connect to MongoDB...")

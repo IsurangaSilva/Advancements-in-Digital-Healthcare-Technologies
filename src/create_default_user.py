@@ -9,9 +9,8 @@ import os
 import sys
 import logging
 
-# Add src directory to path to make imports work
-sys.path.insert(0, os.path.abspath("."))
-from src.db_connection import MongoDBConnection
+# Since we're already in the src directory, we don't need to import from src
+from db_connection import MongoDBConnection
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -50,13 +49,12 @@ def create_default_user(email="patient@example.com", password="password123", rol
             "role": role,
             "phone": "123-456-7890"  # Default phone number
         }
-        
-        # Insert into database
+          # Insert into database
         result = users_collection.insert_one(user)
         
         logger.info(f"Created user {email} with role {role}")
         return True
-          except pymongo.errors.DuplicateKeyError as e:
+    except pymongo.errors.DuplicateKeyError as e:
         # Handle the case where we tried to create a user with a duplicate field
         logger.warning(f"User with this {str(e).split('key:')[1].strip()} already exists")
         return True  # Return True since we can use the existing user

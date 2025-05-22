@@ -5,6 +5,6 @@ if %ERRORLEVEL% NEQ 0 (
     echo Failed to activate the Conda environment.
     exit /b %ERRORLEVEL%
 )
-echo Starting the application...
-python src/main.py
+echo Starting the application with login...
+python src/start_app.py
 pause

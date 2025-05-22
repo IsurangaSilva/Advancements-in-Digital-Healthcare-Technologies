@@ -25,11 +25,9 @@ def main():
             logger.error(f"Required package missing: {e}")
             print(f"Error: {e}. Please install required packages with:")
             print("pip install pymongo bcrypt")
-            return 1
-
-        # Launch login screen
+            return 1        # Launch login screen
         # The login script will launch main.py after successful login
-        login_path = "app_login.py"
+        login_path = "login_new.py"
         if os.path.exists(login_path):
             subprocess.run([sys.executable, login_path])
         else:

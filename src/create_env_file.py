@@ -17,7 +17,8 @@ DEFAULT_DB_NAME = "emotionDB"
 
 def create_env_file():
     """Create env file with MongoDB connection details"""
-    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "env")
+    # env file should be in the parent directory (project root)
+    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "env")
     
     # Check if file already exists
     if os.path.exists(env_path):

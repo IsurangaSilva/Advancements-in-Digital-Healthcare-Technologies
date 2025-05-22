@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("login")
 
 # File to store login state
-LOGIN_STATE_FILE = os.path.join("src", "login_state.txt")
+LOGIN_STATE_FILE = "login_state.txt"
 
 class LoginPage(tk.Tk):
     def __init__(self):
@@ -170,9 +170,8 @@ class LoginPage(tk.Tk):
                     self.save_login_state(email)
                     
                     messagebox.showinfo("Login Successful", f"Welcome, {user['email']}!")
-                    self.destroy()
-                    # Start the main application
-                    main_path = os.path.join("src", "main.py")
+                    self.destroy()                    # Start the main application
+                    main_path = "main.py"
                     if os.path.exists(main_path):
                         try:
                             # Use current Python interpreter to run main.py
