@@ -118,7 +118,7 @@ const Recommendations = () => {
   // Fetch AI recommendation from OpenRouter API
   const fetchRecommendation = async (avgEmotions) => {
     setLoading(true);
-    const OPENROUTER_API_KEY = "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";
+    const OPENROUTER_API_KEY = "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";
     const YOUR_SITE_URL = "http://localhost:3000";
     const YOUR_SITE_NAME = "Mental Health App";
 
@@ -134,7 +134,7 @@ const Recommendations = () => {
     `;
 
     const requestBody = {
-      model: "deepseek/deepseek-r1-distill-llama-70b:free",
+      model: "deepseek/deepseek-r1-zero:free",
       messages: [
         {
           role: "user",

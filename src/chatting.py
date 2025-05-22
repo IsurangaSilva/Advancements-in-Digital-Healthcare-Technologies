@@ -60,14 +60,14 @@ class ChattingPage(tk.Frame):
         try:
             url = "https://openrouter.ai/api/v1/chat/completions"
             headers = {
-                "Authorization": "Bearer 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", 
+                "Authorization": "Bearer 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", 
                 "Content-Type": "application/json",
                 "HTTP-Referer": "<YOUR_SITE_URL>", 
                 "X-Title": "<YOUR_SITE_NAME>",
             }
 
             payload = {
-                "model": "deepseek/deepseek-r1-distill-llama-70b:free",
+                "model": "deepseek/deepseek-r1-zero:free",
                 "messages": [
                     {
                         "role": "user", 

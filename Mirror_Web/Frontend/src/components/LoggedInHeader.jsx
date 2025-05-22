@@ -118,6 +118,7 @@ const LoggedInHeader = () => {
         <MenuItem onClick={() => handleOptionClick("text")}>Text</MenuItem>
         <MenuItem onClick={() => handleOptionClick("voice")}>Voice</MenuItem>
         <MenuItem onClick={() => handleOptionClick("face")}>Face</MenuItem>
+        <MenuItem onClick={() => handleOptionClick("depression")}>Depression Probability</MenuItem>
       </Menu>
           <Link
             to="/recommendation"
