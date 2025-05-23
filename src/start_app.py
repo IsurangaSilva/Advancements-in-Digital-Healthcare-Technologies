@@ -6,8 +6,11 @@ This script launches the application with login functionality
 
 import sys
 import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+import tensorflow as tf
 import subprocess
 import logging
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
