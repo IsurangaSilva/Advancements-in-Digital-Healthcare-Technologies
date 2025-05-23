@@ -5,7 +5,7 @@ import json
 import os
 
 class ChatHistoryPage(tk.Frame):
-    def __init__(self, parent, controller, chat_history_path="../chat_history.json"):
+    def __init__(self, parent, controller, chat_history_path="./chat_history.json"):
         super().__init__(parent, bg="#000D2E")
         self.controller = controller
         self.chat_history_file = chat_history_path
@@ -57,7 +57,7 @@ class ChatHistoryPage(tk.Frame):
                     sender = entry.get("sender", "Assistant")
                     message = entry.get("message", "")
                     timestamp = entry.get("timestamp", "")
-                    icon_path = "../profile_pictures/profile.jpg" if sender.lower() == "user" else "../assets/images/chatbot.png"
+                    icon_path = "./assets/images/user.png" if sender.lower() == "user" else "./assets/images/chatbot.png"
                     self.add_chat_message(message, sender, timestamp, icon_path)
             except Exception as e:
                 print(f"Error loading chat history: {e}")
