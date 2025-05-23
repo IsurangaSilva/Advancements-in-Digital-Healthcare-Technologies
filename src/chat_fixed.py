@@ -30,12 +30,28 @@ class ChatbotApp(tk.Frame):
         self.min_chat_width = 1024
         self.configure(bg='#000D2E')
 
+        # Conversation state
+        self.conversation_paused = False
+
         self.top_frame = tk.Frame(self, bg='#000D2E')
         self.top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=(10, 0))
 
         title_label = tk.Label(self.top_frame, text="Voice Companion", font=("Helvetica", 30, "bold"),
                            bg='#000D2E', fg="white")
-        title_label.pack(pady=(30, 30))
+        title_label.pack(pady=(30, 10))
+
+        # Resume/Play button with initial red color (running state)
+        self.resume_play_button = tk.Button(
+            self.top_frame,
+            text="Pause" if not self.conversation_paused else "Resume",
+            font=("Helvetica", 12),
+            bg="#D32F2F",  # Red for running state (Pause)
+            fg="white",
+            activebackground="#4CAF50",
+            command=self.toggle_conversation
+        )
+        self.resume_play_button.pack(pady=10)
+
         self.left_frame = tk.Frame(self, bg='#000D2E', width=400)
         self.left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
         self.right_frame = tk.Frame(self, bg='#000D2E')
@@ -47,20 +63,17 @@ class ChatbotApp(tk.Frame):
         self.text_prediction = TextualPrediction()
         self.chat_history_file = "chat_history.json"
         
-        # Create UI widgets first - this creates messages_frame and other UI elements
+        # Create UI widgets
         create_widgets(self, self.right_frame)
         
-        # Load icons after widgets are created  
+        # Load icons
         icon_size = (50, 50)
-        # Fix paths to use absolute paths relative to the current file
         current_dir = os.path.dirname(os.path.abspath(__file__))
         user_icon_path = os.path.join(current_dir, "profile_pictures", "profile.jpg")
         ai_icon_path = os.path.join(current_dir, "assets", "images", "chatbot.png")
         
-        # Ensure the placeholder images exist
         self.ensure_placeholder_images(user_icon_path, ai_icon_path)
         
-        # Now load the icons (they should exist now)
         self.user_icon = ImageTk.PhotoImage(
             Image.open(user_icon_path).resize(icon_size, Image.LANCZOS)
         ) if os.path.exists(user_icon_path) else None
@@ -68,13 +81,12 @@ class ChatbotApp(tk.Frame):
             Image.open(ai_icon_path).resize(icon_size, Image.LANCZOS)
         ) if os.path.exists(ai_icon_path) else None
         
-        # Print for debugging
         if not self.user_icon:
             print(f"Warning: User icon not found at {user_icon_path}")
         if not self.ai_icon:
             print(f"Warning: AI icon not found at {ai_icon_path}")
         
-        # Now that UI elements exist, we can bind events to them
+        # Bind events
         self.messages_frame.bind("<Configure>", lambda event: update_scroll_region(self))
         self.chat_canvas.bind("<Configure>", lambda event: update_scroll_region(self))
         bind_mouse_scroll(self)
@@ -82,21 +94,21 @@ class ChatbotApp(tk.Frame):
         # Initialize 2D model
         self.init_2d_model()
         
-        # Initialize models at startup
+        # Initialize models
         self.initialize_models()
         
-        # Add welcome message after initializing all UI components
+        # Add welcome message
         self.add_message("AI", "Hello! How can I help you today?")
         
         # Load model in background
         threading.Thread(target=self.load_model, daemon=True).start()
         
-        # Start recording
-        self.start_background_recording()
+        # Start recording if not paused
+        if not self.conversation_paused:
+            self.start_background_recording()
         
     def ensure_placeholder_images(self, user_icon_path, ai_icon_path):
-        """Create placeholder images if they don't exist"""
-        # Create user icon if it doesn't exist
+        """Create placeholder images if they don't exist."""
         if not os.path.exists(user_icon_path):
             try:
                 os.makedirs(os.path.dirname(user_icon_path), exist_ok=True)
@@ -106,7 +118,6 @@ class ChatbotApp(tk.Frame):
             except Exception as e:
                 print(f"Failed to create user icon: {e}")
                 
-        # Create AI icon if it doesn't exist
         if not os.path.exists(ai_icon_path):
             try:
                 os.makedirs(os.path.dirname(ai_icon_path), exist_ok=True)
@@ -127,7 +138,6 @@ class ChatbotApp(tk.Frame):
         self.model_canvas = tk.Canvas(self.left_frame, width=400, height=450, bg='#000D2E', highlightthickness=0)
         self.model_canvas.pack(pady=20)
 
-        # Fix paths to use absolute paths relative to the current file
         current_dir = os.path.dirname(os.path.abspath(__file__))
         assets_dir = os.path.join(current_dir, "assets", "images")
         
@@ -138,10 +148,9 @@ class ChatbotApp(tk.Frame):
         except pygame.error as e:
             print(f"Error loading animation assets: {e}")
             print(f"Looking for assets in: {assets_dir}")
-            # Create fallback colored rectangles if images cannot be loaded
-            self.mouth_open = self.create_fallback_surface((0, 0, 255))   # Blue rectangle
-            self.mouth_closed = self.create_fallback_surface((0, 255, 0)) # Green rectangle
-            self.eyes_closed = self.create_fallback_surface((255, 0, 0))  # Red rectangle
+            self.mouth_open = self.create_fallback_surface((0, 0, 255))
+            self.mouth_closed = self.create_fallback_surface((0, 255, 0))
+            self.eyes_closed = self.create_fallback_surface((255, 0, 0))
 
         self.animation_running = False
         self.current_image = self.mouth_closed
@@ -158,7 +167,7 @@ class ChatbotApp(tk.Frame):
         """Animate the 2D face while speaking."""
         self.animation_running = True
         engine = pyttsx3.init()
-        engine.setProperty("rate",160)
+        engine.setProperty("rate", 160)
 
         def _animate():
             while self.animation_running:
@@ -178,6 +187,7 @@ class ChatbotApp(tk.Frame):
         self.after(0, self.update_model_display)
         
     def append_to_chat_history(self, sender, message, timestamp):
+        """Append message to chat history file."""
         entry = {"sender": sender, "message": message, "timestamp": timestamp}
         try:
             with open(self.chat_history_file, "a") as f:
@@ -187,19 +197,25 @@ class ChatbotApp(tk.Frame):
             
     def speak_ai(self, text):
         """Speak AI response with animation."""
-        threading.Thread(target=self.animate_face, args=(text,), daemon=True).start()
+        if not self.conversation_paused:
+            threading.Thread(target=self.animate_face, args=(text,), daemon=True).start()
         
     def start_background_recording(self):
-        self.audio_handler.is_recording = True
-        self.recording_thread = threading.Thread(target=self.audio_handler.record_audio, daemon=True)
-        self.recording_thread.start()
-        self.check_recording_status()
+        """Start background audio recording if not paused."""
+        if not self.conversation_paused:
+            self.audio_handler.is_recording = True
+            self.recording_thread = threading.Thread(target=self.audio_handler.record_audio, daemon=True)
+            self.recording_thread.start()
+            self.check_recording_status()
         
     def check_recording_status(self):
+        """Check recording status and process audio if not paused."""
+        if self.conversation_paused:
+            return
+        
         if not self.recording_thread.is_alive():
             if os.path.exists(AUDIO_FILE):
                 text = self.audio_handler.transcribe_audio(AUDIO_FILE)
-                # Only process if we have actual text content (not silence or errors)
                 if (text.strip() and 
                     text != "Error: Could not understand the audio." and
                     not text.startswith("[Silence]") and
@@ -214,7 +230,29 @@ class ChatbotApp(tk.Frame):
         else:
             self.after(1000, self.check_recording_status)
 
+    def toggle_conversation(self):
+        """Toggle conversation state between paused and running."""
+        try:
+            if self.conversation_paused:
+                # Resume conversation
+                self.conversation_paused = False
+                self.resume_play_button.config(text="Pause", bg="#D32F2F")  # Red for Pause
+                self.start_background_recording()
+                print("Conversation resumed")
+            else:
+                # Pause conversation
+                self.conversation_paused = True
+                self.resume_play_button.config(text="Resume", bg="#4CAF50")  # Green for Resume
+                self.audio_handler.is_recording = False
+                if hasattr(self, 'recording_thread') and self.recording_thread.is_alive():
+                    self.recording_thread.join(timeout=1.0)
+                print("Conversation paused")
+        except Exception as e:
+            print(f"Error toggling conversation: {e}")
+            messagebox.showerror("Error", f"Failed to toggle conversation: {str(e)}")
+
     def add_message(self, sender, message):
+        """Add a message to the chat interface."""
         html_content = markdown.markdown(message, extensions=["fenced_code", "tables"])
         styled_html = f"""
         <div style="color: #ffffff; font-family: Arial, sans-serif; font-size: 14px; border-radius: 10px; padding: 10px;">
@@ -260,24 +298,16 @@ class ChatbotApp(tk.Frame):
             self.speak_ai(message)    
             
     def load_model(self):
-        # Initialize audio handler's placeholder model
+        """Load models and report status."""
         result = self.audio_handler.load_model()
         
         try:
-            # Also initialize text emotion model
-            from text_emotion_prediction import initialize_model as init_text_model
             init_text_model()
-            
-            # And initialize voice emotion model
-            from voice_emotion_prediction import load_emotion_model
-            from config import TEXT_MODEL_PATH, VOICE_MODEL_PATH
             voice_model = load_emotion_model(VOICE_MODEL_PATH)
-            
             if voice_model:
                 result += " | Voice and text models loaded successfully"
             else:
                 result += " | Warning: Voice model could not be loaded"
-                
         except Exception as e:
             print(f"Error initializing prediction models: {e}")
             result += f" | Warning: Error loading prediction models: {str(e)}"
@@ -285,6 +315,10 @@ class ChatbotApp(tk.Frame):
         self.add_message("AI", result)
         
     def send_message(self):
+        """Send user message and get AI response."""
+        if self.conversation_paused:
+            return
+        
         user_text = self.user_input.get().strip()
         if not user_text:
             return
@@ -295,13 +329,9 @@ class ChatbotApp(tk.Frame):
         threading.Thread(target=self.get_ai_response, args=(user_text,), daemon=True).start()
         
     def initialize_models(self):
-        """Initialize both text and voice emotion models at startup"""
+        """Initialize text and voice emotion models."""
         try:
-            # Initialize text emotion model
             init_text_model()
-            
-            # Initialize voice emotion model
-            from voice_emotion_prediction import load_emotion_model
             voice_model = load_emotion_model(VOICE_MODEL_PATH)
             if voice_model:
                 print("Voice and text models loaded successfully")
@@ -311,6 +341,10 @@ class ChatbotApp(tk.Frame):
             print(f"Error initializing models: {e}")
     
     def get_ai_response(self, user_text):
+        """Get AI response from backend."""
+        if self.conversation_paused:
+            return
+        
         try:
             ai_text = send_to_backend(self.conversation_history, user_text)
             self.after(0, self.add_message, "AI", ai_text)
@@ -321,6 +355,11 @@ class ChatbotApp(tk.Frame):
             self.after(0, lambda: self.user_input.config(state=tk.NORMAL))
 
     def recognize_speech(self):
+        """Handle speech recognition toggle."""
+        if self.conversation_paused:
+            self.add_message("AI", "Conversation is paused. Resume to enable speech recognition.")
+            return
+        
         if not self.audio_handler.is_recording:
             self.add_message("AI", "Listening... Click again to stop.")
             self.audio_handler.is_recording = True
@@ -332,17 +371,8 @@ class ChatbotApp(tk.Frame):
             self.recording_thread.join()
             self.speak_btn.config(text="🎤 Speak")
             if os.path.exists(AUDIO_FILE):
-                # Make sure we're using the configured models
-                from voice_emotion_prediction import analyze_audio, load_emotion_model
-                from config import VOICE_MODEL_PATH
-                
-                # Load voice model if needed
                 voice_model = load_emotion_model(VOICE_MODEL_PATH)
-                
-                # Analyze audio using the loaded model
                 analyze_audio(voice_model, AUDIO_FILE)
-                
-                # Transcribe and analyze text
                 text = self.audio_handler.transcribe_audio(AUDIO_FILE)
                 self.text_prediction.prediction(text)
                 if text.strip():

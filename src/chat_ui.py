@@ -1,4 +1,3 @@
-# chat_ui.py
 import tkinter as tk
 
 def create_widgets(app, main_frame):
@@ -16,7 +15,6 @@ def create_widgets(app, main_frame):
         highlightthickness=0,
         bd=0,
         yscrollcommand=app.scrollbar.set,
-        
     )
     app.chat_canvas.pack(fill=tk.BOTH, expand=True)
     app.scrollbar.config(command=app.chat_canvas.yview)
@@ -34,7 +32,7 @@ def create_widgets(app, main_frame):
 
     app.user_input = tk.Entry(
         input_frame, 
-        font=('Arial',15), 
+        font=('Arial', 15), 
         bg='#1E1E2E', 
         fg='white', 
         insertbackground='white',
@@ -42,19 +40,6 @@ def create_widgets(app, main_frame):
     )
     app.user_input.pack(side=tk.LEFT, padx=(0, 5)) 
     app.user_input.bind("<Return>", lambda e: app.send_message())
-
-
-    app.speak_btn = tk.Button(
-        input_frame, 
-        text="🎤 Speak", 
-        font=('Arial', 12),
-        command=app.recognize_speech, 
-        bg='#EAC94F', 
-        fg='white', 
-        bd=0,
-        activebackground='#EAC94F'
-    )
-    app.speak_btn.pack(side=tk.LEFT, padx=(0, 5))
 
     send_btn = tk.Button(
         input_frame, 
