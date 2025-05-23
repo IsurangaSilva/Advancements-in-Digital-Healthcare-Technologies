@@ -5,7 +5,7 @@ from settings import SettingsPage
 from profileUser import ProfilePage
 from chat_history import ChatHistoryPage
 from report import ReportPage
-from chat import ChatbotApp
+from chat_fixed import ChatbotApp
 from chatting import ChattingPage
 import logging
 
@@ -416,14 +416,38 @@ class MainApplication(tk.Tk):
     def switch_page(self, page_class, page_name):
         """Switch between pages and update active menu highlight."""
         try:
+            import traceback
             self.active_page = page_name
+            print(f"Switching to page: {page_name}")
+            
+            # Remove existing widgets
             for widget in self.page_frame.winfo_children():
                 widget.destroy()
+                
+            # Create the new page
             page = page_class(self.page_frame, controller=self)
             page.pack(fill="both", expand=True)
+            
+            # Update menu buttons
             self.setup_menu_buttons()
+            print(f"Successfully switched to page: {page_name}")
+            
         except Exception as e:
-            print(f"Error switching to page {page_name}: {e}")
+            print(f"ERROR switching to page {page_name}: {e}")
+            print(traceback.format_exc())  # Print full stack trace for debugging
+            
+            # Create a simple error message on the page
+            error_frame = tk.Frame(self.page_frame, bg="#000D2E")
+            error_frame.pack(fill="both", expand=True)
+            
+            error_label = tk.Label(
+                error_frame, 
+                text=f"Error loading {page_name} page:\n{str(e)}\n\nPlease check logs for details.", 
+                font=("Helvetica", 14),
+                bg="#000D2E",
+                fg="white"
+            )
+            error_label.pack(pady=100)
 
     def dashboard_page(self):
         self.switch_page(ChatbotApp, "Dashboard")

@@ -23,7 +23,8 @@ from text_emotion_prediction import initialize_model as init_text_model
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 pygame.init()
 
-class ChatbotApp(tk.Frame):    def __init__(self, parent, controller=None, **kwargs):
+class ChatbotApp(tk.Frame):
+    def __init__(self, parent, controller=None, **kwargs):
         super().__init__(parent, **kwargs)
         self.controller = controller
         self.min_chat_width = 1024
@@ -40,12 +41,26 @@ class ChatbotApp(tk.Frame):    def __init__(self, parent, controller=None, **kwa
         self.right_frame = tk.Frame(self, bg='#000D2E')
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
         
+        self.message_count = 0
+        self.conversation_history = []
+        self.audio_handler = AudioHandler()
+        self.text_prediction = TextualPrediction()
+        self.chat_history_file = "chat_history.json"
+        
+        # Create UI widgets first - this creates messages_frame and other UI elements
+        create_widgets(self, self.right_frame)
+        
+        # Load icons after widgets are created  
         icon_size = (50, 50)
         # Fix paths to use absolute paths relative to the current file
         current_dir = os.path.dirname(os.path.abspath(__file__))
         user_icon_path = os.path.join(current_dir, "profile_pictures", "profile.jpg")
         ai_icon_path = os.path.join(current_dir, "assets", "images", "chatbot.png")
         
+        # Ensure the placeholder images exist
+        self.ensure_placeholder_images(user_icon_path, ai_icon_path)
+        
+        # Now load the icons (they should exist now)
         self.user_icon = ImageTk.PhotoImage(
             Image.open(user_icon_path).resize(icon_size, Image.LANCZOS)
         ) if os.path.exists(user_icon_path) else None
@@ -59,27 +74,18 @@ class ChatbotApp(tk.Frame):    def __init__(self, parent, controller=None, **kwa
         if not self.ai_icon:
             print(f"Warning: AI icon not found at {ai_icon_path}")
         
-        self.message_count = 0
-        self.conversation_history = []
-        self.audio_handler = AudioHandler()
-        self.text_prediction = TextualPrediction()
-        self.chat_history_file = "chat_history.json"
-        
-        # Create UI widgets first, before accessing any of their attributes
-        create_widgets(self, self.right_frame)
-        
         # Now that UI elements exist, we can bind events to them
         self.messages_frame.bind("<Configure>", lambda event: update_scroll_region(self))
         self.chat_canvas.bind("<Configure>", lambda event: update_scroll_region(self))
         bind_mouse_scroll(self)
         
-        # Initialize models at startup
-        self.initialize_models()
-        
         # Initialize 2D model
         self.init_2d_model()
         
-        # Add welcome message
+        # Initialize models at startup
+        self.initialize_models()
+        
+        # Add welcome message after initializing all UI components
         self.add_message("AI", "Hello! How can I help you today?")
         
         # Load model in background
@@ -156,7 +162,8 @@ class ChatbotApp(tk.Frame):    def __init__(self, parent, controller=None, **kwa
 
         def _animate():
             while self.animation_running:
-                if random.randint(0, 50) > 48:                    self.current_image = self.eyes_closed
+                if random.randint(0, 50) > 48:
+                    self.current_image = self.eyes_closed
                 else:
                     self.current_image = self.mouth_open if random.randint(0, 1) else self.mouth_closed
                 self.after(0, self.update_model_display)
@@ -297,11 +304,10 @@ class ChatbotApp(tk.Frame):    def __init__(self, parent, controller=None, **kwa
             from voice_emotion_prediction import load_emotion_model
             voice_model = load_emotion_model(VOICE_MODEL_PATH)
             if voice_model:
-                self.add_message("AI", "Voice and text models loaded successfully")
+                print("Voice and text models loaded successfully")
             else:
-                self.add_message("AI", "Warning: Voice model could not be loaded")
+                print("Warning: Voice model could not be loaded")
         except Exception as e:
-            self.add_message("AI", f"Warning: Error loading models: {str(e)}")
             print(f"Error initializing models: {e}")
     
     def get_ai_response(self, user_text):
