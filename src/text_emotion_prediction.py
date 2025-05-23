@@ -196,19 +196,24 @@ def initialize_model():
         
         # Set max_length
         max_length = max(len(text.split()) for text in texts) if texts else 100
-        
-        # Load the model
+          # Load the model
         try:
             model = load_model(TEXT_MODEL_PATH)
             logger.info(f"Successfully loaded model from {TEXT_MODEL_PATH}")
             
             # Cache the model in ModelManager
-            model_manager.add_model("text_emotion", {
-                "model": model,
-                "tokenizer": tokenizer,
-                "label_encoder": label_encoder,
-                "max_length": max_length
-            })
+            try:
+                model_data = {
+                    "model": model,
+                    "tokenizer": tokenizer,
+                    "label_encoder": label_encoder,
+                    "max_length": max_length
+                }
+                model_manager.add_model("text_emotion", model_data)
+                logger.info("Text emotion model cached in ModelManager")
+            except Exception as cache_error:
+                # Continue even if caching fails
+                logger.error(f"Failed to cache model in ModelManager: {cache_error}")
             
             return True
         except Exception as e:

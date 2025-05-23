@@ -47,10 +47,10 @@ class MainApplication(tk.Tk):
         self.setup_menu_buttons()
     
     def create_status_indicators(self):
-        """Create status indicators for the three models: Voice, FER, Audio"""
+        """Create status indicators for the three models: Voice, FER, Text"""
         # Create a frame to hold the indicators
         self.status_frame = tk.Frame(self, bg="#0B1B3F")
-        self.status_frame.place(relx=1.0, y=10, anchor="ne", width=120, height=50)
+        self.status_frame.place(relx=1.0, y=10, anchor="ne", width=150, height=50)
         
         # Create the indicators
         # Voice model indicator
@@ -65,51 +65,57 @@ class MainApplication(tk.Tk):
         self.fer_indicator.create_oval(4, 4, 16, 16, fill="red", tags="fer_dot")
         self.fer_indicator.grid(row=0, column=1, padx=5)
         
-        # Audio model indicator
-        self.audio_indicator = tk.Canvas(self.status_frame, width=20, height=20, bg="#0B1B3F",
+        # Text model indicator
+        self.text_indicator = tk.Canvas(self.status_frame, width=20, height=20, bg="#0B1B3F",
                                        highlightthickness=0)
-        self.audio_indicator.create_oval(4, 4, 16, 16, fill="red", tags="audio_dot")
-        self.audio_indicator.grid(row=0, column=2, padx=5)
+        self.text_indicator.create_oval(4, 4, 16, 16, fill="red", tags="text_dot")
+        self.text_indicator.grid(row=0, column=2, padx=5)
         
         # Add labels below each indicator
         tk.Label(self.status_frame, text="Voice", bg="#0B1B3F", fg="white", font=("Helvetica", 8)).grid(row=1, column=0)
         tk.Label(self.status_frame, text="FER", bg="#0B1B3F", fg="white", font=("Helvetica", 8)).grid(row=1, column=1)
-        tk.Label(self.status_frame, text="Audio", bg="#0B1B3F", fg="white", font=("Helvetica", 8)).grid(row=1, column=2)
+        tk.Label(self.status_frame, text="Text", bg="#0B1B3F", fg="white", font=("Helvetica", 8)).grid(row=1, column=2)
+        
+        # Schedule periodic status checks
+        self.after(2000, self.update_model_status)
         
         # Schedule periodic status checks
         self.after(2000, self.update_model_status)
     
     def update_model_status(self):
         """Update the status indicators based on model availability"""
-        # This function would check if models are running and update indicators
-        # For now, we'll simulate status with a placeholder implementation
+        # Check if we have model status from initialization
+        if hasattr(self, 'model_status'):
+            # Use the status provided by the main initialization
+            voice_status = self.model_status.get('voice', False)
+            fer_status = self.model_status.get('fer', False)
+            text_status = self.model_status.get('text', False)
+        else:
+            # Fallback to checking if models are loaded
+            from model_manager import ModelManager
+            model_manager = ModelManager()
+            voice_status = model_manager.has_model('voice')
+            fer_status = hasattr(self, 'emotion_processor') and self.emotion_processor is not None
+            text_status = model_manager.has_model('text')
         
-        # Check Voice model status
+        # Update indicators
         try:
-            # This is a placeholder - in real implementation, check if the voice model is loaded
-            voice_status = True  # Replace with actual status check
             self.voice_indicator.itemconfig("voice_dot", fill="green" if voice_status else "red")
         except Exception as e:
-            print(f"Error checking voice model status: {e}")
+            print(f"Error updating voice indicator: {e}")
             self.voice_indicator.itemconfig("voice_dot", fill="red")
         
-        # Check FER model status
         try:
-            # This is a placeholder - in real implementation, check if the FER model is loaded
-            fer_status = hasattr(self, 'emotion_processor') and self.emotion_processor is not None
             self.fer_indicator.itemconfig("fer_dot", fill="green" if fer_status else "red")
         except Exception as e:
-            print(f"Error checking FER model status: {e}")
+            print(f"Error updating FER indicator: {e}")
             self.fer_indicator.itemconfig("fer_dot", fill="red")
         
-        # Check Audio model status
         try:
-            # This is a placeholder - in real implementation, check if the audio model is loaded
-            audio_status = True  # Replace with actual status check
-            self.audio_indicator.itemconfig("audio_dot", fill="green" if audio_status else "red")
+            self.text_indicator.itemconfig("text_dot", fill="green" if text_status else "red")
         except Exception as e:
-            print(f"Error checking audio model status: {e}")
-            self.audio_indicator.itemconfig("audio_dot", fill="red")
+            print(f"Error updating text indicator: {e}")
+            self.text_indicator.itemconfig("text_dot", fill="red")
         
         # Schedule the next update
         self.after(5000, self.update_model_status)

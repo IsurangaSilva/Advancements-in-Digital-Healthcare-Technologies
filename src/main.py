@@ -114,15 +114,56 @@ def check_backend_ready(app, splash):
     else:
         app.after(500, lambda: check_backend_ready(app, splash))
 
+def finish_showing_app(app, splash):
+    """Finalize app loading by showing main window and destroying splash screen"""
+    app.deiconify()  # Show the main window
+    app.update()     # Force update to ensure everything is rendered correctly
+    splash.destroy() # Close splash screen
+    
+    # Force app to appear as top window
+    app.lift()
+    app.focus_force()
+    app.attributes('-topmost', True)
+    app.update()
+    app.attributes('-topmost', False)
+    
+    logger.info("Application ready and shown to user.")
+
 def finish_loading(app, splash):
     """Initialize the main application features and close splash screen"""
     # Update progress
-    splash.update_progress(60, "Creating user interface...")
+    splash.update_progress(55, "Creating user interface...")
     
-    # Set up emotion processor with lazy loading
+    # Preload all models first
+    try:
+        splash.update_progress(60, "Loading prediction models...")
+        from model_manager import ModelManager
+        model_manager = ModelManager()
+        text_success, voice_success = model_manager.load_prediction_models()
+        
+        # Load FER model
+        splash.update_progress(65, "Loading facial emotion recognition model...")
+        from FER.model_loader import load_fer_models
+        fer_success = load_fer_models()
+        
+        if not all([text_success, voice_success, fer_success]):
+            logger.warning(f"Not all models loaded successfully: Text={text_success}, Voice={voice_success}, FER={fer_success}")
+            # We'll continue anyway but the app will show the models as unavailable
+        
+        app.model_status = {
+            'text': text_success,
+            'voice': voice_success,
+            'fer': fer_success
+        }
+        logger.info(f"Models loaded: Text={text_success}, Voice={voice_success}, FER={fer_success}")
+    except Exception as e:
+        logger.error(f"Error loading models: {e}")
+        app.model_status = {'text': False, 'voice': False, 'fer': False}
+    
+    # Set up emotion processor with lazy loading=False since we already loaded models
     splash.update_progress(70, "Setting up emotion processing...")
     dummy_callback = lambda status: None
-    emotion_processor = EmotionBackgroundProcessor(status_update_callback=dummy_callback, lazy_load=True)
+    emotion_processor = EmotionBackgroundProcessor(status_update_callback=dummy_callback, lazy_load=False)
     emotion_thread = threading.Thread(target=emotion_processor.run, daemon=True)
     
     # Start Text and Audio emotion aggregators
@@ -144,18 +185,18 @@ def finish_loading(app, splash):
     except Exception as e:
         logger.error(f"Failed to start audio handler: {e}")
     
-    # Finish loading
-    splash.update_progress(100, "Loading complete!")
+    # Set up app references
+    splash.update_progress(95, "Finalizing application setup...")
     app.emotion_processor = emotion_processor
     
     # Start emotion processor thread
     emotion_thread.start()
     
-    # Show main window
-    app.deiconify()
+    # Final loading
+    splash.update_progress(100, "Loading complete!")
     
-    # Wait a moment to show 100% then close splash screen
-    app.after(800, splash.destroy)
+    # Show main window with a brief delay to ensure all UI elements are ready
+    app.after(800, lambda: finish_showing_app(app, splash))
 
 if __name__ == "__main__":
     try:

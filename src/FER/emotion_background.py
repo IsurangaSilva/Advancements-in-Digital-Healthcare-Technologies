@@ -43,7 +43,8 @@ class EmotionBackgroundProcessor:
         # Initialize webcam capture
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
-            raise ValueError("Unable to open webcam for emotion detection.")
+            logger.warning("Unable to open webcam for emotion detection. Continuing without webcam.")
+            # We'll continue without the webcam for now
 
         # Initialize the aggregator
         self.save_path = os.path.join(self.BASE_DIR, "db", "FER", "emotion_data.json")

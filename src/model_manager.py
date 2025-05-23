@@ -83,7 +83,27 @@ class ModelManager:
         except Exception as e:
             logger.error(f"Error loading {model_type} model: {e}")
             return None
+    
+    def add_model(self, model_type, model_data):
+        """
+        Add a pre-loaded model to the cache. This is useful for complex models
+        that require additional data like tokenizers and encoders.
+        
+        Args:
+            model_type (str): Type of model for indexing
+            model_data (object): The model data (can be a model or dict with model and metadata)
             
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            self._models[model_type] = model_data
+            logger.info(f"Successfully added {model_type} model to cache")
+            return True
+        except Exception as e:
+            logger.error(f"Error adding {model_type} model to cache: {e}")
+            return False
+    
     def unload_model(self, model_type):
         """
         Unload a model to free up memory
