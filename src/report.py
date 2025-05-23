@@ -53,7 +53,7 @@ class ReportPage(tk.Frame):
         text_frame.pack(fill="both", expand=True, padx=(220, 5), pady=5)
         
         fig_text, emotion_scores_text = self.create_emotion_chart(
-            "src/db/Text/temp_prediction.json", 
+            "./db/Text/text_emotion_data.json", 
             "Text-Based Emotion"
         )
         canvas_text = FigureCanvasTkAgg(fig_text, master=text_frame)
@@ -72,7 +72,7 @@ class ReportPage(tk.Frame):
         avg_voice_frame = tk.Frame(scrollable_frame, bg="#1F2937", bd=2, relief=tk.GROOVE)
         avg_voice_frame.pack(fill="both", expand=True, padx=(220, 5), pady=5)
         fig_avg_voice, avg_emotion_scores = self.create_avg_emotion_chart(
-            "src/db/Audio/voice_prediction.json", 
+            "./db/Audio/audio_emotion_data.json", 
             "Avg Voice-Based Emotion"
         )
         canvas_avg_voice = FigureCanvasTkAgg(fig_avg_voice, master=avg_voice_frame)
