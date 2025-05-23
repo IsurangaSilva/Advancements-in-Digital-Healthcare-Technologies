@@ -22,6 +22,39 @@ class EmotionAggregator:
         # Using six categories after merging Disgust into Sad.
         self.emotion_labels = ['Anger', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
         self.callback = callback
+        self.last_aggregate_time = time.time()
+    
+    def aggregate(self):
+        """
+        Perform emotion aggregation if there are records available.
+        This method is called by the emotion aggregator launcher.
+        """
+        current_time = time.time()
+        # If no emotion records and enough time has passed since the last check, log a message
+        if not self.emotion_records and (current_time - self.last_aggregate_time) >= self.window_seconds:
+            print(f"No emotion records available for aggregation in the last {self.window_seconds} seconds.")
+            self.last_aggregate_time = current_time
+            return
+            
+        # If enough time has passed since the start, aggregate the emotions
+        if self.emotion_records and (current_time - self.start_time) >= self.window_seconds:
+            aggregated = self.compute_average()
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.save_to_json(timestamp, aggregated)
+            
+            if self.callback:
+                self.callback(aggregated)
+            else:
+                print("\n=== Aggregated Emotion Confidence (Last Minute) ===")
+                print(f"Timestamp: {timestamp}")
+                for label, value in aggregated.items():
+                    print(f"{label}: {value * 100:.2f}%")
+                print("====================================================\n")
+            
+            # Reset for next aggregation window
+            self.start_time = current_time
+            self.last_aggregate_time = current_time
+            self.emotion_records = []
 
     def add_emotion(self, emotion_dict):
         self.emotion_records.append(emotion_dict)

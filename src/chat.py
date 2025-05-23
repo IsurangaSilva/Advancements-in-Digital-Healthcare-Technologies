@@ -18,6 +18,8 @@ import pygame
 import time
 import random
 import os
+from config import TEXT_MODEL_PATH, VOICE_MODEL_PATH
+from text_emotion_prediction import initialize_model as init_text_model
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 pygame.init()
 
@@ -41,19 +43,22 @@ class ChatbotApp(tk.Frame):
         self.right_frame = tk.Frame(self, bg='#000D2E')
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        icon_size = (50, 50)
+        icon_size = (50, 50)        
         self.user_icon = ImageTk.PhotoImage(
             Image.open("../profile_pictures/profile.jpg").resize(icon_size, Image.LANCZOS)
         ) if os.path.exists("../profile_pictures/profile.jpg") else None
         self.ai_icon = ImageTk.PhotoImage(
             Image.open("../assets/images/chatbot.png").resize(icon_size, Image.LANCZOS)
         ) if os.path.exists("../assets/images/chatbot.png") else None
-
+        
         self.message_count = 0
         self.conversation_history = []
         self.audio_handler = AudioHandler()
         self.text_prediction = TextualPrediction()
         self.chat_history_file = "chat_history.json"
+        
+        # Initialize models at startup
+        self.initialize_models()
 
         create_widgets(self, self.right_frame)
         self.messages_frame.bind("<Configure>", lambda event: update_scroll_region(self))
@@ -93,13 +98,12 @@ class ChatbotApp(tk.Frame):
 
         def _animate():
             while self.animation_running:
-                if random.randint(0, 50) > 48: 
-                    self.current_image = self.eyes_closed
+                if random.randint(0, 50) > 48:                    self.current_image = self.eyes_closed
                 else:
                     self.current_image = self.mouth_open if random.randint(0, 1) else self.mouth_closed
                 self.after(0, self.update_model_display)
                 time.sleep(0.2)
-
+                
         anim_thread = threading.Thread(target=_animate, daemon=True)
         anim_thread.start()
         engine.say(text)
@@ -107,7 +111,7 @@ class ChatbotApp(tk.Frame):
         self.animation_running = False
         self.current_image = self.mouth_closed
         self.after(0, self.update_model_display)
-
+        
     def append_to_chat_history(self, sender, message, timestamp):
         entry = {"sender": sender, "message": message, "timestamp": timestamp}
         try:
@@ -115,25 +119,29 @@ class ChatbotApp(tk.Frame):
                 f.write(json.dumps(entry) + "\n")
         except Exception as e:
             print(f"Error appending chat history: {e}")
-
+            
     def speak_ai(self, text):
         """Speak AI response with animation."""
         threading.Thread(target=self.animate_face, args=(text,), daemon=True).start()
-
+        
     def start_background_recording(self):
         self.audio_handler.is_recording = True
         self.recording_thread = threading.Thread(target=self.audio_handler.record_audio, daemon=True)
         self.recording_thread.start()
         self.check_recording_status()
-
+        
     def check_recording_status(self):
         if not self.recording_thread.is_alive():
             if os.path.exists(AUDIO_FILE):
                 text = self.audio_handler.transcribe_audio(AUDIO_FILE)
-                if text.strip() and text != "Error: Could not understand the audio.":
-                    # model = load_emotion_model()
-                    # analyze_audio(model, AUDIO_FILE)
-                    # self.text_prediction.prediction(text)
+                # Only process if we have actual text content (not silence or errors)
+                if (text.strip() and 
+                    text != "Error: Could not understand the audio." and
+                    not text.startswith("[Silence]") and
+                    not text.startswith("[Service unavailable]") and
+                    not text.startswith("Error:") and
+                    not text.startswith("Transcription error:")):
+                    
                     self.user_input.delete(0, tk.END)
                     self.user_input.insert(0, text)
                     self.send_message()
@@ -184,12 +192,33 @@ class ChatbotApp(tk.Frame):
         self.append_to_chat_history(sender, message, timestamp)
 
         if sender == "AI":
-            self.speak_ai(message)
-
+            self.speak_ai(message)    
+            
     def load_model(self):
+        # Initialize audio handler's placeholder model
         result = self.audio_handler.load_model()
+        
+        try:
+            # Also initialize text emotion model
+            from text_emotion_prediction import initialize_model as init_text_model
+            init_text_model()
+            
+            # And initialize voice emotion model
+            from voice_emotion_prediction import load_emotion_model
+            from config import TEXT_MODEL_PATH, VOICE_MODEL_PATH
+            voice_model = load_emotion_model(VOICE_MODEL_PATH)
+            
+            if voice_model:
+                result += " | Voice and text models loaded successfully"
+            else:
+                result += " | Warning: Voice model could not be loaded"
+                
+        except Exception as e:
+            print(f"Error initializing prediction models: {e}")
+            result += f" | Warning: Error loading prediction models: {str(e)}"
+            
         self.add_message("AI", result)
-
+        
     def send_message(self):
         user_text = self.user_input.get().strip()
         if not user_text:
@@ -199,7 +228,24 @@ class ChatbotApp(tk.Frame):
         self.user_input.delete(0, tk.END)
         self.user_input.config(state=tk.DISABLED)
         threading.Thread(target=self.get_ai_response, args=(user_text,), daemon=True).start()
-
+        
+    def initialize_models(self):
+        """Initialize both text and voice emotion models at startup"""
+        try:
+            # Initialize text emotion model
+            init_text_model()
+            
+            # Initialize voice emotion model
+            from voice_emotion_prediction import load_emotion_model
+            voice_model = load_emotion_model(VOICE_MODEL_PATH)
+            if voice_model:
+                self.add_message("AI", "Voice and text models loaded successfully")
+            else:
+                self.add_message("AI", "Warning: Voice model could not be loaded")
+        except Exception as e:
+            self.add_message("AI", f"Warning: Error loading models: {str(e)}")
+            print(f"Error initializing models: {e}")
+    
     def get_ai_response(self, user_text):
         try:
             ai_text = send_to_backend(self.conversation_history, user_text)
@@ -222,8 +268,17 @@ class ChatbotApp(tk.Frame):
             self.recording_thread.join()
             self.speak_btn.config(text="🎤 Speak")
             if os.path.exists(AUDIO_FILE):
-                # Use the updated analyze_audio that includes lazy loading
-                analyze_audio(AUDIO_FILE)
+                # Make sure we're using the configured models
+                from voice_emotion_prediction import analyze_audio, load_emotion_model
+                from config import VOICE_MODEL_PATH
+                
+                # Load voice model if needed
+                voice_model = load_emotion_model(VOICE_MODEL_PATH)
+                
+                # Analyze audio using the loaded model
+                analyze_audio(voice_model, AUDIO_FILE)
+                
+                # Transcribe and analyze text
                 text = self.audio_handler.transcribe_audio(AUDIO_FILE)
                 self.text_prediction.prediction(text)
                 if text.strip():

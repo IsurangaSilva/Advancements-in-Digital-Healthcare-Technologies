@@ -125,46 +125,93 @@ def save_results_to_csv(results, output_file=TEMP_VOICE_PREDICTION_RESULT_CSV):
     except Exception as e:
         logging.error(f"Error saving results to CSV: {e}")
 
-def save_results_to_json(results, output_file="voice_prediction.json"):
+def save_results_to_json(results, output_file="audio_emotion_data.json"):
     """Saves the emotion analysis results to a JSON file."""
     try:
-        output_folder = "result/Audio"
+        # Save to db/Audio folder for consistency with other models
+        output_folder = os.path.join("db", "Audio")
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
         
         output_file_path = os.path.join(output_folder, output_file)
         
         if os.path.exists(output_file_path):
-            with open(output_file_path, "r") as f:
-                existing_data = json.load(f)
+            try:
+                with open(output_file_path, "r") as f:
+                    existing_data = json.load(f)
+            except json.JSONDecodeError:
+                logging.warning(f"JSON file {output_file_path} is corrupted. Creating new file.")
+                existing_data = []
         else:
             existing_data = []
-            
-        existing_data.append(results)
+        
+        # Add session_aggregate flag for the aggregation process
+        results_with_flag = {**results, "session_aggregate": False}
+        existing_data.append(results_with_flag)
         
         with open(output_file_path, "w") as f:
             json.dump(existing_data, f, indent=4)
             
         logging.info(f"Results saved to {output_file_path}")
+        
+        # Also save to the original location for backward compatibility
+        original_output_folder = "result/Audio"
+        if not os.path.exists(original_output_folder):
+            os.makedirs(original_output_folder)
+        
+        original_output_file_path = os.path.join(original_output_folder, "voice_prediction.json")
+        
+        if os.path.exists(original_output_file_path):
+            try:
+                with open(original_output_file_path, "r") as f:
+                    original_existing_data = json.load(f)
+            except json.JSONDecodeError:
+                original_existing_data = []
+        else:
+            original_existing_data = []
+            
+        original_existing_data.append(results)
+        
+        with open(original_output_file_path, "w") as f:
+            json.dump(original_existing_data, f, indent=4)
     except Exception as e:
         logging.error(f"Error saving results to JSON: {e}")
 
-def analyze_audio(audio_path=AUDIO_FILE):
-    """Analyzes the audio file for emotion and saves the results."""
+def analyze_audio(model=None, audio_path=AUDIO_FILE):
+    """Analyzes the audio file for emotion and saves the results.
+    
+    Args:
+        model: Pre-loaded emotion model (optional)
+        audio_path: Path to the audio file to analyze
+    """
     if not os.path.exists(audio_path):
         logging.error(f"Audio file not found at {audio_path}")
         return
-        
-    # Lazy load the model only when needed
-    model = load_emotion_model()
-    if model is None:
-        logging.error("Failed to load voice emotion model")
-        return
+    
+    # Check if the audio file is very small (likely silence)
+    is_silent = os.path.getsize(audio_path) < 1024
+    if is_silent:
+        logging.info(f"Audio file {audio_path} appears to be silent (small size). Using default neutral emotion.")
+        # For silent audio, use neutral emotion with zero confidence for other emotions
+        timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+        predicted_emotion = "neutral"
+        predictions = np.zeros(len(CAT6))
+        predictions[CAT6.index("neutral")] = 1.0
+    else:
+        # Ensure we have a model - load it if not provided
+        if model is None:
+            model = load_emotion_model(VOICE_MODEL_PATH)
+            if model is None:
+                logging.error("Failed to load voice emotion model")
+                return
 
-    predicted_emotion, predictions = predict_emotion(model, audio_path)
-    if predicted_emotion is None:
-        logging.error("Failed to predict emotion")
-        return
+        # Process non-silent audio
+        predicted_emotion, predictions = predict_emotion(model, audio_path)
+        if predicted_emotion is None:
+            logging.error("Failed to predict emotion, defaulting to neutral")
+            predicted_emotion = "neutral"
+            predictions = np.zeros(len(CAT6))
+            predictions[CAT6.index("neutral")] = 1.0
 
     timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
     logging.info(f"Audio Analysis for: {audio_path}")
@@ -187,4 +234,4 @@ def analyze_audio(audio_path=AUDIO_FILE):
 if __name__ == "__main__":
     model = load_emotion_model()
     if model is not None:
-        analyze_audio(model)
+        analyze_audio(model=model)

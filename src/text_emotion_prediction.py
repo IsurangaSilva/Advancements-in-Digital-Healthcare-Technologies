@@ -361,23 +361,25 @@ def predict_emotion_level(file_path, output_csv_path, output_json_path):
                 # Safely extract text and timestamp
                 text = str(row.get('transcription', "")) if pd.notna(row.get('transcription', "")) else ""
                 timestamp = row.get('timestamp', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                
-                # Skip empty texts
-                if not text.strip():
-                    logger.warning(f"Skipping empty text at row {idx+1}")
-                    predictions.append("unknown (0.00)")
+                  # Handle empty or silence indicator texts
+                if not text.strip() or text.strip() in ["[Silence]", "[No speech detected]", "[Service unavailable]"]:
+                    logger.info(f"Processing silence/empty text at row {idx+1}: '{text}'")
+                    # For silence, we'll use neutral emotion with zero confidence
+                    predictions.append("neutral (0.00)")
                     vader_scores.append(0.0)
                     polarities.append(0.0)
                     subjectivities.append(0.0)
-                    emotion_scores_list.append({emotion: 0.0 for emotion in label_encoder.classes_})
+                    # Create neutral-biased emotion scores for silent segments
+                    default_scores = {emotion: 0.0 for emotion in label_encoder.classes_}
+                    if "neutral" in label_encoder.classes_:
+                        default_scores["neutral"] = 1.0
+                    emotion_scores_list.append(default_scores)
                     continue
                 
                 # Preprocess text for the model
                 sentence_preprocessed = preprocess_text(text)
                 tokenized_sentence = tokenizer.texts_to_sequences([sentence_preprocessed])
-                padded_sentence = pad_sequences(tokenized_sentence, maxlen=max_length, truncating='pre')
-
-                # Model prediction with error handling
+                padded_sentence = pad_sequences(tokenized_sentence, maxlen=max_length, truncating='pre')                # Model prediction with error handling
                 try:
                     prediction = model.predict(padded_sentence, verbose=0)
                     result = label_encoder.inverse_transform([np.argmax(prediction)])[0]
@@ -386,10 +388,11 @@ def predict_emotion_level(file_path, output_csv_path, output_json_path):
                     logger.error(f"Error during model prediction: {e}")
                     result = "unknown"
                     proba = 0.0
-                    prediction = np.zeros((1, len(label_encoder.classes_)))                # Emotion scores
+                    prediction = np.zeros((1, len(label_encoder.classes_)))
+                  # Emotion scores
                 prediction_array = np.array(prediction[0])
                 emotion_scores = {emotion: float(prediction_array[i]) for i, emotion in enumerate(label_encoder.classes_)}
-                
+
                 # Sentiment Analysis (VADER)
                 vader_score = analyze_sentiment_vader(text)
 
@@ -502,7 +505,8 @@ def save_results_to_json(document, output_file="text_emotion_data.json"):
             except json.JSONDecodeError:
                 logger.warning(f"JSON file {output_file_path} is corrupted. Creating new file.")
                 existing_data = []
-        else:        existing_data = []
+        else:
+            existing_data = []
             
         document_with_session_aggregate = {**document, "session_aggregate": False}
         existing_data.append(document_with_session_aggregate)

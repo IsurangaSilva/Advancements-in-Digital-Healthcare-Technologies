@@ -9,6 +9,7 @@ from tkinter import ttk
 from fixed_app import MainApplication
 from config import API_URL
 from FER.emotion_background import EmotionBackgroundProcessor
+from emotion_aggregator_launcher import start_emotion_aggregators
 import uvicorn
 
 # Disable TensorFlow verbose logging
@@ -70,6 +71,18 @@ def start_backend():
     """Start the backend server"""
     import backend
     port = 8000
+    
+    # Preload models for faster first-time use
+    try:
+        logger.info("Loading emotion prediction models at startup...")
+        from model_manager import ModelManager
+        model_manager = ModelManager()
+        text_success, voice_success = model_manager.load_prediction_models()
+        logger.info(f"Models loaded: Text={text_success}, Voice={voice_success}")
+    except Exception as e:
+        logger.error(f"Error preloading models: {e}")
+    
+    # Start the backend server
     try:
         uvicorn.run(backend.app, host="127.0.0.1", port=port)
     except Exception as e:
@@ -107,10 +120,29 @@ def finish_loading(app, splash):
     splash.update_progress(60, "Creating user interface...")
     
     # Set up emotion processor with lazy loading
-    splash.update_progress(80, "Setting up emotion processing...")
+    splash.update_progress(70, "Setting up emotion processing...")
     dummy_callback = lambda status: None
     emotion_processor = EmotionBackgroundProcessor(status_update_callback=dummy_callback, lazy_load=True)
     emotion_thread = threading.Thread(target=emotion_processor.run, daemon=True)
+    
+    # Start Text and Audio emotion aggregators
+    splash.update_progress(75, "Starting emotion aggregators...")
+    try:
+        start_emotion_aggregators()
+        logger.info("Emotion aggregators started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start emotion aggregators: {e}")
+    
+    # Start audio handler with continuous recording
+    splash.update_progress(85, "Setting up audio handling...")
+    try:
+        from audio_handler import AudioHandler
+        audio_handler = AudioHandler()
+        audio_handler.start_continuous_recording(segment_duration=20)
+        app.audio_handler = audio_handler  # Store reference for cleanup later
+        logger.info("Audio handler with continuous recording started")
+    except Exception as e:
+        logger.error(f"Failed to start audio handler: {e}")
     
     # Finish loading
     splash.update_progress(100, "Loading complete!")
@@ -144,8 +176,19 @@ if __name__ == "__main__":
         
         # Set up clean shutdown
         def on_close():
+            logger.info("Application shutdown initiated")
+            
+            # Stop emotion processor if it exists
             if hasattr(app, 'emotion_processor'):
+                logger.info("Stopping emotion processor")
                 app.emotion_processor.stop()
+                
+            # Stop audio handler if it exists
+            if hasattr(app, 'audio_handler'):
+                logger.info("Stopping audio handler")
+                app.audio_handler.stop_continuous_recording()
+                
+            logger.info("Application shutdown complete")
             app.destroy()
             
         app.protocol("WM_DELETE_WINDOW", on_close)

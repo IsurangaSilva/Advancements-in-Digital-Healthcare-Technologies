@@ -83,7 +83,7 @@ class ModelManager:
         except Exception as e:
             logger.error(f"Error loading {model_type} model: {e}")
             return None
-    
+            
     def unload_model(self, model_type):
         """
         Unload a model to free up memory
@@ -98,3 +98,53 @@ class ModelManager:
             gc.collect()
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
+                
+    def load_prediction_models(self):
+        """
+        Preload both text and voice prediction models
+        
+        Returns:
+            tuple: (text_model_success, voice_model_success)
+        """
+        logger.info("Preloading emotion prediction models...")
+        text_success = False
+        voice_success = False
+        
+        try:
+            # Load the voice model
+            from config import VOICE_MODEL_PATH
+            from voice_emotion_prediction import GetItem
+            voice_model = self.get_model('voice', model_path=VOICE_MODEL_PATH, 
+                                        custom_objects={'GetItem': GetItem})
+            voice_success = voice_model is not None
+            if voice_success:
+                logger.info("Voice emotion model loaded successfully")
+            else:
+                logger.error("Failed to load voice emotion model")
+        except Exception as e:
+            logger.error(f"Error loading voice model: {e}")
+            
+        try:
+            # Load the text model
+            from text_emotion_prediction import initialize_model
+            text_success = initialize_model()
+            if text_success:
+                logger.info("Text emotion model loaded successfully")
+            else:
+                logger.error("Failed to load text emotion model")
+        except Exception as e:
+            logger.error(f"Error loading text model: {e}")
+            
+        return (text_success, voice_success)
+                
+    def has_model(self, model_type):
+        """
+        Check if a model of the specified type is already loaded
+        
+        Args:
+            model_type (str): Type of model to check
+            
+        Returns:
+            bool: True if the model is loaded, False otherwise
+        """
+        return model_type in self._models
