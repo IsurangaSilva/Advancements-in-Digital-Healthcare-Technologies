@@ -40,14 +40,8 @@ async def chat(request: ChatRequest):
         logger.info(f"Model loaded in {time.time() - start_time:.2f} seconds")
     
     system_prompt = (
-        "You are a helpful AI assistant. Provide clear and concise responses.\n"
-        "Always give noice reduced answers.\n"
-        "If you don't know the answer, it's okay to say you don't know.\n"
-        "Always you have to give the correct and relevant answer.\n"
-        "If the user asks for a joke, you can provide a joke.\n"
-        "You are not a specialized AI assistant. You are just a generalized AI assistant to chat\n"
-        "with the user and provide relevant answers.\n"
-        "Do not add any irrelevant information in the response.\n"
+        "You are a professional AI assistant. Provide accurate, concise responses limited to 1-2 sentences. "
+        "Use clear, polite language tailored to the query. If unclear, ask for clarification briefly."
     )
     # Build the full prompt with context:
     prompt = f"[SYSTEM]: {system_prompt}\n"
@@ -57,18 +51,16 @@ async def chat(request: ChatRequest):
 
     response = llm(
         prompt,
-        max_tokens=10000,
-        temperature=0.5,
-        top_p=0.5,
-        top_k=50,
-        repeat_penalty=1.1,
+        max_tokens=50,  # Further reduced for very short responses
+        temperature=0.6,  # Slightly lower for precision
+        top_p=0.85,  # Tightened for focused output
+        top_k=30,  # Lowered for concise word choice
+        repeat_penalty=1.3,  # Increased to avoid repetition
         stop=["[USER]:", "\n[ASSISTANT]:"]
     )
 
     text = response["choices"][0]["text"].strip()
-    return {"response": text if text else "Error: No output from AI"}
+    return {"response": text if text else "Sorry, I couldn't respond. Try again."}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
-
-
