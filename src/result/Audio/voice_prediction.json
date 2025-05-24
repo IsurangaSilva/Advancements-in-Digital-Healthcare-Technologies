@@ -348,27 +348,7 @@
         }
     },
     {
-        "timestamp": "2025-05-23 19:06:31",
-        "predicted_emotion": "neutral",
-        "emotion_scores": {
-            "fear": 0.0,
-            "angry": 0.0,
-            "neutral": 1.0,
-            "happy": 0.0,
-            "sad": 0.0,
-            "surprise": 0.0
-        }
-    },
-    {
-        "timestamp": "2025-05-23 19:06:31",
-        "predicted_emotion": "neutral",
-        "emotion_scores": {
-            "fear": 0.0,
-            "angry": 0.0,
-            "neutral": 1.0,
-            "happy": 0.0,
-            "sad": 0.0,
-            "surprise": 0.0
+
         }
     }
 ]
