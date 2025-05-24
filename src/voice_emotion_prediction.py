@@ -8,6 +8,11 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.layers import Layer
 from config import AUDIO_FILE, VOICE_MODEL_PATH, TEMP_VOICE_PREDICTION_RESULT_CSV
 import tensorflow as tf
+from db_connection import MongoDBConnection  
+from datetime import datetime
+
+mongo_connection = MongoDBConnection()
+collection = mongo_connection.get_collection("voice-emotion-predictions")
 
 # Configure logging
 logging.basicConfig(
@@ -119,29 +124,29 @@ def save_results_to_csv(results, output_file=TEMP_VOICE_PREDICTION_RESULT_CSV):
     except Exception as e:
         logging.error(f"Error saving results to CSV: {e}")
 
-def save_results_to_json(results, output_file="voice_prediction.json"):
-    """Saves the emotion analysis results to a JSON file."""
-    try:
-        output_folder = "result/Audio"
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
+# def save_results_to_json(results, output_file="voice_prediction.json"):
+#     """Saves the emotion analysis results to a JSON file."""
+#     try:
+#         output_folder = "result/Audio"
+#         if not os.path.exists(output_folder):
+#             os.makedirs(output_folder)
         
-        output_file_path = os.path.join(output_folder, output_file)
+#         output_file_path = os.path.join(output_folder, output_file)
         
-        if os.path.exists(output_file_path):
-            with open(output_file_path, "r") as f:
-                existing_data = json.load(f)
-        else:
-            existing_data = []
+#         if os.path.exists(output_file_path):
+#             with open(output_file_path, "r") as f:
+#                 existing_data = json.load(f)
+#         else:
+#             existing_data = []
             
-        existing_data.append(results)
+#         existing_data.append(results)
         
-        with open(output_file_path, "w") as f:
-            json.dump(existing_data, f, indent=4)
+#         with open(output_file_path, "w") as f:
+#             json.dump(existing_data, f, indent=4)
             
-        logging.info(f"Results saved to {output_file_path}")
-    except Exception as e:
-        logging.error(f"Error saving results to JSON: {e}")
+#         logging.info(f"Results saved to {output_file_path}")
+#     except Exception as e:
+#         logging.error(f"Error saving results to JSON: {e}")
 
 def analyze_audio(model, audio_path=AUDIO_FILE):
     """Analyzes the audio file for emotion and saves the results."""
@@ -163,14 +168,57 @@ def analyze_audio(model, audio_path=AUDIO_FILE):
     logging.info(f"Timestamp: {timestamp}")
     logging.info("-" * 50)
 
+    timestampnew = datetime.now()
+    
     results = {
-        "timestamp": timestamp,
+        "timestamp": timestampnew,
         "predicted_emotion": predicted_emotion,
         "emotion_scores": {emotion: float(score) for emotion, score in zip(CAT6, predictions)}
     }
+
+    # Insert the document into MongoDB using the singleton connection
+    collection.insert_one(results)
+    logging.info(f"Inserted document for row into MongoDB.")            
+     
+
+    ## Create a document to insert into MongoDB
+    document = {
+      "timestamp": timestampnew.strftime("%Y-%m-%d %H:%M:%S"),
+      "predicted_emotion": predicted_emotion,
+      "emotion_scores": {emotion: float(score) for emotion, score in zip(CAT6, predictions)}
+    }
+
+    save_results_to_json(document)
     
     save_results_to_csv(results)
-    save_results_to_json(results)
+    # save_results_to_json(results)
+
+def save_results_to_json(document, output_file="voice_emotion_data.json"):
+    """Saves the emotion analysis results to a JSON file."""
+    try:
+        output_folder = "db/Audio"
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+        
+        output_file_path = os.path.join(output_folder, output_file)
+        
+        if os.path.exists(output_file_path):
+            with open(output_file_path, "r") as f:
+                existing_data = json.load(f)
+        else:
+            existing_data = []
+            
+        document_with_session_aggregate = {**document, "session_aggregate": False}
+        
+        existing_data.append(document_with_session_aggregate)
+        
+        with open(output_file_path, "w") as f:
+            json.dump(existing_data, f, indent=4)
+            
+        logging.info(f"Results saved to {output_file_path}")
+    except Exception as e:
+        logging.error(f"Error saving results to JSON: {e}")
+
 
 if __name__ == "__main__":
     model = load_emotion_model()
