@@ -67,12 +67,11 @@ class EmotionAggregator:
             else:
                 print("\n=== Aggregated Emotion Confidence (Last Minute) ===")
                 print(f"Timestamp: {timestamp}")
-                for label, value in aggregated.items():
-                    print(f"{label}: {value * 100:.2f}%")
+                for label, value in aggregated.items():                    print(f"{label}: {value * 100:.2f}%")
                 print("====================================================\n")
             self.start_time = time.time()
             self.emotion_records = []
-
+            
     def compute_average(self):
         avg_emotions = {label: 0 for label in self.emotion_labels}
         count = len(self.emotion_records)
@@ -84,14 +83,16 @@ class EmotionAggregator:
         for label in avg_emotions:
             avg_emotions[label] /= count
         return avg_emotions
-
+        
     def save_to_json(self, timestamp, aggregated_data):
         # Add the "session_used" flag with a default value of False.
+        # Also add "db_status" flag to track if the entry has been sent to the database
         new_entry = {
             "timestamp": timestamp,
             "aggregated_emotions": aggregated_data,
             "session_used": False,
-            "session_used_hour": False
+            "session_used_hour": False,
+            "db_status": False
         }
         directory = os.path.dirname(self.save_path)
         if not os.path.exists(directory):

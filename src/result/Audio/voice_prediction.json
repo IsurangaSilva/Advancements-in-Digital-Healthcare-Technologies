@@ -382,5 +382,125 @@
             "sad": 2.5523446467445865e-08,
             "surprise": 8.214778972615022e-06
         }
+    },
+    {
+        "timestamp": "2025-05-25 02:00:08",
+        "predicted_emotion": "surprise",
+        "emotion_scores": {
+            "fear": 1.2696530575340148e-05,
+            "angry": 7.888040272518992e-05,
+            "neutral": 6.266299897106364e-05,
+            "happy": 4.344829358160496e-05,
+            "sad": 1.0960633289869293e-08,
+            "surprise": 0.99980229139328
+        }
+    },
+    {
+        "timestamp": "2025-05-25 02:00:22",
+        "predicted_emotion": "neutral",
+        "emotion_scores": {
+            "fear": 0.0,
+            "angry": 0.0,
+            "neutral": 1.0,
+            "happy": 0.0,
+            "sad": 0.0,
+            "surprise": 0.0
+        }
+    },
+    {
+        "timestamp": "2025-05-25 02:00:22",
+        "predicted_emotion": "neutral",
+        "emotion_scores": {
+            "fear": 0.0,
+            "angry": 0.0,
+            "neutral": 1.0,
+            "happy": 0.0,
+            "sad": 0.0,
+            "surprise": 0.0
+        }
+    },
+    {
+        "timestamp": "2025-05-25 03:01:32",
+        "predicted_emotion": "surprise",
+        "emotion_scores": {
+            "fear": 7.656837624381296e-06,
+            "angry": 3.729707168531604e-05,
+            "neutral": 2.936064629466273e-05,
+            "happy": 2.624479566293303e-05,
+            "sad": 3.3033289437156554e-09,
+            "surprise": 0.9998993873596191
+        }
+    },
+    {
+        "timestamp": "2025-05-25 03:01:47",
+        "predicted_emotion": "surprise",
+        "emotion_scores": {
+            "fear": 5.415461055235937e-05,
+            "angry": 0.00011967292084591463,
+            "neutral": 0.00016167967987712473,
+            "happy": 0.00016200983372982591,
+            "sad": 6.086783344017022e-08,
+            "surprise": 0.999502420425415
+        }
+    },
+    {
+        "timestamp": "2025-05-25 03:02:07",
+        "predicted_emotion": "surprise",
+        "emotion_scores": {
+            "fear": 0.00014711245603393763,
+            "angry": 0.00011541265121195465,
+            "neutral": 0.00010692386422306299,
+            "happy": 0.00019574510224629194,
+            "sad": 6.618902403943139e-08,
+            "surprise": 0.9994346499443054
+        }
+    },
+    {
+        "timestamp": "2025-05-25 03:02:27",
+        "predicted_emotion": "surprise",
+        "emotion_scores": {
+            "fear": 5.317624527378939e-05,
+            "angry": 9.666891855886206e-05,
+            "neutral": 7.986577111296356e-05,
+            "happy": 0.00010384123743278906,
+            "sad": 3.213363797271995e-08,
+            "surprise": 0.9996664524078369
+        }
+    },
+    {
+        "timestamp": "2025-05-25 03:02:48",
+        "predicted_emotion": "surprise",
+        "emotion_scores": {
+            "fear": 0.00020849569409620017,
+            "angry": 0.00027188658714294434,
+            "neutral": 0.00018255921895615757,
+            "happy": 0.0002533348451834172,
+            "sad": 1.6104748112866218e-07,
+            "surprise": 0.9990835189819336
+        }
+    },
+    {
+        "timestamp": "2025-05-25 03:03:08",
+        "predicted_emotion": "surprise",
+        "emotion_scores": {
+            "fear": 0.00012910045916214585,
+            "angry": 0.00017399241914972663,
+            "neutral": 0.00012195797171443701,
+            "happy": 0.00017739908071234822,
+            "sad": 7.991820893948898e-08,
+            "surprise": 0.9993975162506104
+        }
+    },
+    {
+        "timestamp": "2025-05-25 03:03:10",
+        "predicted_emotion": "neutral",
+        "emotion_scores": {
+            "fear": 0.0,
+            "angry": 0.0,
+            "neutral": 1.0,
+            "happy": 0.0,
+            "sad": 0.0,
+            "surprise": 0.0
+        }
     }
 ]
