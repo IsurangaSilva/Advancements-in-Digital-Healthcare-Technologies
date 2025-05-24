@@ -4,7 +4,6 @@ import logging
 logging.getLogger('pymongo').setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO)
 
-
 import subprocess
 import time
 import requests
@@ -30,9 +29,27 @@ def run_session_text_aggregation60():
         except subprocess.CalledProcessError as e:
             print(f"Error running sessionTextAggregation.py: {e}")
         # Wait for 5 minutes (300 seconds) before running again
+        # time.sleep(20)          
+
+def run_session_voice_aggregation60():
+    while True:
+        try:
+            # Run the sessionTextAggregation.py script
+            subprocess.run(["python", "src/sessionVoiceAggregate60.py"], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error running sessionVoiceAggregation.py: {e}")
+        # Wait for 5 minutes (300 seconds) before running again
         # time.sleep(20)  
 
-
+def run_session_voice_aggregation():
+    while True:
+        try:
+            # Run the sessionTextAggregation.py script
+            subprocess.run(["python", "src/sessionVoiceAggregate.py"], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error running sessionVoiceAggregation.py: {e}")
+        # Wait for 5 minutes (300 seconds) before running again
+        # time.sleep(20)
 
 if __name__ == "__main__":
     # Start the sessionTextAggregation script in a separate thread
@@ -40,6 +57,11 @@ if __name__ == "__main__":
     aggregation60_thread = threading.Thread(target=run_session_text_aggregation60, daemon=True)
     aggregation_thread.start()
     aggregation60_thread.start()
+
+    aggregation_voice_thread = threading.Thread(target=run_session_voice_aggregation, daemon=True)
+    aggregation60_voice_thread = threading.Thread(target=run_session_voice_aggregation60, daemon=True)
+    aggregation_voice_thread.start()
+    aggregation60_voice_thread.start()
 
     backend_process = subprocess.Popen(["python", "src/backend.py"])
     print("Waiting for backend to start...")
