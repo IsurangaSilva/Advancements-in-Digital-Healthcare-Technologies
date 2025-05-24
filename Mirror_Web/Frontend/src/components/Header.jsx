@@ -91,6 +91,17 @@ const Header = () => {
           >
             About Us
           </Link>
+          <Link
+            to="/plans"
+            style={
+              activeLink === "/plans"
+                ? { ...linkStyle, ...activeStyle }
+                : linkStyle
+            }
+            onClick={() => setActiveLink("/plans")}
+          >
+            Plans
+          </Link>
         </Box>
 
         <div

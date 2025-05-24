@@ -54,6 +54,8 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/plans" element={<Plans />} />
+
 
           </>
         )}
@@ -67,9 +69,9 @@ const App = () => {
             <Route path="/recommendation" element={<Recommendation />} />
             <Route path="/predictions/text" element={<TextPrediction />} />
             <Route path="/predictions/fer" element={<FERPredictions />} />
-            <Route path="/predictions/dep" element={<DepressionPredictions />} />
+            <Route path="/depression" element={<DepressionPredictions />} />
             <Route path="/blog" element={<Blog />} />
-            <Route path="/plans" element={<Plans />} />
+           
           </>
         ) : (
           <>

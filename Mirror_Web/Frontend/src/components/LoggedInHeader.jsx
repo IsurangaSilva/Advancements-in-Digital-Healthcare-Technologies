@@ -84,17 +84,6 @@ const LoggedInHeader = () => {
           >
             Dashboard
           </Link>
-          {/* <Link
-            to="/predictions"
-            style={
-              activeLink === "/predictions"
-                ? { ...linkStyle, ...activeStyle }
-                : linkStyle
-            }
-            onClick={() => setActiveLink("/predictions")}
-          >
-            Predictions
-          </Link> */}
            <Link
         aria-controls="predictions-menu"
         aria-haspopup="true"
@@ -104,8 +93,7 @@ const LoggedInHeader = () => {
             ? { ...linkStyle, ...activeStyle }
             : linkStyle
         }
-      >
-        Predictions
+      >Emotion Predictions
       </Link>
 
       {/* Dropdown Menu */}
@@ -118,8 +106,21 @@ const LoggedInHeader = () => {
         <MenuItem onClick={() => handleOptionClick("text")}>Text</MenuItem>
         <MenuItem onClick={() => handleOptionClick("voice")}>Voice</MenuItem>
         <MenuItem onClick={() => handleOptionClick("fer")}>Face</MenuItem>
-        <MenuItem onClick={() => handleOptionClick("dep")}>Depression Probability</MenuItem>
       </Menu>
+
+       <Link
+            to="/depression"
+            style={
+              activeLink === "/depression"
+                ? { ...linkStyle, ...activeStyle }
+                : linkStyle
+            }
+            onClick={() => setActiveLink("/depression")}
+          >
+            Depression Prediction
+          </Link>
+
+      
           <Link
             to="/recommendation"
             style={
@@ -142,28 +143,7 @@ const LoggedInHeader = () => {
           >
             Contact
           </Link>
-          <Link
-            to="/about"
-            style={
-              activeLink === "/about"
-                ? { ...linkStyle, ...activeStyle }
-                : linkStyle
-            }
-            onClick={() => setActiveLink("/about")}
-          >
-            About Us
-          </Link>
-          <Link
-            to="/plans"
-            style={
-              activeLink === "/plans"
-                ? { ...linkStyle, ...activeStyle }
-                : linkStyle
-            }
-            onClick={() => setActiveLink("/plans")}
-          >
-            Our Plans
-          </Link>
+          
         </Box>
         
 

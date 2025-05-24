@@ -118,7 +118,7 @@ const Recommendations = () => {
   // Fetch AI recommendation from OpenRouter API
   const fetchRecommendation = async (avgEmotions) => {
     setLoading(true);
-    const OPENROUTER_API_KEY = "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";
+    const OPENROUTER_API_KEY = "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";
     const YOUR_SITE_URL = "http://localhost:3000";
     const YOUR_SITE_NAME = "Mental Health App";
 
@@ -130,7 +130,7 @@ const Recommendations = () => {
       Fear: ${avgEmotions.fear.toFixed(4)},
       Surprise: ${avgEmotions.surprise.toFixed(4)},
       Neutral: ${avgEmotions.neutral.toFixed(4)},
-      provide personalized recommendations to help the user maintain their mental health and well-being.
+      provide personalized recommendations.
     `;
 
     const requestBody = {
@@ -220,7 +220,7 @@ const Recommendations = () => {
             letterSpacing: "1px",
           }}
         >
-          Your Personalized Recommendations
+          Your Patient Recommendations
         </Typography>
         <Typography
           variant="subtitle1"
