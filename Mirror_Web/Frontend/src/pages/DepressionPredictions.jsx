@@ -1,32 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Grid, 
-  Paper, 
-  Divider, 
+import {
+  Container,
+  Typography,
+  Box,
+  Grid,
+  Paper,
+  Divider,
   CircularProgress,
-  Alert, 
-  Accordion, 
-  AccordionSummary, 
-  AccordionDetails,
-  Chip,
+  Alert,
   useTheme,
-  Tooltip as MuiTooltip
+  Tooltip as MuiTooltip,
+  Chip
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PsychologyIcon from '@mui/icons-material/Psychology';
-import InfoIcon from '@mui/icons-material/Info';
-import ScaleIcon from '@mui/icons-material/Scale';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import FunctionsIcon from '@mui/icons-material/Functions';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
+import InfoIcon from '@mui/icons-material/Info';
 import { motion } from 'framer-motion';
-import { Radar } from 'react-chartjs-2';
-// Import and register the parts of Chart.js we need
+import { Bar, Radar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
+  BarElement,
+  CategoryScale,
+  LinearScale,
   RadialLinearScale,
   PointElement,
   LineElement,
@@ -34,9 +30,13 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+import emailjs from '@emailjs/browser';
 
 // Register Chart.js components
 ChartJS.register(
+  BarElement,
+  CategoryScale,
+  LinearScale,
   RadialLinearScale,
   PointElement,
   LineElement,
@@ -49,25 +49,62 @@ const DepressionPredictions = () => {
   const theme = useTheme();
   const [predictionData, setPredictionData] = useState(null);
   const [error, setError] = useState(null);
+  const [emailError, setEmailError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [expandedSection, setExpandedSection] = useState(false);
-  const chartRef = useRef(null);
+  const barChartRef = useRef(null);
+  const radarChartRef = useRef(null);
 
-  const handleAccordionChange = (panel) => (event, isExpanded) => {
-    setExpandedSection(isExpanded ? panel : false);
+  // Initialize EmailJS
+  useEffect(() => {
+    emailjs.init('D7VczC01i0Q9NyruI'); // Replace with your EmailJS User ID
+  }, []);
+
+  // Function to send email alert using EmailJS
+  const sendAlertEmail = async (scoreType, score) => {
+    try {
+      const response = await emailjs.send(
+        'service_db8tebr', // Replace with your EmailJS Service ID
+        'template_1w32sle', // Replace with your EmailJS Template ID
+      );
+      console.log(`Email sent for ${scoreType} score: ${score}`, response);
+    } catch (err) {
+      console.error('Email alert error:', err);
+      const errorMessage = err.text || 'Unknown error';
+      setEmailError(`Failed to send alert email for ${scoreType} score: ${errorMessage}. Please check EmailJS configuration.`);
+    }
   };
 
+  // Fetch data and check for high scores
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const response = await fetch('http://localhost:4000/api/depression/depressionprediction');
         const result = await response.json();
-        
+
         if (result.error) {
           setError(result.error);
         } else {
-          setPredictionData(result);
+          const data = {
+            ...result,
+            microScore: 0.35, // Mock data
+            macroScore: result.averageDepressionScore || 0.45,
+            clinicalScore: 0.2, // Set to trigger email alert
+            averageEmotions: {
+              Anger: 0.2,
+              Fear: 0.3,
+              Happy: 0.5,
+              Neutral: 0.6,
+              Sad: 0.4,
+              Surprise: 0.1
+            }
+          };
+          setPredictionData(data);
+
+          // Check for high scores and send email alerts
+          if (data.microScore > 0.85) await sendAlertEmail('Micro', data.microScore);
+          if (data.macroScore > 0.85) await sendAlertEmail('Macro', data.macroScore);
+          if (data.clinicalScore > 0.85) await sendAlertEmail('Clinical', data.clinicalScore);
         }
       } catch (err) {
         console.error('Fetch error:', err);
@@ -76,41 +113,22 @@ const DepressionPredictions = () => {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
-  // Helper function to get depression level color
-  const getDepressionLevelColor = (rating) => {
-    switch(rating.toLowerCase()) {
-      case 'minimal': return '#4caf50'; // Green
-      case 'mild': return '#8bc34a';    // Light Green
-      case 'moderate': return '#ff9800'; // Orange
-      case 'severe': return '#f44336';  // Red
-      default: return '#2196f3';        // Blue (default)
-    }
-  };
-  
-  // Helper function to get depression level emoji
-  const getDepressionLevelEmoji = (rating) => {
-    switch(rating.toLowerCase()) {
-      case 'minimal': return '😊';
-      case 'mild': return '🙂';
-      case 'moderate': return '😐';
-      case 'severe': return '😔';
-      default: return '❓';
-    }
+  // Determine color and level based on score
+  const getDepressionLevel = (score) => {
+    if (score <= 0.25) return { level: 'Minimal', color: '#4caf50' };
+    if (score <= 0.5) return { level: 'Mild', color: '#8bc34a' };
+    if (score <= 0.75) return { level: 'Moderate', color: '#ff9800' };
+    return { level: 'Severe', color: '#f44336' };
   };
 
+  // Loading state
   if (loading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: '70vh' 
-      }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '70vh' }}>
         <CircularProgress size={60} thickness={4} />
         <Typography variant="h6" sx={{ mt: 3 }}>
           Loading depression prediction data...
@@ -119,44 +137,89 @@ const DepressionPredictions = () => {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <Container maxWidth="md" sx={{ my: 4 }}>
-        <Alert 
-          severity="error" 
-          variant="filled" 
-          sx={{ 
-            p: 2, 
-            borderRadius: 2,
-            fontSize: '1rem'
-          }}
-        >
+        <Alert severity="error" variant="filled" sx={{ p: 2, borderRadius: 2, fontSize: '1rem' }}>
           {error}
         </Alert>
       </Container>
     );
   }
 
+  // No data state
   if (!predictionData) {
     return (
       <Container maxWidth="md" sx={{ my: 4 }}>
-        <Alert 
-          severity="info" 
-          variant="filled" 
-          sx={{ 
-            p: 2, 
-            borderRadius: 2,
-            fontSize: '1rem'
-          }}
-        >
+        <Alert severity="info" variant="filled" sx={{ p: 2, borderRadius: 2, fontSize: '1rem' }}>
           No depression prediction data available
         </Alert>
       </Container>
     );
   }
-  // Prepare data for the radar chart
-  const { averageDepressionScore, rating, averageEmotions } = predictionData;
-  
+
+  const { microScore, macroScore, clinicalScore, averageEmotions } = predictionData;
+
+  // Bar Chart Configuration
+  const barChartData = {
+    labels: ['Micro Score', 'Macro Score', 'Clinical Score'],
+    datasets: [
+      {
+        label: 'Depression Scores',
+        data: [microScore, macroScore, clinicalScore],
+        backgroundColor: ['#4caf50', '#2196f3', '#ff9800'],
+        borderColor: ['#388e3c', '#1976d2', '#f57c00'],
+        borderWidth: 1
+      }
+    ]
+  };
+
+  const barChartOptions = {
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 1,
+        title: {
+          display: true,
+          text: 'Score',
+          font: { size: 14, weight: 'bold' }
+        },
+        ticks: {
+          stepSize: 0.25,
+          color: theme.palette.text.secondary
+        },
+        grid: {
+          color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Assessment Type',
+          font: { size: 14, weight: 'bold' }
+        },
+        grid: { display: false }
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)',
+        titleFont: { size: 14 },
+        bodyFont: { size: 13 },
+        bodyColor: theme.palette.mode === 'dark' ? '#000' : '#fff'
+      }
+    },
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+      duration: 1500,
+      easing: 'easeOutCubic'
+    }
+  };
+
+  // Radar Chart Configuration
   const radarData = {
     labels: ['Anger', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise'],
     datasets: [
@@ -182,30 +245,24 @@ const DepressionPredictions = () => {
       }
     ]
   };
-  
-  // Chart options
+
   const radarOptions = {
     scales: {
       r: {
-        angleLines: {
-          color: 'rgba(0, 0, 0, 0.1)',
-        },
-        grid: {
-          color: 'rgba(0, 0, 0, 0.05)',
-        },
+        angleLines: { color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)' },
+        grid: { color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' },
         pointLabels: {
           font: {
             size: 14,
             family: "'Roboto', 'Helvetica', 'Arial', sans-serif",
             weight: 'bold'
-          }
+          },
+          color: theme.palette.text.primary
         },
         ticks: {
           backdropColor: 'transparent',
-          color: 'rgba(0, 0, 0, 0.6)',
-          font: {
-            size: 10
-          }
+          color: theme.palette.text.secondary,
+          font: { size: 10 }
         }
       }
     },
@@ -215,47 +272,80 @@ const DepressionPredictions = () => {
         labels: {
           boxWidth: 15,
           padding: 20,
-          font: {
-            size: 14
-          }
+          font: { size: 14 },
+          color: theme.palette.text.primary
         }
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        padding: 12,
-        titleFont: {
-          size: 14
-        },
-        bodyFont: {
-          size: 13
-        },
-        displayColors: false
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)',
+        titleFont: { size: 14 },
+        bodyFont: { size: 13 },
+        bodyColor: theme.palette.mode === 'dark' ? '#000' : '#fff'
       }
     },
+    responsive: true,
     maintainAspectRatio: true,
-    responsive: true
+    animation: {
+      duration: 1500,
+      easing: 'easeOutCubic'
+    }
   };
-  
-  // Depression level color
-  const levelColor = getDepressionLevelColor(rating);
-  const levelEmoji = getDepressionLevelEmoji(rating);
+
+  // Indicator configurations
+  const indicators = [
+    {
+      level: 'Micro',
+      timeWindow: '5 min',
+      usedFor: 'Emotion detection per input session',
+      score: microScore,
+      description: 'Analyzes immediate emotional responses within a short time frame.'
+    },
+    {
+      level: 'Macro',
+      timeWindow: '24h average',
+      usedFor: 'Daily depression estimation (Dt)',
+      score: macroScore,
+      description: 'Evaluates average emotional patterns over a day for consistent trends.'
+    },
+    {
+      level: 'Clinical',
+      timeWindow: '7-day trend',
+      usedFor: 'Alerting and clinical summary',
+      score: clinicalScore,
+      description: 'Assesses long-term patterns to inform clinical decisions.'
+    }
+  ];
+
+  // Animation variants
+  const boxVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.95 },
+    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5 } },
+    hover: { scale: 1.02, boxShadow: `0 6px 16px rgba(0, 0, 0, 0.15)` }
+  };
+
+  const chipVariants = {
+    initial: { scale: 1 },
+    highScore: {
+      scale: [1, 1.1, 1],
+      transition: { repeat: Infinity, duration: 1.5, ease: 'easeInOut' }
+    }
+  };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 6 }}>
+      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
       >
-        <Box sx={{ mb: 5, textAlign: "center" }}>
-          <Typography 
-            variant="h3" 
-            component="h1" 
-            sx={{ 
-              fontWeight: 700, 
-              background: `linear-gradient(45deg, ${levelColor} 30%, ${levelColor}99 90%)`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
+        <Box sx={{ mb: 5, textAlign: 'center' }}>
+          <Typography
+            variant="h3"
+            component="h1"
+            sx={{
+              fontWeight: 700,
+              color: theme.palette.primary.main,
               mb: 2,
               display: 'flex',
               alignItems: 'center',
@@ -263,489 +353,196 @@ const DepressionPredictions = () => {
               gap: 2
             }}
           >
-            <PsychologyIcon sx={{ fontSize: 40 }} />
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <PsychologyIcon sx={{ fontSize: 40 }} />
+            </motion.div>
             Depression Analysis
           </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 800, mx: "auto" }}>
+          <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 800, mx: 'auto' }}>
             Comprehensive assessment of depression indicators based on emotional patterns
           </Typography>
         </Box>
       </motion.div>
-      
-      <Grid container spacing={4}>
-        {/* Depression Score Overview */}
-        <Grid item xs={12} md={6}>
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-          >
-            <Paper 
-              elevation={3} 
-              sx={{ 
-                p: 4, 
-                height: '100%',
-                borderRadius: 3,
-                background: `linear-gradient(to bottom, white, white, ${levelColor}15)`,
-                display: 'flex',
-                flexDirection: 'column'
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <ScaleIcon sx={{ mr: 1.5, color: levelColor, fontSize: 28 }} />
-                <Typography variant="h5" fontWeight={600}>
-                  Depression Assessment
-                </Typography>
-              </Box>
-              
-              <Divider sx={{ mb: 3 }} />
-              
-              <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={12}>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center',
-                    py: 3
-                  }}>
-                    <Box sx={{ 
-                      width: 110, 
-                      height: 110, 
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: `linear-gradient(45deg, ${levelColor}99 30%, ${levelColor} 90%)`,
-                      boxShadow: `0 4px 20px ${levelColor}50`,
-                      mb: 2,
-                      fontSize: '2.5rem'
-                    }}>
-                      {levelEmoji}
-                    </Box>
-                    <Typography variant="h4" fontWeight={700} sx={{ color: levelColor, mb: 0.5 }}>
-                      {rating}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                      Depression Level
-                    </Typography>
-                  </Box>
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <Box sx={{ 
-                    p: 2, 
-                    borderRadius: 2,
-                    bgcolor: 'rgba(0, 0, 0, 0.03)'
-                  }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="subtitle1" fontWeight={500}>
-                        Depression Score:
-                      </Typography>
-                      <Typography 
-                        variant="h5" 
-                        fontWeight={700}
-                        sx={{ color: levelColor }}
-                      >
-                        {averageDepressionScore.toFixed(2)}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ 
-                      mt: 1,
-                      height: 8, 
-                      bgcolor: 'rgba(0, 0, 0, 0.09)',
-                      borderRadius: 4,
-                      overflow: 'hidden'
-                    }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(averageDepressionScore / 1.0 * 100, 100)}%` }}
-                        transition={{ duration: 1, delay: 0.5 }}
-                        style={{
-                          height: '100%',
-                          backgroundColor: levelColor,
-                          borderRadius: 4
-                        }}
-                      />
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                      <Typography variant="caption" color="text.secondary">0</Typography>
-                      <Typography variant="caption" color="text.secondary">1.0</Typography>
-                    </Box>
-                  </Box>
-                </Grid>
-              </Grid>
-              
-              <Box sx={{ mt: 'auto', pt: 2 }}>
-                <Typography variant="body1" fontWeight={500}>
-                  Key Indicators:
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-                  {['Sadness', 'Anger', 'Fear', 'Joy', 'Neutral'].map(emotion => (
-                    <Chip 
-                      key={emotion} 
-                      label={emotion} 
-                      size="small"
-                      sx={{ 
-                        bgcolor: emotion === 'Sadness' || emotion === 'Anger' || emotion === 'Fear' 
-                          ? `${levelColor}30` 
-                          : 'rgba(0, 0, 0, 0.08)',
-                        color: emotion === 'Sadness' || emotion === 'Anger' || emotion === 'Fear'
-                          ? levelColor
-                          : 'text.primary',
-                        fontWeight: emotion === 'Sadness' ? 500 : 400
-                      }} 
-                    />
-                  ))}
-                </Box>
-              </Box>
-            </Paper>
-          </motion.div>
-        </Grid>
-        
-        {/* Radar Chart */}
-        <Grid item xs={12} md={6}>
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.3 }}
-          >
-            <Paper 
-              elevation={3} 
-              sx={{ 
-                p: 4,
-                height: '100%',
-                borderRadius: 3
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <BubbleChartIcon sx={{ mr: 1.5, color: theme.palette.primary.main, fontSize: 28 }} />
-                <Typography variant="h5" fontWeight={600}>
-                  Emotional Pattern Analysis
-                </Typography>
-              </Box>
-              
-              <Divider sx={{ mb: 3 }} />
-              
-              <Box sx={{ 
-                height: 350,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Radar 
-                  data={radarData} 
-                  options={radarOptions}
-                  ref={chartRef}
-                />
-              </Box>
-              
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
-                The radar chart visualizes the distribution of different emotions detected in your communications.
-                Higher values of sadness, anger, and fear may correlate with depression indicators.
-              </Typography>
-            </Paper>
-          </motion.div>
-        </Grid>
-        
-        {/* Depression Algorithm Explanation */}
+
+      {/* Email Error Alert */}
+      {emailError && (
+        <Box sx={{ mb: 3 }}>
+          <Alert severity="error" variant="filled" sx={{ p: 2, borderRadius: 2, fontSize: '1rem' }}>
+            {emailError}
+          </Alert>
+        </Box>
+      )}
+
+      <Grid container spacing={3}>
+        {/* Depression Scores Row */}
         <Grid item xs={12}>
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.5 }}
-          >
-            <Accordion 
-              expanded={expandedSection === 'algorithm'} 
-              onChange={handleAccordionChange('algorithm')}
-              sx={{
-                borderRadius: 3,
-                '&:before': {
-                  display: 'none',
-                },
-                boxShadow: 3
-              }}
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                sx={{ 
-                  backgroundColor: theme.palette.primary.main,
-                  color: 'white',
-                  borderRadius: expandedSection === 'algorithm' ? '12px 12px 0 0' : 3
-                }}
+          <Grid container spacing={3}>
+            {indicators.map((indicator, index) => {
+              const { level, color } = getDepressionLevel(indicator.score);
+              return (
+                <Grid item xs={12} sm={4} key={indicator.level}>
+                  <motion.div
+                    variants={boxVariants}
+                    initial="hidden"
+                    animate="visible"
+                    whileHover="hover"
+                    transition={{ delay: index * 0.2 }}
+                  >
+                    <Paper
+                      elevation={2}
+                      sx={{
+                        p: 3,
+                        borderRadius: 2,
+                        background: theme.palette.mode === 'dark' ? '#333' : 'linear-gradient(to bottom, #ffffff, #f9f9f9)',
+                        boxShadow: `0 4px 12px ${color}20`,
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        border: `1px solid ${color}30`
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, justifyContent: 'space-between' }}>
+                        <Typography variant="h6" fontWeight={600} sx={{ color }}>
+                          {indicator.level} Score
+                        </Typography>
+                        <MuiTooltip title={indicator.description}>
+                          <InfoIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+                        </MuiTooltip>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h4" fontWeight={700} sx={{ color, mr: 2 }}>
+                          {indicator.score.toFixed(2)}
+                        </Typography>
+                        <motion.div
+                          variants={chipVariants}
+                          initial="initial"
+                          animate={indicator.score > 0.85 ? 'highScore' : 'initial'}
+                        >
+                          <Chip
+                            label={level}
+                            size="small"
+                            sx={{
+                              bgcolor: `${color}30`,
+                              color,
+                              fontWeight: 500,
+                              borderRadius: 1,
+                              px: 1,
+                              boxShadow: indicator.score > 0.85 ? `0 0 8px ${color}50` : 'none'
+                            }}
+                          />
+                        </motion.div>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {indicator.usedFor} ({indicator.timeWindow})
+                      </Typography>
+                      <Box sx={{ height: 8, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)', borderRadius: 4, overflow: 'hidden' }}>
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(indicator.score * 100, 100)}%` }}
+                          transition={{ duration: 1, delay: 0.5 + index * 0.2, ease: 'easeOut' }}
+                          style={{
+                            height: '100%',
+                            backgroundColor: color,
+                            borderRadius: 4
+                          }}
+                        />
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary">0</Typography>
+                        <Typography variant="caption" color="text.secondary">1.0</Typography>
+                      </Box>
+                    </Paper>
+                  </motion.div>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Grid>
+
+        {/* Charts Row */}
+        <Grid item xs={12}>
+          <Grid container spacing={3}>
+            {/* Bar Chart */}
+            <Grid item xs={12} md={6}>
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.7, delay: 0.6, ease: 'easeOut' }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <FunctionsIcon sx={{ mr: 1.5 }} />
-                  <Typography variant="h6" fontWeight={500}>
-                    Understanding the Depression Detection Algorithm
-                  </Typography>
-                </Box>
-              </AccordionSummary>
-              <AccordionDetails sx={{ p: 4, bgcolor: 'rgba(0, 0, 0, 0.01)' }}>
-                <Typography variant="h5" gutterBottom fontWeight={600} sx={{ mb: 3, color: theme.palette.primary.main }}>
-                  Depression Detection Algorithm: Step by Step Explanation
-                </Typography>
-                
-                <Typography variant="h6" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
-                  🔍 The Goal: Normalize the Raw Score
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  We convert the raw depression score (Sₜ), which can be any value from -1.3 to +2.3, into a number between 0 and 1. 
-                  This is called normalization.
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  📈 Why? Because values between 0 and 1 are easier to interpret, compare, visualize (e.g., on a graph), 
-                  and categorize into levels like "mild," "moderate," etc.
-                </Typography>
-                
-                <Typography variant="h6" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
-                  📏 Step 1: Understand the Raw Score Range
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  We calculate the raw score Sₜ using:
-                </Typography>
-                <Box sx={{ bgcolor: 'rgba(0, 0, 0, 0.05)', p: 2, borderRadius: 2, my: 2 }}>
-                  <Typography variant="body1" fontFamily="monospace">
-                    Sₜ = ∑ P(c)ₜ · w(c)
-                  </Typography>
-                </Box>
-                <Typography variant="body1" paragraph>
-                  Where:
-                </Typography>
-                <ul>
-                  <li>
-                    <Typography variant="body1">
-                      P(c)ₜ: probability of emotion c at time t
+                <Paper
+                  elevation={2}
+                  sx={{
+                    p: 4,
+                    borderRadius: 2,
+                    background: theme.palette.mode === 'dark' ? '#333' : '#ffffff',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <motion.div
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      <BarChartIcon sx={{ mr: 1.5, color: theme.palette.primary.main, fontSize: 28 }} />
+                    </motion.div>
+                    <Typography variant="h5" fontWeight={600}>
+                      Depression Score Comparison
                     </Typography>
-                  </li>
-                  <li>
-                    <Typography variant="body1">
-                      w(c): clinical weight for emotion c
+                  </Box>
+                  <Divider sx={{ mb: 3 }} />
+                  <Box sx={{ height: 350 }}>
+                    <Bar data={barChartData} options={barChartOptions} ref={barChartRef} />
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
+                    Comparison of Micro, Macro, and Clinical depression scores. Higher scores indicate greater severity.
+                  </Typography>
+                </Paper>
+              </motion.div>
+            </Grid>
+
+            {/* Radar Chart */}
+            <Grid item xs={12} md={6}>
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.7, delay: 0.6, ease: 'easeOut' }}
+              >
+                <Paper
+                  elevation={2}
+                  sx={{
+                    p: 4,
+                    height: '100%',
+                    borderRadius: 3,
+                    background: theme.palette.mode === 'dark' ? '#333' : '#ffffff',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <motion.div
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      <BubbleChartIcon sx={{ mr: 1.5, color: theme.palette.primary.main, fontSize: 28 }} />
+                    </motion.div>
+                    <Typography variant="h5" fontWeight={600}>
+                      Emotional Pattern Analysis
                     </Typography>
-                  </li>
-                </ul>
-                
-                <Typography variant="h6" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
-                  ✅ Clinical Weights Used
-                </Typography>
-                <Box sx={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
-                    <thead>
-                      <tr style={{ backgroundColor: theme.palette.primary.main, color: 'white' }}>
-                        <th style={{ padding: '10px', textAlign: 'left', border: '1px solid #ddd' }}>Emotion</th>
-                        <th style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>Weight w(c)</th>
-                        <th style={{ padding: '10px', textAlign: 'left', border: '1px solid #ddd' }}>Impact</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
-                        <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 500 }}>Sadness</td>
-                        <td style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>+1.0</td>
-                        <td style={{ padding: '10px', border: '1px solid #ddd' }}>Strong depression signal</td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 500 }}>Anger</td>
-                        <td style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>+0.7</td>
-                        <td style={{ padding: '10px', border: '1px solid #ddd' }}>Common in depression</td>
-                      </tr>
-                      <tr style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
-                        <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 500 }}>Fear</td>
-                        <td style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>+0.6</td>
-                        <td style={{ padding: '10px', border: '1px solid #ddd' }}>Anxiety-related</td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 500 }}>Neutral</td>
-                        <td style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>0.0</td>
-                        <td style={{ padding: '10px', border: '1px solid #ddd' }}>No impact</td>
-                      </tr>
-                      <tr style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
-                        <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 500 }}>Joy</td>
-                        <td style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>-1.0</td>
-                        <td style={{ padding: '10px', border: '1px solid #ddd' }}>Opposite of depression</td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 500 }}>Surprise</td>
-                        <td style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>-0.3</td>
-                        <td style={{ padding: '10px', border: '1px solid #ddd' }}>Mildly counter-depressive</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </Box>
-                
-                <Typography variant="h6" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
-                  🔽 What's the lowest possible score (Sₜ)?
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  Let's say the person only shows Joy and Surprise, both at 100% (which is rare but mathematically possible):
-                </Typography>
-                <Box sx={{ bgcolor: 'rgba(0, 0, 0, 0.05)', p: 2, borderRadius: 2, my: 2, fontFamily: 'monospace' }}>
-                  <Typography variant="body1">
-                    Sₘᵢₙ = (1.0 × -1.0) + (1.0 × -0.3) = -1.0 - 0.3 = -1.3
+                  </Box>
+                  <Divider sx={{ mb: 3 }} />
+                  <Box sx={{ height: 350, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Radar data={radarData} options={radarOptions} ref={radarChartRef} />
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
+                    The radar chart visualizes the distribution of different emotions detected in your communications.
+                    Higher values of sadness, anger, and fear may correlate with depression indicators.
                   </Typography>
-                </Box>
-                
-                <Typography variant="h6" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
-                  🔼 What's the highest possible score (Sₜ)?
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  Let's say the person only shows Sadness (1.0), Anger (1.0), and Fear (1.0):
-                </Typography>
-                <Box sx={{ bgcolor: 'rgba(0, 0, 0, 0.05)', p: 2, borderRadius: 2, my: 2, fontFamily: 'monospace' }}>
-                  <Typography variant="body1">
-                    Sₘₐₓ = (1.0 × 1.0) + (1.0 × 0.7) + (1.0 × 0.6) = 1.0 + 0.7 + 0.6 = 2.3
-                  </Typography>
-                </Box>
-                
-                <Typography variant="h6" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
-                  📘 Why Add 1.3?
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  💡 We need to shift the entire range to start from 0.
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  Currently:
-                </Typography>
-                <ul>
-                  <li>
-                    <Typography variant="body1">
-                      Minimum Sₜ = -1.3
-                    </Typography>
-                  </li>
-                  <li>
-                    <Typography variant="body1">
-                      Maximum Sₜ = 2.3
-                    </Typography>
-                  </li>
-                </ul>
-                <Typography variant="body1" paragraph>
-                  We add 1.3 to every raw score to move the range:
-                </Typography>
-                <Box sx={{ bgcolor: 'rgba(0, 0, 0, 0.05)', p: 2, borderRadius: 2, my: 2, fontFamily: 'monospace' }}>
-                  <Typography variant="body1">
-                    [-1.3, 2.3] → [0, 3.6]
-                  </Typography>
-                </Box>
-                <Typography variant="body1" paragraph>
-                  This makes all values positive and easier to normalize.
-                </Typography>
-                
-                <Typography variant="h6" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
-                  📗 Why Divide by 3.6?
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  After the shift, the new range is from 0 to 3.6. To scale it down to the standard [0, 1] range, we divide by 3.6:
-                </Typography>
-                <Box sx={{ bgcolor: 'rgba(0, 0, 0, 0.05)', p: 2, borderRadius: 2, my: 2, fontFamily: 'monospace' }}>
-                  <Typography variant="body1">
-                    Dₜ = (Sₜ + 1.3) / 3.6
-                  </Typography>
-                </Box>
-                
-                <Typography variant="h6" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
-                  ✅ Final Formula for Depression Index Dₜ:
-                </Typography>
-                <Box sx={{ bgcolor: theme.palette.primary.main + '20', p: 2, borderRadius: 2, my: 2, fontFamily: 'monospace', borderLeft: `4px solid ${theme.palette.primary.main}` }}>
-                  <Typography variant="h6" fontWeight={600}>
-                    Dₜ = (Sₜ + 1.3) / 3.6
-                  </Typography>
-                </Box>
-                
-                <Typography variant="h6" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
-                  📊 Example Breakdown
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  Let's walk through a real example step by step.
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  Fused Emotion Probabilities:
-                </Typography>
-                <Box sx={{ overflowX: 'auto' }}>
-                  <table style={{ width: '70%', borderCollapse: 'collapse', marginBottom: '20px' }}>
-                    <thead>
-                      <tr style={{ backgroundColor: theme.palette.primary.main, color: 'white' }}>
-                        <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>Emotion</th>
-                        <th style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd' }}>Probability</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td style={{ padding: '8px', border: '1px solid #ddd' }}>Anger</td>
-                        <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd' }}>0.12</td>
-                      </tr>
-                      <tr style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
-                        <td style={{ padding: '8px', border: '1px solid #ddd' }}>Fear</td>
-                        <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd' }}>0.10</td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: '8px', border: '1px solid #ddd' }}>Joy</td>
-                        <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd' }}>0.20</td>
-                      </tr>
-                      <tr style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
-                        <td style={{ padding: '8px', border: '1px solid #ddd' }}>Neutral</td>
-                        <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd' }}>0.30</td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: '8px', border: '1px solid #ddd' }}>Sadness</td>
-                        <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd' }}>0.22</td>
-                      </tr>
-                      <tr style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
-                        <td style={{ padding: '8px', border: '1px solid #ddd' }}>Surprise</td>
-                        <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd' }}>0.06</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </Box>
-                
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  Apply Clinical Weights:
-                </Typography>
-                <Box sx={{ bgcolor: 'rgba(0, 0, 0, 0.05)', p: 2, borderRadius: 2, my: 2, fontFamily: 'monospace' }}>
-                  <Typography variant="body1">
-                    Sₜ = (0.12 ⋅ 0.7) + (0.10 ⋅ 0.6) + (0.20 ⋅ -1.0) + (0.30 ⋅ 0.0) + (0.22 ⋅ 1.0) + (0.06 ⋅ -0.3)
-                  </Typography>
-                  <Typography variant="body1" sx={{ mt: 1 }}>
-                    Sₜ = 0.084 + 0.06 - 0.20 + 0 + 0.22 - 0.018 = 0.146
-                  </Typography>
-                </Box>
-                
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  Normalize:
-                </Typography>
-                <Box sx={{ bgcolor: 'rgba(0, 0, 0, 0.05)', p: 2, borderRadius: 2, my: 2, fontFamily: 'monospace' }}>
-                  <Typography variant="body1">
-                    Sₜ + 1.3 = 0.146 + 1.3 = 1.446
-                  </Typography>
-                  <Typography variant="body1" sx={{ mt: 1 }}>
-                    Dₜ = 1.446 / 3.6 ≈ 0.402
-                  </Typography>
-                </Box>
-                
-                <Typography variant="h6" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
-                  📘 Real-World Analogy
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  Imagine a school gives students scores between -13 to +23 (instead of 0 to 100). It would be confusing!
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  To make it easier:
-                </Typography>
-                <ol>
-                  <li>
-                    <Typography variant="body1">
-                      Add 13 to make the lowest score 0 → now it's [0, 36]
-                    </Typography>
-                  </li>
-                  <li>
-                    <Typography variant="body1">
-                      Divide by 36 to scale to [0, 1] → now every score is a percentage
-                    </Typography>
-                  </li>
-                </ol>
-                <Typography variant="body1">
-                  This is exactly what we're doing here.
-                </Typography>
-              </AccordionDetails>
-            </Accordion>
-          </motion.div>
+                </Paper>
+              </motion.div>
+            </Grid>
+          </Grid>
         </Grid>
       </Grid>
     </Container>
