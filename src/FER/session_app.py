@@ -14,9 +14,9 @@ from scipy.spatial.distance import cosine
 from aggregator import EmotionAggregator
 
 class SessionApp:
-    def __init__(self, master, reference_embedding):
+    def __init__(self, master, reference_embedding=None, no_personalization=True):
         self.master = master
-        self.master.title("Background Processes")
+        self.master.title("FER Background Processes")
         self.master.geometry("400x400")
         self.master.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -24,7 +24,11 @@ class SessionApp:
         BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         self.BASE_DIR = BASE_DIR
 
-        self.reference_embedding = reference_embedding
+        # Set no_personalization flag
+        self.no_personalization = no_personalization
+        
+        # Set reference embedding to None if no personalization is used
+        self.reference_embedding = None if no_personalization else reference_embedding
 
         # File path for minute-level data (session aggregation is now handled separately)
         self.emotion_data_path = os.path.join(BASE_DIR, "db", "FER", "emotion_data.json")
@@ -97,26 +101,48 @@ class SessionApp:
             self.system_status = True
             results = self.detector.detect_and_predict(frame)
             if results:
-                best_face = None
-                best_similarity = 0
-                for (box, emotion_dict) in results:
-                    x1, y1, x2, y2 = box
-                    face_roi = frame[y1:y2, x1:x2]
-                    if face_roi.size != 0:
-                        pil_face = Image.fromarray(cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB))
-                        face_embedding = self.get_face_embedding(pil_face)
-                        if face_embedding is not None:
-                            similarity = 1 - cosine(face_embedding, self.reference_embedding)
-                            if similarity > self.similarity_threshold and similarity > best_similarity:
-                                best_face = (emotion_dict, similarity)
-                                best_similarity = similarity
-                if best_face:
-                    emotion_dict, similarity = best_face
-                    # Merge "Disgust" into "Sad" if needed.
-                    if "Disgust" in emotion_dict and "Sad" in emotion_dict:
-                        emotion_dict["Sad"] += emotion_dict["Disgust"]
-                        del emotion_dict["Disgust"]
-                    self.aggregator.add_emotion(emotion_dict)
+                if self.no_personalization:
+                    # Without personalization: process the largest face or all faces
+                    largest_face = None
+                    largest_area = 0
+                    
+                    for (box, emotion_dict) in results:
+                        x1, y1, x2, y2 = box
+                        face_area = (x2 - x1) * (y2 - y1)
+                        
+                        # Find the largest face in the frame
+                        if face_area > largest_area:
+                            largest_face = emotion_dict
+                            largest_area = face_area
+                    
+                    if largest_face:
+                        # Merge "Disgust" into "Sad" if needed
+                        if "Disgust" in largest_face and "Sad" in largest_face:
+                            largest_face["Sad"] += largest_face["Disgust"]
+                            del largest_face["Disgust"]
+                        self.aggregator.add_emotion(largest_face)
+                else:
+                    # Original personalization code
+                    best_face = None
+                    best_similarity = 0
+                    for (box, emotion_dict) in results:
+                        x1, y1, x2, y2 = box
+                        face_roi = frame[y1:y2, x1:x2]
+                        if face_roi.size != 0:
+                            pil_face = Image.fromarray(cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB))
+                            face_embedding = self.get_face_embedding(pil_face)
+                            if face_embedding is not None:
+                                similarity = 1 - cosine(face_embedding, self.reference_embedding)
+                                if similarity > self.similarity_threshold and similarity > best_similarity:
+                                    best_face = (emotion_dict, similarity)
+                                    best_similarity = similarity
+                    if best_face:
+                        emotion_dict, similarity = best_face
+                        # Merge "Disgust" into "Sad" if needed.
+                        if "Disgust" in emotion_dict and "Sad" in emotion_dict:
+                            emotion_dict["Sad"] += emotion_dict["Disgust"]
+                            del emotion_dict["Disgust"]
+                        self.aggregator.add_emotion(emotion_dict)
         self.update_dot()
         self.master.after(self.delay, self.update)
 
@@ -137,12 +163,10 @@ class SessionApp:
 
 if __name__ == "__main__":
     import numpy as np
-    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    ref_emb_path = os.path.join(BASE_DIR, "db", "FER", "average_embedding.npy")
-    if not os.path.exists(ref_emb_path):
-        raise ValueError("Reference embedding not found. Please run the capture process first.")
-    reference_embedding = np.load(ref_emb_path)
     
+    # Create a window
     root = ttk.Window(themename="darkly")
-    app = SessionApp(root, reference_embedding)
+    
+    # Launch the app without personalization (default)
+    app = SessionApp(root, no_personalization=True)
     root.mainloop()
