@@ -11,6 +11,7 @@ import Blog from "./pages/blog";
 import Plans from "./pages/plans";
 import Recommendation from "./pages/recommendation";
 import TextPrediction from "./pages/TextPrediction";
+import VoicePrediction from "./pages/VoicePrediction";
 import FERPredictions from "./pages/FERPredictions";
 import Header from "./components/Header";
 import LoggedInHeader from "./components/LoggedInHeader";
@@ -68,6 +69,7 @@ const App = () => {
             <Route path="/contact" element={<Contact />} />
             <Route path="/recommendation" element={<Recommendation />} />
             <Route path="/predictions/text" element={<TextPrediction />} />
+            <Route path="/predictions/voice" element={<VoicePrediction />} />
             <Route path="/predictions/fer" element={<FERPredictions />} />
             <Route path="/depression" element={<DepressionPredictions />} />
             <Route path="/blog" element={<Blog />} />

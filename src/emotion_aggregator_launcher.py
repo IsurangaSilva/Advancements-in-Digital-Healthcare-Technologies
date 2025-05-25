@@ -11,6 +11,8 @@ from FER.session_aggregator import SessionAggregator
 from FER.aggregator import EmotionAggregator
 from sessionTextAggregate import TextEmotionAggregator
 from sessionTextAggregate60 import TextEmotionAggregator60
+from sessionVoiceAggregate import VoiceEmotionAggregator
+from sessionVoiceAggregate60 import VoiceEmotionAggregator60
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -37,6 +39,8 @@ def start_emotion_aggregators():
     emotion_aggregator = EmotionAggregator(window_seconds=60)     # 1 minute
     text_aggregator = TextEmotionAggregator(interval_seconds=20)  # 20 seconds
     text_aggregator_60 = TextEmotionAggregator60(interval_seconds=60)  # 1 minute
+    voice_aggregator = VoiceEmotionAggregator(interval_seconds=20)  # 20 seconds
+    voice_aggregator_60 = VoiceEmotionAggregator60(interval_seconds=60)  # 1 minute
     
     # Create and start threads for each aggregator
     threads = [
@@ -58,6 +62,16 @@ def start_emotion_aggregators():
         threading.Thread(
             target=run_aggregator,
             args=(text_aggregator_60, 60, "Text-60min"),
+            daemon=True
+        ),
+         threading.Thread(
+            target=run_aggregator,
+            args=(voice_aggregator, 20, "Voice"),
+            daemon=True
+        ),
+        threading.Thread(
+            target=run_aggregator,
+            args=(voice_aggregator_60, 60, "Voice-60min"),
             daemon=True
         )
     ]
