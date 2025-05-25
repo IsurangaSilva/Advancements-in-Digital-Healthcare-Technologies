@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Blog from "./pages/blog";
 import Plans from "./pages/plans";
+import Recommendation from "./pages/recommendation";
 import TextPrediction from "./pages/TextPrediction";
 import FERPredictions from "./pages/FERPredictions";
 import Header from "./components/Header";
@@ -63,7 +64,7 @@ const App = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/contact" element={<Contact />} />
+            <Route path="/recommendation" element={<Recommendation />} />
             <Route path="/predictions/text" element={<TextPrediction />} />
             <Route path="/predictions/fer" element={<FERPredictions />} />
             <Route path="/predictions/dep" element={<DepressionPredictions />} />
