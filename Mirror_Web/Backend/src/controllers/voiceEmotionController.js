@@ -1,0 +1,274 @@
+const mongoose = require("mongoose");
+const Voice_Emotion_Prediction = require("../models/voice_emotion.model"); 
+const Voice_Emotion_Aggregate = require("../models/voiceAggregate.model"); 
+const Voice_Emotion_60Aggregate = require("../models/voice60Aggregate.model");
+
+// Get All Text Emotions
+const getAllVoiceEmotions = async (req, res) => {
+    try {
+        const emotions = await Voice_Emotion_Prediction.find();
+        
+        const formattedEmotions = emotions.map(emotion => ({
+            ...emotion._doc, 
+            timestamp: new Date(emotion.timestamp).toISOString().replace("T", " ").split(".")[0] 
+        }));
+
+        res.json({ success: true, emotions: formattedEmotions });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+// Get All Text Emotions Precentages
+const getAllVoiceEmotionsPrecentages = async (req, res) => {
+    try {
+        const emotions = await Voice_Emotion_Prediction.find();
+        
+        if (emotions.length === 0) {
+            return res.json({ success: true, percentages: {} });
+        }
+
+        // Count occurrences of each prediction
+        const emotionCounts = {
+            angry: 0,
+            fear: 0,
+            happy: 0,
+            neutral: 0,
+            sad: 0,
+            surprise: 0
+        };
+
+        emotions.forEach(({ predicted_emotion }) => {
+            if (emotionCounts.hasOwnProperty(predicted_emotion)) {
+                emotionCounts[predicted_emotion]++;
+            }
+        });
+
+        // Total predictions
+        const total = emotions.length;
+
+        // Calculate percentages
+        const emotionPercentages = Object.fromEntries(
+            Object.entries(emotionCounts).map(([emotion, count]) => [
+                emotion,
+                ((count / total) * 100).toFixed(2)
+            ])
+        );
+
+        const latestEmotion = await Voice_Emotion_Prediction.findOne().sort({ timestamp: -1 });
+
+        if (!latestEmotion || !latestEmotion.emotion_scores) {
+            return res.json({ success: true, message: "No data available", percentages: {} });
+        }
+
+        // Convert emotion scores to percentages
+        const emotionLastPercentages = Object.fromEntries(
+            Object.entries(latestEmotion.emotion_scores).map(([emotion, score]) => [
+                emotion, (score * 100).toFixed(2) // Convert to percentage with 2 decimal places
+            ])
+        );
+
+
+        res.json({ success: true, percentages: emotionPercentages, counts: emotionCounts ,emotionLastPercentages:emotionLastPercentages});
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+
+// Get Text Aggregation Emotions
+const getVoiceAggregateEmotions = async (req, res) => {
+    try {
+
+         const emotions = await Voice_Emotion_Aggregate.find();
+        
+        const formattedEmotions = emotions.map(emotion => {
+            const date = new Date(emotion.timestamp);
+            const formattedTimestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+            return {
+                ...emotion._doc,
+                timestamp: formattedTimestamp
+            };
+        });
+
+        // res.json({ success: true, emotions: formattedEmotions });
+
+        const emotionshouraggregate = await Voice_Emotion_60Aggregate.find();
+        console.log("emotionshouraggregate",emotionshouraggregate)
+        
+        const formattedhourEmotions = emotionshouraggregate.map(emotion => {
+            const date = new Date(emotion.timestamp);
+            const formattedTimestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+            return {
+                ...emotion._doc,
+                timestamp: formattedTimestamp
+            };
+        });
+
+        
+
+        res.json({ success: true, emotions: formattedEmotions ,emotionshourly: formattedhourEmotions });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+//5min Aggregation
+const getVoiceAggregateEmotions5min = async (req, res) => {
+    try {
+        const emotions = await Voice_Emotion_Aggregate.find();
+        
+        const formattedEmotions = emotions.map(emotion => {
+            const date = new Date(emotion.timestamp);
+            const formattedTimestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+            return {
+                ...emotion._doc,
+                timestamp: formattedTimestamp
+            };
+        });
+
+        res.json({ success: true, emotions: formattedEmotions });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+//1hour Aggregation
+const getVoiceAggregateEmotionshourly = async (req, res) => {
+    try {
+        const emotionshouraggregate = await Voice_Emotion_60Aggregate.find();
+        
+        const formattedhourEmotions = emotionshouraggregate.map(emotion => {
+            const date = new Date(emotion.timestamp);
+            const formattedTimestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+            return {
+                ...emotion._doc,
+                timestamp: formattedTimestamp
+            };
+        });
+
+        
+
+        res.json({ success: true, emotionshourly: formattedhourEmotions });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+
+// Get Text Aggregation Emotions
+const getVoiceAggregateEmotions60min = async (req, res) => {
+    try {
+        const emotions = await Voice_Emotion_Aggregate.find();
+        
+        const formattedEmotions = emotions.map(emotion => {
+            const date = new Date(emotion.timestamp);
+            const formattedTimestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+            return {
+                ...emotion._doc,
+                timestamp: formattedTimestamp
+            };
+        });
+
+        const emotionshouraggregate = await Voice_Emotion_Aggregate.find();
+        console.log("emotionshouraggregate",emotionshouraggregate)
+        
+        const formattedhourEmotions = emotionshouraggregate.map(emotion => {
+            const date = new Date(emotion.timestamp);
+            const formattedTimestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+            return {
+                ...emotionshouraggregate._doc,
+                timestamp: formattedTimestamp
+            };
+        });
+
+        
+
+        res.json({ success: true, emotions: formattedEmotions, emotionshourly: formattedhourEmotions });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+
+// const getEmotionsByTimestampFilter = async (req, res) => {
+//     try {
+//         const { filter } = req.query; 
+//         const now = new Date();
+//         let startTime;
+
+//         switch (filter) {
+//             case "15min":
+//                 startTime = new Date(now.getTime() - 15 * 60 * 1000); // Last 15 minutes
+//                 break;
+//             case "1hour":
+//                 startTime = new Date(now.getTime() - 60 * 60 * 1000); // Last 1 hour
+//                 break;
+//             case "day":
+//                 startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Last 24 hours
+//                 break;
+//             case "week":
+//                 startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // Last 7 days
+//                 break;
+//             case "month":
+//                 startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // Last 30 days
+//                 break;
+//             default:
+//                 return res.status(400).json({ msg: "Invalid filter provided", success: false });
+//         }
+
+//         // const emotions = await Text_Emotion_Prediction.find({
+//         //     timestamp: { $gte: startTime.toISOString(), $lte: now.toISOString() }
+//         // }).sort({ timestamp: 1 });       
+//         const startTimeNew = "2025-03-09 00:00:00";
+//         const endTime = "2025-03-09 23:59:59";
+        
+//         const filteredEmotions = await Text_Emotion_Prediction.find({
+//             timestamp: { $gte: startTimeNew, $lte: endTime } // Compare as strings
+//         }).sort({ timestamp: 1 });
+        
+//         console.log("Filtered Emotions:", filteredEmotions);
+
+
+//         // console.log("Fetched Emotions:", emotions);
+
+//         // const emotionData = emotions.map(emotion => ({
+//         //     timestamp: emotion.timestamp,
+//         //     transcription: emotion.transcription,
+//         //     // Extract only the prediction part before the parentheses
+//         //     prediction: emotion?.prediction ? emotion.prediction.split(' ')[0] : "N/A",  
+//         //     polarity: emotion?.polarity ?? "N/A",      // Polarity seems to be 0 in your case
+//         // })).filter(Boolean);
+//         const emotionData = emotions.map(emotion => {
+//             console.log("Timestamp:", emotion.timestamp, "Type:", typeof emotion.timestamp); // Log value and type
+//             return {
+//                 timestamp: emotion.timestamp,
+//                 transcription: emotion.transcription,
+//                 prediction: emotion?.prediction ? emotion.prediction.split(' ')[0] : "N/A",
+//                 polarity: emotion?.polarity ?? "N/A",
+//             };
+//         }).filter(Boolean);
+        
+//         console.log("Final Emotion Data:", emotionData);       
+        
+//         res.json({ success: true, emotionData });        
+        
+//     } catch (error) {
+//         res.status(500).json({ msg: "Internal Server Error", success: false });
+//     }
+// };
+
+module.exports = {
+    getAllVoiceEmotions,    
+    getAllVoiceEmotionsPrecentages,
+    getVoiceAggregateEmotions,
+    getVoiceAggregateEmotions60min,
+    getVoiceAggregateEmotions5min,
+    getVoiceAggregateEmotionshourly
+};
