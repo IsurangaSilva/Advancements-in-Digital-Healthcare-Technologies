@@ -48,7 +48,7 @@ class EmotionBackgroundProcessor:
 
         # Initialize the aggregator
         self.save_path = os.path.join(self.BASE_DIR, "db", "FER", "emotion_data.json")
-        self.aggregator = EmotionAggregator(window_seconds=60, save_path=self.save_path)
+        self.aggregator = EmotionAggregator(window_seconds=20, save_path=self.save_path)
         
         # Load reference embedding from file (if available); otherwise, use a dummy vector
         ref_path = os.path.join(self.BASE_DIR, "db", "FER", "average_embedding.npy")
@@ -63,7 +63,7 @@ class EmotionBackgroundProcessor:
             self._load_models()
             
         # Initiate session aggregator in separate daemon threads
-        self.session_aggregator = SessionAggregator(interval_seconds=310, emotion_file=self.save_path)
+        self.session_aggregator = SessionAggregator(interval_seconds=60, emotion_file=self.save_path)
         self.session_thread = threading.Thread(target=self.session_aggregator.run, daemon=True)
         self.session_thread.start()
         logger.info("Session aggregator thread started.")

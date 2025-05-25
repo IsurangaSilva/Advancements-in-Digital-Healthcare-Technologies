@@ -21,7 +21,7 @@ const ferAggregation60Schema = new mongoose.Schema(
 );
 
 const FER_Emotion_60Aggregate = connection.model(
-  "fer-hourly-aggregates",ferAggregation60Schema
+  "fer-session-aggregates",ferAggregation60Schema
 );
 
 module.exports = FER_Emotion_60Aggregate;

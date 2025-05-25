@@ -8,7 +8,7 @@ import threading
 file_lock = threading.Lock()
 
 class EmotionAggregator:
-    def __init__(self, window_seconds=60, callback=None, save_path=None): # Change to 60 seconds after testing
+    def __init__(self, window_seconds=20, callback=None, save_path=None): # Change to 60 seconds after testing
         BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
         self.save_path = save_path or os.path.join(BASE_DIR, "db", "FER", "emotion_data.json")
         """

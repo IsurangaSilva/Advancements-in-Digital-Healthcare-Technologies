@@ -8,7 +8,7 @@ const ferAggregationSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    session_aggregate: {
+    aggregated_emotions: {
       Anger: { type: Number, required: true },
       Fear: { type: Number, required: true },
       Happy: { type: Number, required: true },
@@ -16,12 +16,24 @@ const ferAggregationSchema = new mongoose.Schema(
       Sad: { type: Number, required: true },
       Surprise: { type: Number, required: true },
     },
+    db_status: {
+      type: Boolean,
+      default: true
+    },
+    session_used: {
+      type: Boolean,
+      default: false
+    },
+    session_used_hour: {
+      type: Boolean,
+      default: false
+    }
   },
   { timestamps: true }
 );
 
 const FER_Emotion_Aggregate = connection.model(
-  "fer-session-aggregates",ferAggregationSchema
+  "fer-aggregates", ferAggregationSchema
 );
 
 module.exports = FER_Emotion_Aggregate;
