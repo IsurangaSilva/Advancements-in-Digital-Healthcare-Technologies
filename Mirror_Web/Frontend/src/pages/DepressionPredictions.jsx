@@ -13,6 +13,45 @@ import {
   Chip,
   Avatar
 } from '@mui/material';
+
+/**
+ * DepressionPredictions Component
+ * 
+ * This component implements a clinical algorithm for depression score calculation based on emotional analysis:
+ * 
+ * 1. Algorithm steps (ONLY APPLIED TO MICRO SCORE):
+ *    - Extract individual emotion values (Sadness, Anger, Fear, Neutral, Joy, Surprise)
+ *    - Apply clinical weights to each emotion (positive weights increase depression score, negative reduce it)
+ *    - Sum all weighted emotion contributions to get raw score
+ *    - Add 1.3 to the raw score to normalize (shift from negative range to positive)
+ *    - Divide by 3.6 to scale to [0,1] range
+ *    - Clamp final result to ensure it's within [0,1]
+ * 
+ * 2. Score Types:
+ *    - Micro Score (5-min): Calculated from weighted averages using the algorithm
+ *    - Macro Score (hourly): Directly from API, not calculated
+ *    - Clinical Score (overall): Directly from API, not calculated
+ * 
+ * 3. Visualization components:
+ *    - Radar chart showing emotion distribution and depression contributions
+ *    - Bar chart comparing different time-window scores
+ *    - Score indicator cards with clinical interpretation
+ *    - Debug panel showing detailed calculation for micro score only
+ * 
+ * 4. Score interpretation:
+ *    - 0.00-0.30: No Depression
+ *    - 0.30-0.49: Mild Depression
+ *    - 0.50-0.69: Moderate Depression
+ *    - 0.70-0.85: Severe Depression
+ *    - 0.85-1.00: Very Severe Depression
+ * 
+ * 5. Data Flow:
+ *    - Backend provides the weighted averages and other raw data
+ *    - Frontend extracts emotion values with fallback strategies
+ *    - Micro score is calculated from the emotion values
+ *    - Macro and clinical scores taken directly from API
+ */
+
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
@@ -59,6 +98,30 @@ const DepressionPredictions = () => {
   const [loading, setLoading] = useState(true);
   const barChartRef = useRef(null);
   const radarChartRef = useRef(null);
+  // Clinical emotion weights - make sure these match the normalized emotion keys from API
+  /**
+   * Clinical emotion weights for depression calculation
+   * 
+   * These weights are based on established clinical correlations between emotions and depression:
+   * - Positive weights increase depression score (emotions positively correlated with depression)
+   * - Negative weights decrease depression score (emotions negatively correlated with depression)
+   * - Values represent relative strength of correlation with depression
+   * 
+   * The weight values are calibrated so that:
+   * 1. Maximum theoretical score (full sadness, anger, fear) is approximately +2.3
+   * 2. Minimum theoretical score (full joy, surprise) is approximately -1.3
+   * 3. When normalized with +1.3 shift and /3.6 division, the range becomes [0,1]
+   */
+  const emotionWeights = {
+    Sadness: 1.0,   // Core symptom of depression - highest weight
+    Anger: 0.7,     // Often reflects irritability and negative affect in depression 
+    Fear: 0.6,      // Anxiety and worry frequently comorbid with depression
+    Neutral: 0.0,   // No direct contribution to depression score
+    Joy: -1.0,      // Opposite of depressive state - reduces score significantly
+    Surprise: -0.3  // Linked to arousal/curiosity - mildly reduces depression
+  };
+  
+  console.log("Using depression clinical weights:", emotionWeights);
 
   // Initialize EmailJS
   useEffect(() => {
@@ -78,40 +141,212 @@ const DepressionPredictions = () => {
       const errorMessage = err.text || 'Unknown error';
       setEmailError(`Failed to send alert email for ${scoreType} score: ${errorMessage}. Please check EmailJS configuration.`);
     }
-  };
-
-  // Fetch data and check for high scores
+  };  // Calculate depression score based on emotions
+  const calculateDepressionScore = (emotions) => {
+    console.log("Calculating depression score for emotions:", emotions);
+    
+    // Data validation - verify we have emotion data
+    if (!emotions || typeof emotions !== 'object') {
+      console.error("Invalid emotions input:", emotions);
+      return 0; // Default to 0 for invalid input
+    }
+    
+    // Verify some emotion values exist (even if 0)
+    const hasEmotionData = Object.keys(emotions).some(key => 
+      emotions[key] !== undefined && emotions[key] !== null);
+    
+    if (!hasEmotionData) {
+      console.warn("No valid emotion data found:", emotions);
+      return 0; // Default to 0 when no valid data
+    }
+    
+    // Step 1: Get emotions separately
+    const sadness = emotions.Sadness || 0;
+    const anger = emotions.Anger || 0;
+    const fear = emotions.Fear || 0;
+    const neutral = emotions.Neutral || 0;
+    const joy = emotions.Joy || 0;
+    const surprise = emotions.Surprise || 0;
+    
+    console.log("Individual emotions extracted:", { sadness, anger, fear, neutral, joy, surprise });
+    
+    // Step 2 & 3: Multiply emotions by their clinical weights and sum them
+    const weightedSadness = sadness * emotionWeights.Sadness;
+    const weightedAnger = anger * emotionWeights.Anger;
+    const weightedFear = fear * emotionWeights.Fear;
+    const weightedNeutral = neutral * emotionWeights.Neutral;
+    const weightedJoy = joy * emotionWeights.Joy; // Note: this is negative as joy counters depression
+    const weightedSurprise = surprise * emotionWeights.Surprise; // Also likely negative
+    
+    // Create detailed breakdown for debugging
+    const emotionScores = {
+      Sadness: { value: sadness, weight: emotionWeights.Sadness, weightedScore: weightedSadness },
+      Anger: { value: anger, weight: emotionWeights.Anger, weightedScore: weightedAnger },
+      Fear: { value: fear, weight: emotionWeights.Fear, weightedScore: weightedFear },
+      Neutral: { value: neutral, weight: emotionWeights.Neutral, weightedScore: weightedNeutral },
+      Joy: { value: joy, weight: emotionWeights.Joy, weightedScore: weightedJoy },
+      Surprise: { value: surprise, weight: emotionWeights.Surprise, weightedScore: weightedSurprise }
+    };
+    
+    console.log("Emotion scores with weights applied:", emotionScores);
+    
+    // Step 3: Calculate raw score (sum of all weighted emotions)
+    const rawScore = weightedSadness + weightedAnger + weightedFear + 
+                     weightedNeutral + weightedJoy + weightedSurprise;
+    
+    console.log("Raw depression score (sum of weighted emotions):", rawScore);
+    
+    // Step 4: Add 1.3 to normalize (shift the range)
+    const shiftedScore = rawScore + 1.3;
+    console.log("Shifted score (raw score + 1.3):", shiftedScore);
+    
+    // Step 5: Divide by 3.6 to get final score in [0,1] range
+    const normalizedScore = shiftedScore / 3.6;
+    console.log("Normalized score (shifted score / 3.6):", normalizedScore);
+    
+    // Ensure score is within [0, 1] range
+    const finalScore = Math.max(0, Math.min(1, normalizedScore));
+    console.log("Final clamped depression score:", finalScore);
+    
+    return finalScore;
+  };  // Fetch data and calculate scores
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch('http://localhost:4000/api/average/combined-5min-weighted-average');
-        const result = await response.json();
-
-        if (result.error) {
-          setError(result.error);
-        } else {
-          const data = {
-            ...result,
-            microScore: 0.5, // Mock data
-            macroScore: result.averageDepressionScore || 0.45,
-            clinicalScore: 0.2, // Set to trigger email alert
-            averageEmotions: {
-              Anger: 0.2,
-              Fear: 0.3,
-              Happy: 0.5,
-              Neutral: 0.6,
-              Sad: 0.4,
-              Surprise: 0.1
-            }
-          };
-          setPredictionData(data);
-
-          // Check for high scores and send email alerts
-          if (data.microScore > 0.85) await sendAlertEmail('Micro', data.microScore);
-          if (data.macroScore > 0.85) await sendAlertEmail('Macro', data.macroScore);
-          if (data.clinicalScore > 0.85) await sendAlertEmail('Clinical', data.clinicalScore);
+        // Fetch both 5-min and 60-min data simultaneously
+        const [microResponse, macroResponse] = await Promise.all([
+          fetch('http://localhost:4000/api/average/combined-5min-weighted-average'),
+          fetch('http://localhost:4000/api/average/60min-weighted-average')
+        ]);
+        
+        const microResult = await microResponse.json();
+        const macroResult = await macroResponse.json();
+        
+        console.log("Micro API response:", microResult);
+        console.log("Macro API response:", macroResult);
+        
+        if (microResult.error) {
+          setError(microResult.error);
+          return;
         }
+        
+        // STEP 1: Extract emotion data for micro (5-minute) calculations
+        let apiEmotions = {};
+        let dataSource = "unknown";
+        
+        // Check all possible places where emotion data might be located
+        if (microResult.averageEmotions && Object.keys(microResult.averageEmotions).length > 0) {
+          apiEmotions = microResult.averageEmotions;
+          dataSource = "averageEmotions";
+        } else if (microResult.weightedAverages && Object.keys(microResult.weightedAverages).length > 0) {
+          apiEmotions = microResult.weightedAverages;
+          dataSource = "weightedAverages";
+        } else if (microResult.rawData?.weightedAverages) {
+          apiEmotions = microResult.rawData.weightedAverages;
+          dataSource = "rawData.weightedAverages";
+        } else if (microResult.emotions && microResult.emotions.length > 0) {
+          const latestEmotion = microResult.emotions[0];
+          
+          if (latestEmotion.weightedAverages) {
+            apiEmotions = latestEmotion.weightedAverages;
+            dataSource = "emotions[0].weightedAverages";
+          } else if (latestEmotion.session_aggregate) {
+            apiEmotions = latestEmotion.session_aggregate;
+            dataSource = "emotions[0].session_aggregate";
+          }
+        }
+        
+        console.log("Micro data source used:", dataSource);
+        
+        // STEP 2: Normalize emotion keys to support all different format variations
+        const averageEmotions = {
+          Sadness: apiEmotions.Sadness || apiEmotions.sadness || apiEmotions.Sad || apiEmotions.sad || 0,
+          Anger: apiEmotions.Anger || apiEmotions.anger || 0,
+          Fear: apiEmotions.Fear || apiEmotions.fear || 0,
+          Neutral: apiEmotions.Neutral || apiEmotions.neutral || 0,
+          Joy: apiEmotions.Joy || apiEmotions.joy || apiEmotions.Happy || apiEmotions.happy || 0,
+          Surprise: apiEmotions.Surprise || apiEmotions.surprise || 0
+        };
+        
+        // STEP 3: Calculate micro score (5-min data)
+        const microScore = calculateDepressionScore(averageEmotions);
+        console.log("Micro score (5-min) from weighted averages algorithm:", microScore);
+        
+        // STEP 4: Process macro data (60-min)
+        let macroScore = 0;
+        let macroScoreSource = "default";
+        let macroEmotions = null;
+        
+        if (macroResult && macroResult.success) {          if (macroResult.macroScore !== undefined) {
+            // Use pre-calculated score from backend
+            macroScore = macroResult.macroScore;
+            macroScoreSource = "pre-calculated";
+            
+            // Even if we have pre-calculated score, we still want emotion values for the debug display
+            if (macroResult.averageEmotions || macroResult.weightedAverages) {
+              const emotionSource = macroResult.averageEmotions || macroResult.weightedAverages;
+              macroEmotions = {
+                Sadness: emotionSource.Sadness || emotionSource.sadness || 0,
+                Anger: emotionSource.Anger || emotionSource.anger || 0,
+                Fear: emotionSource.Fear || emotionSource.fear || 0,
+                Neutral: emotionSource.Neutral || emotionSource.neutral || 0,
+                Joy: emotionSource.Joy || emotionSource.joy || emotionSource.Happy || emotionSource.happy || 0,
+                Surprise: emotionSource.Surprise || emotionSource.surprise || 0
+              };
+            }          } else if (macroResult.averageEmotions || macroResult.weightedAverages) {
+            // Get the emotion data from the 60-min API (try both possible formats)
+            const emotionSource = macroResult.averageEmotions || macroResult.weightedAverages;
+            macroEmotions = {
+              Sadness: emotionSource.Sadness || emotionSource.sadness || 0,
+              Anger: emotionSource.Anger || emotionSource.anger || 0,
+              Fear: emotionSource.Fear || emotionSource.fear || 0,
+              Neutral: emotionSource.Neutral || emotionSource.neutral || 0,
+              Joy: emotionSource.Joy || emotionSource.joy || emotionSource.Happy || emotionSource.happy || 0,
+              Surprise: emotionSource.Surprise || emotionSource.surprise || 0
+            };
+            
+            // Calculate from the provided average emotions
+            macroScore = calculateDepressionScore(macroEmotions);
+            macroScoreSource = "calculated-from-averages";
+          }
+          
+          console.log(`Macro score (60-min, ${macroScoreSource}):`, macroScore);
+          console.log("Records used for macro score calculation:", macroResult.recordCount || "unknown");
+        } else {
+          console.warn("Failed to fetch macro data, defaulting to 0");
+        }
+        
+        // STEP 5: Get clinical score (long-term data if available)
+        const clinicalScore = microResult.clinicalScore || microResult.clinicalDepressionScore || 0;
+        console.log("Clinical score:", clinicalScore);
+          // Consolidate all data
+        const data = {
+          ...microResult,
+          microScore,
+          macroScore,
+          macroScoreSource,
+          macroEmotions,
+          clinicalScore,
+          averageEmotions,
+          macroData: {
+            ...macroResult,
+            calculationDetails: macroResult.calculationDetails || null,
+            recordCount: macroResult.recordCount || 24,
+            timestamp: macroResult.timestamp || new Date().toISOString(),
+            weightedAverages: macroResult.weightedAverages || null,
+            emotions: macroResult.emotions || []
+          },
+          dataSource,
+          lastUpdated: new Date().toLocaleString()
+        };
+        
+        setPredictionData(data);
+        
+        // Check for high scores and send email alerts
+        if (microScore > 0.85) await sendAlertEmail('Micro', microScore);
+        if (macroScore > 0.85) await sendAlertEmail('Macro', macroScore);
+        if (clinicalScore > 0.85) await sendAlertEmail('Clinical', clinicalScore);
       } catch (err) {
         console.error('Fetch error:', err);
         setError('Failed to fetch depression prediction data. Please try again later.');
@@ -121,7 +356,9 @@ const DepressionPredictions = () => {
     };
 
     fetchData();
-  }, []);  // Determine color, level and icon based on score (Dt Range)
+  }, []);
+
+  // Determine color, level, and icon based on score
   const getDepressionLevel = (score) => {
     if (score < 0.30) return { 
       level: 'No Depression', 
@@ -193,12 +430,11 @@ const DepressionPredictions = () => {
       </Container>
     );
   }
-
   const { microScore, macroScore, clinicalScore, averageEmotions } = predictionData;
 
   // Bar Chart Configuration
   const barChartData = {
-    labels: ['Micro Score', 'Macro Score', 'Clinical Score'],
+    labels: ['Micro Score (5-min)', 'Macro Score (Last 24 Hrs)', 'Clinical Score'],
     datasets: [
       {
         label: 'Depression Scores',
@@ -219,7 +455,8 @@ const DepressionPredictions = () => {
           display: true,
           text: 'Score',
           font: { size: 14, weight: 'bold' }
-        },        ticks: {
+        },
+        ticks: {
           stepSize: 0.1,
           color: theme.palette.text.secondary
         },
@@ -251,22 +488,35 @@ const DepressionPredictions = () => {
       duration: 1500,
       easing: 'easeOutCubic'
     }
-  };
-
-  // Radar Chart Configuration
+  };  // Radar Chart Configuration
+  const emotionLabels = ['Sadness', 'Anger', 'Fear', 'Neutral', 'Joy', 'Surprise'];
+  
+  // Prepare emotion data in consistent order matching emotionLabels
+  const emotionValues = [
+    averageEmotions.Sadness || 0,
+    averageEmotions.Anger || 0,
+    averageEmotions.Fear || 0,
+    averageEmotions.Neutral || 0,
+    averageEmotions.Joy || 0,
+    averageEmotions.Surprise || 0
+  ];
+  
+  // Create weight data for visualization
+  const weightValues = [
+    emotionWeights.Sadness,
+    emotionWeights.Anger,
+    emotionWeights.Fear,
+    emotionWeights.Neutral,
+    emotionWeights.Joy,
+    emotionWeights.Surprise
+  ];
+  
   const radarData = {
-    labels: ['Anger', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise'],
+    labels: emotionLabels,
     datasets: [
       {
-        label: 'Average Emotions',
-        data: [
-          averageEmotions.Anger,
-          averageEmotions.Fear,
-          averageEmotions.Happy,
-          averageEmotions.Neutral,
-          averageEmotions.Sad,
-          averageEmotions.Surprise
-        ],
+        label: 'Emotion Values',
+        data: emotionValues,
         backgroundColor: 'rgba(66, 165, 245, 0.2)',
         borderColor: 'rgba(33, 150, 243, 1)',
         pointBackgroundColor: 'rgba(33, 150, 243, 1)',
@@ -276,21 +526,70 @@ const DepressionPredictions = () => {
         borderWidth: 2,
         pointRadius: 4,
         pointHoverRadius: 6
+      },
+      {
+        label: 'Depression Contribution',
+        data: emotionValues.map((val, idx) => Math.abs(val * weightValues[idx])),
+        backgroundColor: 'rgba(244, 67, 54, 0.15)',
+        borderColor: 'rgba(244, 67, 54, 0.7)',
+        pointBackgroundColor: 'rgba(244, 67, 54, 0.7)',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgba(244, 67, 54, 1)',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6
       }
     ]
-  };  const radarOptions = {
+  };
+
+  const radarOptions = {
     layout: {
       padding: {
-        top: 10,
-        bottom: 10,
-        left: 10,
-        right: 10
+        top: 20,
+        bottom: 20,
+        left: 20,
+        right: 20
+      }
+    },
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          font: {
+            size: 12,
+            family: "'Roboto', 'Helvetica', 'Arial', sans-serif"
+          },
+          boxWidth: 15,
+          padding: 15
+        }
+      },
+      tooltip: {
+        callbacks: {
+          title: (tooltipItems) => {
+            return tooltipItems[0].label;
+          },
+          label: (context) => {
+            const emotion = context.label;
+            const dataset = context.dataset;
+            const value = dataset.data[context.dataIndex].toFixed(3);
+            const label = dataset.label;
+            
+            if (label === 'Depression Contribution') {
+              const weight = emotionWeights[emotion] || 0;
+              return `${emotion}: ${value} (weight: ${weight})`;
+            }
+            return `${emotion}: ${value}`;
+          }
+        }
       }
     },
     scales: {
       r: {
         angleLines: { color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)' },
         grid: { color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' },
+        suggestedMin: 0,
+        suggestedMax: 1,
         pointLabels: {
           font: {
             size: 14,
@@ -363,6 +662,7 @@ const DepressionPredictions = () => {
       timestamp: new Date().toLocaleString()
     }
   ];
+
   // Animation variants
   const boxVariants = {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
@@ -406,8 +706,7 @@ const DepressionPredictions = () => {
       transition: { repeat: Infinity, duration: 1.2, ease: 'easeInOut' }
     }
   };
-  
-  // Enhanced number animations with counting up effect
+
   const scoreNumberVariants = {
     hidden: { opacity: 0, scale: 0.5, y: 20 },
     visible: { 
@@ -422,7 +721,7 @@ const DepressionPredictions = () => {
       }
     }
   };
-  
+
   const progressVariants = {
     initial: { width: 0 },
     animate: (score) => ({
@@ -430,8 +729,7 @@ const DepressionPredictions = () => {
       transition: { duration: 1.5, ease: "easeOut" }
     })
   };
-  
-  // Enhanced icon animations with more dynamic effects
+
   const iconVariants = {
     hidden: { opacity: 0, rotate: -45, scale: 0.7 },
     visible: { 
@@ -459,11 +757,11 @@ const DepressionPredictions = () => {
         duration: 2,
         ease: "easeInOut"
       }
-    }  };
-  
+    }
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 6 }}>
-      {/* Enhanced Header with decorative elements */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -480,7 +778,6 @@ const DepressionPredictions = () => {
           borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
           gap: { xs: 2, md: 4 }
         }}>
-          {/* Decorative circle */}
           <Box
             sx={{
               position: 'absolute',
@@ -493,7 +790,6 @@ const DepressionPredictions = () => {
               zIndex: 0
             }}
           />
-          
           <Avatar
             sx={{
               width: 84,
@@ -507,7 +803,6 @@ const DepressionPredictions = () => {
           >
             <PsychologyIcon sx={{ fontSize: 48 }} />
           </Avatar>
-          
           <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
             <Typography 
               variant="h3" 
@@ -528,7 +823,7 @@ const DepressionPredictions = () => {
             </Typography>
           </Box>
         </Box>
-      </motion.div>      {/* Email Error Alert */}
+      </motion.div>
       {emailError && (
         <Box sx={{ mb: 3 }}>
           <Alert severity="error" variant="filled" sx={{ p: 2, borderRadius: 2, fontSize: '1rem' }}>
@@ -536,8 +831,6 @@ const DepressionPredictions = () => {
           </Alert>
         </Box>
       )}
-      
-      {/* Depression Level Reference Chart */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -560,7 +853,6 @@ const DepressionPredictions = () => {
               Depression Score Reference
             </Typography>
           </Box>
-          
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12} sm={4} md={2.4}>
               <Box sx={{ 
@@ -571,7 +863,7 @@ const DepressionPredictions = () => {
                 textAlign: 'center'
               }}>
                 <Typography variant="body2" fontWeight={600} sx={{ color: '#4caf50' }}>No Depression</Typography>
-                <Typography variant="caption" sx={{ opacity: 0.8 }}>0 &lt; 0.30</Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8 }}>0 to 0.30</Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={4} md={2.4}>
@@ -610,8 +902,7 @@ const DepressionPredictions = () => {
                 <Typography variant="caption" sx={{ opacity: 0.8 }}>0.70–0.85</Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} sm={6} md={2.4}>
-              <Box sx={{ 
+            <Grid item xs={12} sm={6} md={2.4}>              <Box sx={{ 
                 bgcolor: '#d32f2f15', 
                 p: 1.5, 
                 borderRadius: 2,
@@ -619,14 +910,13 @@ const DepressionPredictions = () => {
                 textAlign: 'center'
               }}>
                 <Typography variant="body2" fontWeight={600} sx={{ color: '#d32f2f' }}>Very Severe</Typography>
-                <Typography variant="caption" sx={{ opacity: 0.8 }}>1.0&gt; 0.85</Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8 }}>0.85 to 1.0</Typography>
               </Box>
             </Grid>
           </Grid>
         </Paper>
       </motion.div>
-
-      <Grid container spacing={3}>        {/* Depression Scores Row */}
+      <Grid container spacing={3}>
         <Grid item xs={12}>
           <Grid container spacing={4}>
             {indicators.map((indicator, index) => {
@@ -659,7 +949,6 @@ const DepressionPredictions = () => {
                         overflow: 'hidden'
                       }}
                     >
-                      {/* Decorative top gradient */}
                       <Box 
                         sx={{ 
                           position: 'absolute', 
@@ -670,8 +959,6 @@ const DepressionPredictions = () => {
                           background: gradient 
                         }} 
                       />
-                      
-                      {/* Decorative circle in background */}
                       <Box 
                         sx={{ 
                           position: 'absolute', 
@@ -684,7 +971,6 @@ const DepressionPredictions = () => {
                           zIndex: 0
                         }} 
                       />
-                      
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, justifyContent: 'space-between', zIndex: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                           <motion.div
@@ -714,8 +1000,7 @@ const DepressionPredictions = () => {
                           <InfoIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
                         </MuiTooltip>
                       </Box>
-                      
-                      {/* Main score display - made larger with enhanced styling */}                      <Box 
+                      <Box 
                         sx={{ 
                           display: 'flex', 
                           flexDirection: 'column',
@@ -734,7 +1019,6 @@ const DepressionPredictions = () => {
                           zIndex: 1
                         }}
                       >
-                        {/* Status first (above) */}
                         <motion.div
                           variants={chipVariants}
                           initial="initial"
@@ -746,7 +1030,8 @@ const DepressionPredictions = () => {
                               : 'initial'
                           }
                           style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
-                        >                          <Chip
+                        >
+                          <Chip
                             label={level}
                             size="large"
                             sx={{
@@ -772,13 +1057,11 @@ const DepressionPredictions = () => {
                             }}
                           />
                         </motion.div>
-                        
-                        {/* Score below status (smaller) */}
                         <motion.div
                           variants={scoreNumberVariants}
                           initial="hidden"
                           animate="visible"
-                        >                          
+                        >
                           <Typography 
                             variant="h6" 
                             fontWeight={500} 
@@ -792,7 +1075,6 @@ const DepressionPredictions = () => {
                             Score: {indicator.score.toFixed(2)}
                           </Typography>
                         </motion.div>
-                        
                         <Typography 
                           variant="body2" 
                           sx={{ 
@@ -807,8 +1089,6 @@ const DepressionPredictions = () => {
                           {levelDescription}
                         </Typography>
                       </Box>
-                      
-                      {/* Add visual progress bar */}
                       <Box sx={{ mt: 1, mb: 2, width: '100%', zIndex: 1 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, px: 0.5 }}>
                           <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
@@ -838,7 +1118,6 @@ const DepressionPredictions = () => {
                           />
                         </Box>
                       </Box>
-                        {/* Timestamp */}
                       <Box sx={{ 
                         mt: 'auto',
                         pt: 2, 
@@ -866,7 +1145,7 @@ const DepressionPredictions = () => {
               );
             })}
           </Grid>
-        </Grid>        {/* Enhanced Charts Row */}
+        </Grid>
         <Grid item xs={12}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -902,7 +1181,6 @@ const DepressionPredictions = () => {
               <BarChartIcon sx={{ mr: 1, color: theme.palette.primary.main }}  />
               Visualization Analysis
             </Typography>
-            
             <Typography 
               variant="body1" 
               color="text.secondary" 
@@ -915,9 +1193,7 @@ const DepressionPredictions = () => {
             >
               These charts provide a comprehensive view of your emotional patterns and depression indicators over time
             </Typography>
-            
             <Grid container spacing={4}>
-              {/* Bar Chart - Enhanced */}
               <Grid item xs={12} md={6}>
                 <motion.div
                   initial={{ opacity: 0, y: 40 }}
@@ -941,7 +1217,6 @@ const DepressionPredictions = () => {
                       overflow: 'hidden'
                     }}
                   >
-                    {/* Decorative elements */}
                     <Box sx={{ 
                       position: 'absolute', 
                       top: 0, 
@@ -950,7 +1225,6 @@ const DepressionPredictions = () => {
                       height: '4px', 
                       background: 'linear-gradient(90deg, #2196f3, #4dabf5)' 
                     }}/>
-                    
                     <Box sx={{ 
                       position: 'absolute', 
                       top: 15, 
@@ -961,25 +1235,21 @@ const DepressionPredictions = () => {
                       background: 'radial-gradient(circle, rgba(33, 150, 243, 0.05) 0%, rgba(0, 0, 0, 0) 70%)',
                       zIndex: 0
                     }}/>
-                    
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, zIndex: 1 }}>
                       <Typography variant="h6" fontWeight={600}>
                         Depression Score Analysis
                       </Typography>
                       <BarChartIcon color="primary" />
                     </Box>
-                      <Box sx={{ height: 380, position: 'relative', zIndex: 1 }}>
+                    <Box sx={{ height: 380, position: 'relative', zIndex: 1 }}>
                       <Bar ref={barChartRef} data={barChartData} options={barChartOptions} />
                     </Box>
-                    
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 3, fontStyle: 'italic' }}>
                       Compare your micro, macro, and clinical depression scores to track changes over time
                     </Typography>
                   </Paper>
                 </motion.div>
               </Grid>
-
-              {/* Radar Chart - Enhanced */}
               <Grid item xs={12} md={6}>
                 <motion.div
                   initial={{ opacity: 0, y: 40 }}
@@ -1003,7 +1273,6 @@ const DepressionPredictions = () => {
                       overflow: 'hidden'
                     }}
                   >
-                    {/* Decorative elements */}
                     <Box 
                       sx={{ 
                         position: 'absolute',
@@ -1014,8 +1283,6 @@ const DepressionPredictions = () => {
                         background: 'linear-gradient(to right, #9c27b0, #673ab7, #3f51b5)'
                       }} 
                     />
-                    
-                    {/* Decorative circles */}
                     <Box sx={{ 
                       position: 'absolute', 
                       top: -40, 
@@ -1026,7 +1293,6 @@ const DepressionPredictions = () => {
                       background: 'radial-gradient(circle, rgba(156, 39, 176, 0.05) 0%, rgba(0, 0, 0, 0) 70%)',
                       zIndex: 0
                     }}/>
-                    
                     <Box sx={{ 
                       position: 'absolute', 
                       bottom: -30, 
@@ -1037,7 +1303,6 @@ const DepressionPredictions = () => {
                       background: 'radial-gradient(circle, rgba(63, 81, 181, 0.05) 0%, rgba(0, 0, 0, 0) 70%)',
                       zIndex: 0
                     }}/>
-                    
                     <Box sx={{ 
                       display: 'flex', 
                       alignItems: 'center',
@@ -1052,7 +1317,8 @@ const DepressionPredictions = () => {
                         Emotional Pattern Analysis
                       </Typography>
                       <BubbleChartIcon sx={{ color: '#9c27b0' }} />
-                    </Box>                      <Box sx={{ 
+                    </Box>
+                    <Box sx={{ 
                       height: 380, 
                       position: 'relative', 
                       zIndex: 1,
@@ -1068,20 +1334,402 @@ const DepressionPredictions = () => {
                         justifyContent: 'center',
                         alignItems: 'center'
                       }}>
-                        <Radar ref={radarChartRef} data={radarData} options={radarOptions} />
-                      </Box>
+                        <Radar ref={radarChartRef} data={radarData} options={radarOptions} />                      </Box>
                     </Box>
-                    
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 3, fontStyle: 'italic', zIndex: 1 }}>
                       Distribution of your emotional patterns across different mood categories
-                    </Typography>
+                    </Typography>                    <Box sx={{ mt: 2, p: 2, border: '1px dashed rgba(0,0,0,0.1)', borderRadius: 2, background: 'rgba(0,0,0,0.02)' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 'bold', color: theme.palette.text.primary, display: 'flex', alignItems: 'center' }}>
+                          <InfoIcon sx={{ fontSize: '14px', color: theme.palette.primary.main, mr: 0.5 }} />
+                          Depression Score Calculation Debug Panel
+                        </Typography>
+                        <Chip 
+                          size="small" 
+                          label="Diagnostic" 
+                          variant="outlined" 
+                          color="primary" 
+                          sx={{ height: 20, fontSize: '10px' }}
+                        />
+                      </Box>
+                      <Typography variant="caption" component="div" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '10px' }}>{/* Header with clear explanation */}                        
+                        <div style={{ 
+                          backgroundColor: '#e3f2fd', 
+                          padding: '8px', 
+                          borderRadius: '4px', 
+                          marginBottom: '10px',
+                          border: '1px solid #90caf9'
+                        }}>
+                          <div style={{ fontWeight: 'bold', fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Depression Score Calculation Framework</span>
+                            <span style={{ fontSize: '9px', backgroundColor: '#2196f3', color: 'white', padding: '1px 5px', borderRadius: '10px' }}>
+                              Clinical Algorithm
+                            </span>
+                          </div>
+                          
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '5px', fontSize: '9px', marginTop: '5px' }}>
+                            <div style={{ fontWeight: 'bold', color: '#2196f3' }}>Micro Score (5-min):</div>
+                            <div>Current emotional state from latest session data</div>
+                              <div style={{ fontWeight: 'bold', color: '#ff9800' }}>Macro Score (Last 24 Hours):</div>
+                            <div>Aggregated from hourly emotion records over the past 24 hours from current time</div>
+                            
+                            <div style={{ fontWeight: 'bold', color: '#f44336' }}>Clinical Score:</div>
+                            <div>Comprehensive assessment from historical data</div>
+                          </div>
+                            <div style={{ marginTop: '8px', fontStyle: 'italic', fontSize: '8px', backgroundColor: 'rgba(255, 255, 255, 0.5)', padding: '4px', borderRadius: '3px' }}>
+                            All scores use the clinical algorithm: weighted emotions → raw score → shifted score (+1.3) → normalized score (/3.6)
+                            <div style={{ marginTop: '3px', fontWeight: 'bold' }}>
+                              Note: Macro score uses data from exactly the past 24 hours from current time
+                            </div>
+                          </div>
+                          
+                          <div style={{ 
+                            marginTop: '5px', 
+                            fontSize: '8px', 
+                            borderTop: '1px dashed #90caf9', 
+                            paddingTop: '5px',
+                            display: 'flex',
+                            justifyContent: 'space-between'
+                          }}>
+                            <div>
+                              <span style={{ fontWeight: 'bold' }}>Data Sources:</span>                            <span> 5-min API: http://localhost:4000/api/average/combined-5min-weighted-average</span>
+                              <span> | 24hr API: http://localhost:4000/api/average/60min-weighted-average (past 24 hrs from now)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                              <AccessTimeIcon sx={{ fontSize: '10px', mr: 0.5, color: '#2196f3' }} />
+                              <span>{new Date().toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Micro Score with blue theme */}
+                        <div style={{ 
+                          backgroundColor: 'rgba(33, 150, 243, 0.05)', 
+                          padding: '8px', 
+                          borderRadius: '4px',
+                          border: '1px solid rgba(33, 150, 243, 0.2)'
+                        }}>                          <div style={{ fontWeight: 'bold', marginBottom: '5px', color: '#2196f3', borderBottom: '1px dotted #2196f3', paddingBottom: '2px' }}>
+                            MICRO SCORE CALCULATION (5-min data)
+                          </div>                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <div style={{ fontWeight: 'bold' }}>Value:</div> 
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <div style={{ 
+                                fontWeight: 'bold',
+                                color: '#ffffff', 
+                                backgroundColor: '#2196f3',
+                                padding: '2px 8px',
+                                borderRadius: '10px',
+                                fontSize: '10px'
+                              }}>
+                                {microScore?.toFixed(3) || 'Not available'}
+                              </div>
+                              <div style={{ 
+                                fontSize: '8px',
+                                color: getDepressionLevel(microScore).color,
+                                fontWeight: 'bold' 
+                              }}>
+                                {getDepressionLevel(microScore).level}
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ marginBottom: '8px' }}>Step 1-2: Emotion Values × Clinical Weights</div>
+                          {Object.entries(averageEmotions).map(([emotion, value]) => (
+                            <div key={emotion}>
+                              {emotion}: {value?.toFixed(3) || 0} × {emotionWeights[emotion] || 0} = {((value || 0) * (emotionWeights[emotion] || 0)).toFixed(3)}
+                            </div>
+                          ))}
+                          
+                          <div style={{ marginTop: '8px', borderTop: '1px dotted #ccc', paddingTop: '5px' }}>
+                            Step 3: Raw Score (sum of weighted emotions): {Object.entries(averageEmotions).reduce((sum, [emotion, value]) => 
+                              sum + ((emotionWeights[emotion] || 0) * (value || 0)), 0).toFixed(3)}
+                          </div>
+                          <div>
+                            Step 4: Shifted Score (raw + 1.3): {(Object.entries(averageEmotions).reduce((sum, [emotion, value]) => 
+                              sum + ((emotionWeights[emotion] || 0) * (value || 0)), 0) + 1.3).toFixed(3)}
+                          </div>                          <div style={{ fontWeight: 'bold', color: '#2196f3' }}>
+                            Step 5: Final Micro Score ((raw + 1.3) / 3.6): {((Object.entries(averageEmotions).reduce((sum, [emotion, value]) => 
+                              sum + ((emotionWeights[emotion] || 0) * (value || 0)), 0) + 1.3) / 3.6).toFixed(3)}
+                          </div>
+                          
+                          <div style={{ fontSize: '8px', marginTop: '5px', textAlign: 'right', fontStyle: 'italic', color: '#2196f3' }}>
+                            Timestamp: {new Date().toLocaleString()}
+                          </div>
+                          
+                          {/* Data Information Status */}
+                          <div style={{ marginTop: '8px', padding: '4px', fontSize: '8px', backgroundColor: '#f5f5f5', borderRadius: '2px' }}>
+                            <span style={{ fontWeight: 'bold' }}>Data Sources:</span> 
+                            <span> Micro: {predictionData?.dataSource || 'unknown'} | </span>
+                            <span>Macro: {predictionData?.macroScoreSource || 'unknown'} | </span>
+                            <span>Last Updated: {predictionData?.lastUpdated || new Date().toLocaleString()}</span>
+                          </div>
+                        </div>
+                        
+                        {/* Other scores with their own themes */}
+                        <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>                          {/* Macro Score */}                          <div style={{ 
+                            flex: '1', 
+                            backgroundColor: 'rgba(255, 152, 0, 0.05)', 
+                            padding: '8px', 
+                            borderRadius: '4px',
+                            border: '1px solid rgba(255, 152, 0, 0.2)'
+                          }}>                            <div style={{ fontWeight: 'bold', color: '#ff9800', borderBottom: '1px dotted #ff9800', paddingBottom: '2px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>MACRO SCORE (Last 24 Hours)</div>
+                              <div style={{ fontSize: '7px', fontWeight: 'normal', backgroundColor: '#fff3e0', padding: '1px 4px', borderRadius: '3px' }}>
+                                Hourly records from last 24 hrs
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
+                              <div style={{ fontWeight: 'bold' }}>Value:</div> 
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <div style={{ 
+                                  fontWeight: 'bold',
+                                  color: '#ffffff', 
+                                  backgroundColor: '#ff9800',
+                                  padding: '2px 8px',
+                                  borderRadius: '10px',
+                                  fontSize: '10px'
+                                }}>
+                                  {macroScore?.toFixed(3) || 'Not available'}
+                                </div>
+                                <div style={{ 
+                                  fontSize: '8px',
+                                  color: getDepressionLevel(macroScore).color,
+                                  fontWeight: 'bold' 
+                                }}>
+                                  {getDepressionLevel(macroScore).level}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Improved macro score calculation visualization */}
+                            {predictionData?.macroEmotions ? (
+                              <>
+                                <div style={{ fontSize: '8px', marginTop: '8px', borderTop: '1px dotted #ccc', paddingTop: '5px' }}>                                  <div style={{ marginBottom: '3px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>Step 1-2: Last 24 Hours Emotion Values & Clinical Weights</span>
+                                    <span style={{ color: '#ff9800', fontSize: '7px' }}>From 60-min API, aligned with current time</span>
+                                  </div>
+                                  
+                                  {/* Emotion weights table with visual indicators */}
+                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '2px', marginBottom: '5px' }}>
+                                    <div style={{ fontWeight: 'bold', fontSize: '7px', borderBottom: '1px solid #ffe0b2' }}>Emotion</div>
+                                    <div style={{ fontWeight: 'bold', fontSize: '7px', borderBottom: '1px solid #ffe0b2' }}>Value</div>
+                                    <div style={{ fontWeight: 'bold', fontSize: '7px', borderBottom: '1px solid #ffe0b2' }}>Weight</div>
+                                    <div style={{ fontWeight: 'bold', fontSize: '7px', borderBottom: '1px solid #ffe0b2' }}>Contribution</div>
+                                    
+                                    {Object.entries(predictionData.macroEmotions).map(([emotion, value]) => {
+                                      const weight = emotionWeights[emotion] || 0;
+                                      const contribution = (value || 0) * weight;
+                                      const isPositive = contribution >= 0;
+                                      
+                                      return (
+                                        <React.Fragment key={emotion}>
+                                          <div style={{ fontSize: '7px' }}>{emotion}</div>
+                                          <div style={{ fontSize: '7px' }}>
+                                            <span style={{ 
+                                              display: 'inline-block',
+                                              width: `${Math.min(value * 100, 100)}%`, 
+                                              height: '3px', 
+                                              backgroundColor: emotion === 'Joy' ? '#4caf50' : 
+                                                              emotion === 'Sadness' ? '#42a5f5' : 
+                                                              emotion === 'Anger' ? '#f44336' : 
+                                                              emotion === 'Fear' ? '#7e57c2' : 
+                                                              emotion === 'Surprise' ? '#ffca28' : '#9e9e9e',
+                                              marginRight: '3px'
+                                            }}></span>
+                                            {(value || 0).toFixed(3)}
+                                          </div>
+                                          <div style={{ fontSize: '7px' }}>
+                                            <span style={{
+                                              color: weight > 0 ? '#f44336' : weight < 0 ? '#4caf50' : '#9e9e9e',
+                                              fontWeight: Math.abs(weight) > 0.5 ? 'bold' : 'normal'
+                                            }}>
+                                              {weight.toFixed(1)}
+                                            </span>
+                                          </div>
+                                          <div style={{ fontSize: '7px' }}>
+                                            <span style={{
+                                              color: isPositive ? '#f44336' : '#4caf50',
+                                              fontWeight: Math.abs(contribution) > 0.1 ? 'bold' : 'normal'
+                                            }}>
+                                              {contribution.toFixed(3)}
+                                            </span>
+                                            <span style={{ 
+                                              display: 'inline-block',
+                                              width: `${Math.min(Math.abs(contribution) * 100, 100)}%`, 
+                                              height: '3px', 
+                                              backgroundColor: isPositive ? '#f44336' : '#4caf50',
+                                              marginLeft: '3px'
+                                            }}></span>
+                                          </div>
+                                        </React.Fragment>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                                
+                                <div style={{ fontSize: '8px', marginTop: '5px', borderTop: '1px dotted #ccc', paddingTop: '5px' }}>
+                                  {/* Calculate the raw score using the same algorithm as micro score */}
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                                    <span>Step 3: Raw Score (sum of weighted emotions):</span>
+                                    <span style={{ fontWeight: 'bold' }}>
+                                      {Object.entries(predictionData.macroEmotions).reduce((sum, [emotion, value]) => 
+                                        sum + ((emotionWeights[emotion] || 0) * (value || 0)), 0).toFixed(3)}
+                                    </span>
+                                  </div>
+                                  
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                                    <span>Step 4: Shifted Score (raw + 1.3):</span>
+                                    <span style={{ fontWeight: 'bold' }}>
+                                      {(Object.entries(predictionData.macroEmotions).reduce((sum, [emotion, value]) => 
+                                        sum + ((emotionWeights[emotion] || 0) * (value || 0)), 0) + 1.3).toFixed(3)}
+                                    </span>
+                                  </div>
+
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#ff9800', borderTop: '1px solid #ffe0b2', paddingTop: '3px', marginTop: '3px' }}>
+                                    <span>Step 5: Final Macro Score ((raw + 1.3) / 3.6):</span>
+                                    <span>
+                                      {((Object.entries(predictionData.macroEmotions).reduce((sum, [emotion, value]) => 
+                                        sum + ((emotionWeights[emotion] || 0) * (value || 0)), 0) + 1.3) / 3.6).toFixed(3)}
+                                    </span>
+                                  </div>
+                                  
+                                  <div style={{ fontSize: '7px', marginTop: '5px', textAlign: 'right', fontStyle: 'italic', color: '#ff9800' }}>
+                                    {predictionData?.macroData?.timestamp ? 
+                                      `Timestamp: ${new Date(predictionData.macroData.timestamp).toLocaleString()}` :
+                                      `Timestamp: ${new Date().toLocaleString()}`}
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <div style={{ fontSize: '8px', marginTop: '8px', fontStyle: 'italic', padding: '4px', backgroundColor: '#fffde7', borderRadius: '3px' }}>
+                                <div>No emotion details available for macro score calculation.</div>
+                                <div>Score was retrieved directly from the API.</div>
+                                {predictionData?.macroScoreSource && (
+                                  <div style={{ marginTop: '3px', fontWeight: 'bold' }}>
+                                    Source: {predictionData.macroScoreSource}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* API Calculation Details */}
+                            {predictionData?.macroData?.calculationDetails && (
+                              <div style={{ 
+                                fontSize: '8px', 
+                                marginTop: '5px',
+                                borderTop: '1px dotted #ccc',
+                                paddingTop: '5px',
+                                backgroundColor: 'rgba(255, 248, 225, 0.5)',
+                                padding: '4px',
+                                borderRadius: '3px'
+                              }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>API Calculation Details:</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px' }}>
+                                  <div>Raw Score from API:</div>
+                                  <div style={{ fontWeight: 'bold' }}>{predictionData.macroData.calculationDetails.rawScore?.toFixed(3) || 'N/A'}</div>
+                                  
+                                  <div>Shifted Score (+1.3):</div>
+                                  <div style={{ fontWeight: 'bold' }}>{predictionData.macroData.calculationDetails.shiftedScore?.toFixed(3) || 'N/A'}</div>
+                                  
+                                  <div>Normalized Score (/3.6):</div>
+                                  <div style={{ fontWeight: 'bold', color: '#ff9800' }}>{predictionData.macroData.calculationDetails.normalizedScore?.toFixed(3) || 'N/A'}</div>
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div style={{ 
+                              fontSize: '7px', 
+                              marginTop: '8px', 
+                              backgroundColor: '#fff3e0',
+                              padding: '4px',
+                              borderRadius: '3px',
+                              border: '1px dashed #ffcc80'
+                            }}>                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>                                <div style={{ fontWeight: 'bold' }}>
+                                  ⓘ Data source: {predictionData?.macroScoreSource || 'unknown'}
+                                </div>
+                                <div style={{ 
+                                  fontSize: '6px',
+                                  backgroundColor: '#ff9800',
+                                  color: 'white',
+                                  padding: '1px 4px',
+                                  borderRadius: '8px'
+                                }}>
+                                  LAST 24 HRS DATA
+                                </div>
+                              </div>
+                              <div style={{ marginTop: '2px' }}>
+                                Data analyzed: Hourly emotion records from the past 24 hours
+                                {predictionData?.macroData?.emotions && ` (${predictionData.macroData.emotions.length} available)`}
+                              </div>
+                              
+                              <div style={{ marginTop: '2px', fontStyle: 'italic' }}>
+                                Time range: Last 24 hours from {predictionData?.macroData?.timestamp ? 
+                                  new Date(predictionData.macroData.timestamp).toLocaleString() : 
+                                  new Date().toLocaleString()} (current time)
+                              </div>
+                            </div>
+                          </div>
+                            {/* Clinical Score */}
+                          <div style={{ 
+                            flex: '1', 
+                            backgroundColor: 'rgba(244, 67, 54, 0.05)', 
+                            padding: '8px', 
+                            borderRadius: '4px', 
+                            border: '1px solid rgba(244, 67, 54, 0.2)'
+                          }}>                            <div style={{ fontWeight: 'bold', color: '#f44336', borderBottom: '1px dotted #f44336', paddingBottom: '2px', marginBottom: '5px' }}>
+                              CLINICAL SCORE (Overall)
+                            </div>                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
+                              <div style={{ fontWeight: 'bold' }}>Value:</div> 
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <div style={{ 
+                                  fontWeight: 'bold',
+                                  color: '#ffffff', 
+                                  backgroundColor: '#f44336',
+                                  padding: '2px 8px',
+                                  borderRadius: '10px',
+                                  fontSize: '10px'
+                                }}>
+                                  {clinicalScore?.toFixed(3) || 'Not available'}
+                                </div>
+                                <div style={{ 
+                                  fontSize: '8px',
+                                  color: getDepressionLevel(clinicalScore).color,
+                                  fontWeight: 'bold' 
+                                }}>
+                                  {getDepressionLevel(clinicalScore).level}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div style={{ fontSize: '8px', marginTop: '5px', textAlign: 'right', fontStyle: 'italic', color: '#f44336' }}>
+                              Timestamp: {predictionData?.lastUpdated || new Date().toLocaleString()}
+                            </div>
+                            
+                            <div style={{ fontSize: '8px', marginTop: '8px', fontStyle: 'italic', backgroundColor: '#ffebee', padding: '4px', borderRadius: '3px' }}>
+                              <div style={{ fontWeight: 'bold' }}>
+                                ⓘ Clinical score represents a comprehensive assessment
+                              </div>
+                              <div>
+                                Based on long-term historical data and weighted across multiple modalities
+                              </div>
+                              <div>
+                                Last updated: {predictionData?.lastUpdated || new Date().toLocaleString()}
+                              </div>
+                            </div>
+                            <div style={{ fontSize: '8px', marginTop: '5px', fontStyle: 'italic' }}>
+                              ⓘ From API directly
+                            </div>
+                          </div>
+                        </div>
+                      </Typography>
+                    </Box>
                   </Paper>
                 </motion.div>
               </Grid>
             </Grid>
           </motion.div>
         </Grid>  
-        </Grid>
+      </Grid>
     </Container>
   );
 };

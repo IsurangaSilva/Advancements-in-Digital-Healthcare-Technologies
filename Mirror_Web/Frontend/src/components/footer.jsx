@@ -322,23 +322,22 @@ const Footer = () => {
                 </Typography>
                 <motion.div variants={staggerContainer} initial="initial" animate="animate">
                   {["Emotion Analysis", "Text Recognition", "Voice Analysis", "Facial Recognition", "Depression Detection", "Mental Health Tips", "Personalized Care"].map((service, index) => (
-                    <motion.div key={index} variants={fadeInUp}>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          opacity: 0.8, 
-                          mb: 1.5,
-                          transition: "all 0.3s",
-                          "&:hover": { 
-                            opacity: 1, 
-                            color: "#64b5f6"
-                          } 
-                        }}
-                      >
-                        <motion.div whileHover={{ scale: 1.05, x: 5 }}>
+                    <motion.div key={index} variants={fadeInUp}>                      <motion.div whileHover={{ scale: 1.05, x: 5 }}>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            opacity: 0.8, 
+                            mb: 1.5,
+                            transition: "all 0.3s",
+                            "&:hover": { 
+                              opacity: 1, 
+                              color: "#64b5f6"
+                            } 
+                          }}
+                        >
                           {service}
-                        </motion.div>
-                      </Typography>
+                        </Typography>
+                      </motion.div>
                     </motion.div>
                   ))}
                 </motion.div>
