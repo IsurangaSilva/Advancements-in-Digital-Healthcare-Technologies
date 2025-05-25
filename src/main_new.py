@@ -75,7 +75,7 @@ class SplashScreen(tk.Tk):
         # Set up emotion processor with lazy loading
         self.update_progress(80, "Setting up emotion processing...")
         dummy_callback = lambda status: None
-        emotion_processor = EmotionBackgroundProcessor(status_update_callback=dummy_callback, lazy_load=True)
+        emotion_processor = EmotionBackgroundProcessor(status_update_callback=dummy_callback, lazy_load=True, no_personalization=True)
         emotion_thread = threading.Thread(target=emotion_processor.run, daemon=True)
         
         # Finish loading

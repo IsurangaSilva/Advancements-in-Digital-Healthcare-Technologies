@@ -5,7 +5,7 @@ from datetime import datetime
 from .aggregator import file_lock
 
 class SessionAggregator:
-    def __init__(self, interval_seconds=300, emotion_file=None, session_file=None):
+    def __init__(self, interval_seconds=60, emotion_file=None, session_file=None):
         # Compute the base directory one level up and point to the db/FER folder.
         BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         db_dir = os.path.join(BASE_DIR, "db", "FER")
@@ -30,19 +30,19 @@ class SessionAggregator:
                 print("Error reading emotion data:", e)
                 return
             
-            # Filter entries that have not been used for 5-minute session aggregation.
+            # Filter entries that have not been used for 1h session aggregation.
             unused = [entry for entry in data if not entry.get("session_used", False)]
-            if len(unused) < 5:
-                print("Not enough unused emotion data for session aggregation. Waiting for 5 entries.")
+            if len(unused) < 12:
+                print(f"Not enough unused (Have len(unused)={len(unused)}) emotion data for session aggregation. Waiting for 12 entries.")
                 return
             
-            # Take the last 5 objects (most recent 5 entries)
-            session_entries = unused[-5:]
+            # Take the last 12 objects (most recent 12 entries)
+            session_entries = unused[-12:]
             keys = ['Anger', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
             session_aggregate = {}
             for key in keys:
                 total = sum(entry["aggregated_emotions"].get(key, 0) for entry in session_entries)
-                session_aggregate[key] = total / 5.0
+                session_aggregate[key] = total / 12.0
 
             # Append the session aggregate to session_summery.json.
             try:
@@ -92,21 +92,21 @@ class SessionAggregator:
                 return
             
             # Filter entries that have not been used for hourly aggregation.
-            unused = [entry for entry in data if not entry.get("session_used_hour", False)]
-            if len(unused) < 60:
-                print("Not enough unused emotion data for hour aggregation. Waiting for 60 entries.")
+            unused = [entry for entry in data if not entry.get("session_used", False)]
+            if len(unused) < 33:
+                print(f"Not enough unused (Have len(unused)={len(unused)}) emotion data for hour aggregation. Waiting for 12 entries.")
                 return
             
-            # Take the last 60 objects (most recent 60 entries)
-            session_entries = unused[-60:]
+            # Take the last 12 objects (most recent 12 entries for 1 hour aggregation)
+            session_entries = unused[-33:]
             keys = ['Anger', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
             session_aggregate = {}
             for key in keys:
                 total = sum(entry["aggregated_emotions"].get(key, 0) for entry in session_entries)
-                session_aggregate[key] = total / 60.0
+                session_aggregate[key] = total / 33.0
 
-            # Define the hourly session summary file (session_summery1h.json)
-            hour_session_file = os.path.join(os.path.dirname(self.session_file), "session_summery1h.json")
+            # Define the session summary file (session_summery.json)
+            hour_session_file = os.path.join(os.path.dirname(self.session_file), "session_summery.json")
             try:
                 if os.path.exists(hour_session_file) and os.path.getsize(hour_session_file) > 0:
                     with open(hour_session_file, "r") as f:
@@ -129,7 +129,7 @@ class SessionAggregator:
             for entry in data:
                 for se in session_entries:
                     if entry.get("timestamp") == se.get("timestamp"):
-                        entry["session_used_hour"] = True
+                        entry["session_used"] = True
                         break
 
             with open(self.emotion_file, "w") as f:
@@ -139,7 +139,7 @@ class SessionAggregator:
         # This loop runs the hourly aggregation periodically.
         while True:
             self.aggregate_hour()
-            time.sleep(3600)  # Sleep for 1 hour
+            time.sleep(3600)  # Sleep for 1 hour (For testing, changed to 60 seconds)
 
 if __name__ == "__main__":
     aggregator = SessionAggregator()
