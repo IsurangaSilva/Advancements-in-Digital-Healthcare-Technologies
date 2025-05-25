@@ -1,5 +1,6 @@
 import os
 import json
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import librosa
@@ -10,6 +11,9 @@ from config import AUDIO_FILE, VOICE_MODEL_PATH, TEMP_VOICE_PREDICTION_RESULT_CS
 import tensorflow as tf
 from model_manager import ModelManager
 from db_connection import MongoDBConnection  # Import the MongoDB connection
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
 
 # Configure logging
 log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
@@ -33,6 +37,14 @@ logging.basicConfig(
 
 # Define emotion categories
 CAT6 = ['fear', 'angry', 'neutral', 'happy', 'sad', 'surprise']
+EMOTION_COLORS = {
+    'fear': 'purple',
+    'angry': 'red',
+    'neutral': 'gray',
+    'happy': 'green',
+    'sad': 'blue',
+    'surprise': 'orange'
+}
 
 # Custom GetItem layer
 class GetItem(Layer):
@@ -191,16 +203,415 @@ def save_results_to_json(results, output_file="audio_emotion_data.json"):
 
 
 
-def analyze_audio(model=None, audio_path=AUDIO_FILE):
-    """Analyzes the audio file for emotion and saves the results.
+# def analyze_audio(model=None, audio_path=AUDIO_FILE):
+#     """Analyzes the audio file for emotion and saves the results.
     
-    Args:
-        model: Pre-loaded emotion model (optional)
-        audio_path: Path to the audio file to analyze
-    """
+#     Args:
+#         model: Pre-loaded emotion model (optional)
+#         audio_path: Path to the audio file to analyze
+#     """
+#     if not os.path.exists(audio_path):
+#         logging.error(f"Audio file not found at {audio_path}")
+#         return
+    
+#     # Check if the audio file is very small (likely silence)
+#     is_silent = os.path.getsize(audio_path) < 1024
+#     if is_silent:
+#         logging.info(f"Audio file {audio_path} appears to be silent (small size). Using default neutral emotion.")
+#         # For silent audio, use neutral emotion with zero confidence for other emotions
+#         timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+#         predicted_emotion = "neutral"
+#         predictions = np.zeros(len(CAT6))
+#         predictions[CAT6.index("neutral")] = 1.0
+#     else:
+#         # Ensure we have a model - load it if not provided
+#         if model is None:
+#             model = load_emotion_model(VOICE_MODEL_PATH)
+#             if model is None:
+#                 logging.error("Failed to load voice emotion model")
+#                 return
+
+#         # Process non-silent audio
+#         predicted_emotion, predictions = predict_emotion(model, audio_path)
+#         if predicted_emotion is None:
+#             logging.error("Failed to predict emotion, defaulting to neutral")
+#             predicted_emotion = "neutral"
+#             predictions = np.zeros(len(CAT6))
+#             predictions[CAT6.index("neutral")] = 1.0
+
+#     timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+#     logging.info(f"Audio Analysis for: {audio_path}")
+#     logging.info(f"Predicted Emotion: {predicted_emotion}")
+#     logging.info("Emotion Scores:")
+#     for emotion, score in zip(CAT6, predictions):
+#         logging.info(f"  {emotion}: {score:.4f}")
+#     logging.info(f"Timestamp: {timestamp}")
+#     logging.info("-" * 50)
+
+#     results = {
+#         "timestamp": timestamp,
+#         "predicted_emotion": predicted_emotion,
+#         "emotion_scores": {emotion: float(score) for emotion, score in zip(CAT6, predictions)}
+#     }
+
+#     # Insert into MongoDB with error handling
+#     try:
+#         collection.insert_one(results)
+#         logging.info(f"Inserted document for row into MongoDB")
+#     except Exception as e:
+#         logging.error(f"Error inserting into MongoDB: {e}")
+
+    
+#     save_results_to_csv(results)
+#     save_results_to_json(results)
+
+
+def generate_visualizations(audio_path, predictions, predicted_emotion):
+    """Generates various visualizations for audio analysis."""
+    visualizations = {}
+    
+    try:
+        # Load audio file
+        y, sr = librosa.load(audio_path, sr=16000)
+        
+        # 1. MFCC Visualization
+        plt.figure(figsize=(10, 4))
+        mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20)
+        librosa.display.specshow(mfccs, x_axis='time')
+        plt.colorbar()
+        plt.title(f'MFCC - Predicted Emotion: {predicted_emotion}')
+        plt.tight_layout()
+        
+        # Save to base64
+        buf = BytesIO()
+        plt.savefig(buf, format='png', dpi=300)
+        buf.seek(0)
+        visualizations['mfcc'] = base64.b64encode(buf.read()).decode('utf-8')
+        plt.close()
+        
+        # 2. Waveform with Emotion Color
+        plt.figure(figsize=(12, 3))
+        plt.plot(y, color=EMOTION_COLORS.get(predicted_emotion, 'blue'))
+        plt.title(f'Audio Waveform - Predicted Emotion: {predicted_emotion}')
+        plt.xlabel('Time')
+        plt.ylabel('Amplitude')
+        plt.tight_layout()
+        
+        buf = BytesIO()
+        plt.savefig(buf, format='png', dpi=300)
+        buf.seek(0)
+        visualizations['waveform'] = base64.b64encode(buf.read()).decode('utf-8')
+        plt.close()
+        
+        # 3. Emotion Distribution Bar Chart
+        plt.figure(figsize=(10, 5))
+        colors = [EMOTION_COLORS[emotion] for emotion in CAT6]
+        plt.bar(CAT6, predictions, color=colors)
+        plt.title('Emotion Prediction Distribution')
+        plt.ylabel('Probability')
+        plt.ylim(0, 1)
+        plt.tight_layout()
+        
+        buf = BytesIO()
+        plt.savefig(buf, format='png', dpi=300)
+        buf.seek(0)
+        visualizations['emotion_distribution'] = base64.b64encode(buf.read()).decode('utf-8')
+        plt.close()
+        
+        # 4. Spectrogram
+        plt.figure(figsize=(10, 4))
+        D = librosa.amplitude_to_db(np.abs(librosa.stft(y)), ref=np.max)
+        librosa.display.specshow(D, y_axis='log', x_axis='time')
+        plt.colorbar(format='%+2.0f dB')
+        plt.title(f'Spectrogram - Predicted Emotion: {predicted_emotion}')
+        plt.tight_layout()
+        
+        buf = BytesIO()
+        plt.savefig(buf, format='png', dpi=300)
+        buf.seek(0)
+        visualizations['spectrogram'] = base64.b64encode(buf.read()).decode('utf-8')
+        plt.close()
+        
+        logging.info("Visualizations generated successfully")
+        
+    except Exception as e:
+        logging.error(f"Error generating visualizations: {e}")
+    
+    return visualizations
+
+# def analyze_audio(model=None, audio_path=AUDIO_FILE):
+#     """Analyzes the audio file for emotion and saves the results."""
+#     if not os.path.exists(audio_path):
+#         logging.error(f"Audio file not found at {audio_path}")
+#         return
+    
+#     # Ensure assets directory exists
+#     Path("assets").mkdir(parents=True, exist_ok=True)
+    
+#     # Check if the audio file is very small (likely silence)
+#     is_silent = os.path.getsize(audio_path) < 1024
+#     if is_silent:
+#         logging.info(f"Audio file {audio_path} appears to be silent (small size). Using default neutral emotion.")
+#         # For silent audio, use neutral emotion with zero confidence for other emotions
+#         timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+#         predicted_emotion = "neutral"
+#         predictions = np.zeros(len(CAT6))
+#         predictions[CAT6.index("neutral")] = 1.0
+#         visualizations = {}  # Empty visualizations for silent audio
+#     else:
+#         # Ensure we have a model - load it if not provided
+#         if model is None:
+#             model = load_emotion_model(VOICE_MODEL_PATH)
+#             if model is None:
+#                 logging.error("Failed to load voice emotion model")
+#                 return
+
+#         # Process non-silent audio
+#         predicted_emotion, predictions = predict_emotion(model, audio_path)
+#         if predicted_emotion is None:
+#             logging.error("Failed to predict emotion, defaulting to neutral")
+#             predicted_emotion = "neutral"
+#             predictions = np.zeros(len(CAT6))
+#             predictions[CAT6.index("neutral")] = 1.0
+        
+#         # Generate visualizations
+#         visualizations = generate_visualizations(audio_path, predictions, predicted_emotion)
+        
+#         # Save visualization images to files
+#         for viz_name, viz_data in visualizations.items():
+#             image_filename = f"assets/{Path(audio_path).stem}_{viz_name}.png"
+#             with open(image_filename, "wb") as f:
+#                 f.write(base64.b64decode(viz_data))
+#             logging.info(f"Saved visualization: {image_filename}")
+
+#     timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+#     logging.info(f"Audio Analysis for: {audio_path}")
+#     logging.info(f"Predicted Emotion: {predicted_emotion}")
+#     logging.info("Emotion Scores:")
+#     for emotion, score in zip(CAT6, predictions):
+#         logging.info(f"  {emotion}: {score:.4f}")
+#     logging.info(f"Timestamp: {timestamp}")
+#     logging.info("-" * 50)
+
+#     results = {
+#         "timestamp": timestamp,
+#         "audio_file": audio_path,
+#         "predicted_emotion": predicted_emotion,
+#         "emotion_scores": {emotion: float(score) for emotion, score in zip(CAT6, predictions)},
+#         # "visualizations": visualizations  # Store base64 versions in MongoDB
+#     }
+
+#     # Insert into MongoDB with error handling
+#     try:
+#         collection.insert_one(results)
+#         logging.info(f"Inserted document with visualizations into MongoDB")
+#     except Exception as e:
+#         logging.error(f"Error inserting into MongoDB: {e}")
+
+#     save_results_to_csv(results)
+#     save_results_to_json(results)
+# def analyze_audio(model=None, audio_path=AUDIO_FILE):
+#     """Analyzes the audio file for emotion and saves the results."""
+#     if not os.path.exists(audio_path):
+#         logging.error(f"Audio file not found at {audio_path}")
+#         return
+    
+#     # Ensure assets directory exists
+#     Path("assets").mkdir(parents=True, exist_ok=True)
+    
+#     # Clean up previous latest visualizations
+#     for viz_type in ['mfcc', 'waveform', 'spectrogram', 'emotion_distribution']:
+#         latest_file = Path(f"assets/latest_{viz_type}.png")
+#         if latest_file.exists():
+#             latest_file.unlink()
+    
+#     # Check if the audio file is very small (likely silence)
+#     is_silent = os.path.getsize(audio_path) < 1024
+#     if is_silent:
+#         logging.info(f"Audio file {audio_path} appears to be silent (small size). Using default neutral emotion.")
+#         # For silent audio, use neutral emotion with zero confidence for other emotions
+#         timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+#         predicted_emotion = "neutral"
+#         predictions = np.zeros(len(CAT6))
+#         predictions[CAT6.index("neutral")] = 1.0
+#         visualizations = {}  # Empty visualizations for silent audio
+#     else:
+#         # Ensure we have a model - load it if not provided
+#         if model is None:
+#             model = load_emotion_model(VOICE_MODEL_PATH)
+#             if model is None:
+#                 logging.error("Failed to load voice emotion model")
+#                 return
+
+#         # Process non-silent audio
+#         predicted_emotion, predictions = predict_emotion(model, audio_path)
+#         if predicted_emotion is None:
+#             logging.error("Failed to predict emotion, defaulting to neutral")
+#             predicted_emotion = "neutral"
+#             predictions = np.zeros(len(CAT6))
+#             predictions[CAT6.index("neutral")] = 1.0
+        
+#         # Generate visualizations
+#         visualizations = generate_visualizations(audio_path, predictions, predicted_emotion)
+        
+#         # Save visualization images to files (both specific and latest versions)
+#         for viz_name, viz_data in visualizations.items():
+#             # Save specific version
+#             image_filename = f"assets/{Path(audio_path).stem}_{viz_name}.png"
+#             with open(image_filename, "wb") as f:
+#                 f.write(base64.b64decode(viz_data))
+#             logging.info(f"Saved visualization: {image_filename}")
+            
+#             # Save latest version (overwrites previous latest)
+#             latest_filename = f"assets/latest_{viz_name}.png"
+#             with open(latest_filename, "wb") as f:
+#                 f.write(base64.b64decode(viz_data))
+#             logging.info(f"Updated latest visualization: {latest_filename}")
+
+#     timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+#     logging.info(f"Audio Analysis for: {audio_path}")
+#     logging.info(f"Predicted Emotion: {predicted_emotion}")
+#     logging.info("Emotion Scores:")
+#     for emotion, score in zip(CAT6, predictions):
+#         logging.info(f"  {emotion}: {score:.4f}")
+#     logging.info(f"Timestamp: {timestamp}")
+#     logging.info("-" * 50)
+
+#     results = {
+#         "timestamp": timestamp,
+#         "audio_file": audio_path,
+#         "predicted_emotion": predicted_emotion,
+#         "emotion_scores": {emotion: float(score) for emotion, score in zip(CAT6, predictions)},
+#         # "latest_visualizations": {
+#         #     "mfcc": f"assets/latest_mfcc.png",
+#         #     "waveform": f"assets/latest_waveform.png",
+#         #     "spectrogram": f"assets/latest_spectrogram.png",
+#         #     "emotion_distribution": f"assets/latest_emotion_distribution.png"
+#         # }
+#     }
+
+#     # Insert into MongoDB with error handling
+#     try:
+#         collection.insert_one(results)
+#         logging.info(f"Inserted document with visualizations into MongoDB")
+#     except Exception as e:
+#         logging.error(f"Error inserting into MongoDB: {e}")
+
+#     save_results_to_csv(results)
+#     save_results_to_json(results)
+
+# def analyze_audio(model=None, audio_path=AUDIO_FILE):
+#     """Analyzes the audio file for emotion and saves the results."""
+#     if not os.path.exists(audio_path):
+#         logging.error(f"Audio file not found at {audio_path}")
+#         return
+    
+#     # Get the root directory of your project
+#     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#     assets_dir = os.path.join(project_root, "Frontend", "public", "assets")
+    
+#     # Ensure assets directory exists
+#     os.makedirs(assets_dir, exist_ok=True)
+    
+#     # Clean up previous latest visualizations
+#     for viz_type in ['mfcc', 'waveform', 'spectrogram', 'emotion_distribution']:
+#         latest_file = os.path.join(assets_dir, f"latest_{viz_type}.png")
+#         if os.path.exists(latest_file):
+#             try:
+#                 os.remove(latest_file)
+#                 logging.info(f"Removed previous visualization: {latest_file}")
+#             except Exception as e:
+#                 logging.error(f"Error removing {latest_file}: {e}")
+    
+#     # Check if the audio file is very small (likely silence)
+#     is_silent = os.path.getsize(audio_path) < 1024
+#     if is_silent:
+#         logging.info(f"Audio file {audio_path} appears to be silent (small size). Using default neutral emotion.")
+#         # For silent audio, use neutral emotion with zero confidence for other emotions
+#         timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+#         predicted_emotion = "neutral"
+#         predictions = np.zeros(len(CAT6))
+#         predictions[CAT6.index("neutral")] = 1.0
+#         visualizations = {}  # Empty visualizations for silent audio
+#     else:
+#         # Ensure we have a model - load it if not provided
+#         if model is None:
+#             model = load_emotion_model(VOICE_MODEL_PATH)
+#             if model is None:
+#                 logging.error("Failed to load voice emotion model")
+#                 return
+
+#         # Process non-silent audio
+#         predicted_emotion, predictions = predict_emotion(model, audio_path)
+#         if predicted_emotion is None:
+#             logging.error("Failed to predict emotion, defaulting to neutral")
+#             predicted_emotion = "neutral"
+#             predictions = np.zeros(len(CAT6))
+#             predictions[CAT6.index("neutral")] = 1.0
+        
+#         # Generate visualizations
+#         visualizations = generate_visualizations(audio_path, predictions, predicted_emotion)
+        
+#         # Save visualization images to files
+#         for viz_name, viz_data in visualizations.items():
+#             try:
+#                 # Save latest version
+#                 latest_filename = os.path.join(assets_dir, f"latest_{viz_name}.png")
+#                 with open(latest_filename, "wb") as f:
+#                     f.write(base64.b64decode(viz_data))
+#                 logging.info(f"Saved visualization: {latest_filename}")
+#             except Exception as e:
+#                 logging.error(f"Error saving visualization {viz_name}: {e}")
+
+#     # Rest of your function remains the same...
+#     timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+#     logging.info(f"Audio Analysis for: {audio_path}")
+#     logging.info(f"Predicted Emotion: {predicted_emotion}")
+#     logging.info("Emotion Scores:")
+#     for emotion, score in zip(CAT6, predictions):
+#         logging.info(f"  {emotion}: {score:.4f}")
+#     logging.info(f"Timestamp: {timestamp}")
+#     logging.info("-" * 50)
+
+#     results = {
+#         "timestamp": timestamp,
+#         "audio_file": audio_path,
+#         "predicted_emotion": predicted_emotion,
+#         "emotion_scores": {emotion: float(score) for emotion, score in zip(CAT6, predictions)}
+#     }
+
+#     # Insert into MongoDB with error handling
+#     try:
+#         collection.insert_one(results)
+#         logging.info(f"Inserted document with visualizations into MongoDB")
+#     except Exception as e:
+#         logging.error(f"Error inserting into MongoDB: {e}")
+
+#     save_results_to_csv(results)
+#     save_results_to_json(results)
+
+def analyze_audio(model=None, audio_path=AUDIO_FILE):
+    """Analyzes the audio file for emotion and saves the results."""
     if not os.path.exists(audio_path):
         logging.error(f"Audio file not found at {audio_path}")
         return
+    
+    # Get the root directory of your project
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    assets_dir = os.path.join(project_root, "Mirror_Web", "Frontend", "public", "assets")
+    
+    # Ensure assets directory exists
+    os.makedirs(assets_dir, exist_ok=True)
+    
+    # Clean up previous latest visualizations
+    for viz_type in ['mfcc', 'waveform', 'spectrogram', 'emotion_distribution']:
+        latest_file = os.path.join(assets_dir, f"latest_{viz_type}.png")
+        if os.path.exists(latest_file):
+            try:
+                os.remove(latest_file)
+                logging.info(f"Removed previous visualization: {latest_file}")
+            except Exception as e:
+                logging.error(f"Error removing {latest_file}: {e}")
     
     # Check if the audio file is very small (likely silence)
     is_silent = os.path.getsize(audio_path) < 1024
@@ -211,6 +622,7 @@ def analyze_audio(model=None, audio_path=AUDIO_FILE):
         predicted_emotion = "neutral"
         predictions = np.zeros(len(CAT6))
         predictions[CAT6.index("neutral")] = 1.0
+        visualizations = {}  # Empty visualizations for silent audio
     else:
         # Ensure we have a model - load it if not provided
         if model is None:
@@ -226,7 +638,22 @@ def analyze_audio(model=None, audio_path=AUDIO_FILE):
             predicted_emotion = "neutral"
             predictions = np.zeros(len(CAT6))
             predictions[CAT6.index("neutral")] = 1.0
+        
+        # Generate visualizations
+        visualizations = generate_visualizations(audio_path, predictions, predicted_emotion)
+        
+        # Save visualization images to files
+        for viz_name, viz_data in visualizations.items():
+            try:
+                # Save latest version
+                latest_filename = os.path.join(assets_dir, f"latest_{viz_name}.png")
+                with open(latest_filename, "wb") as f:
+                    f.write(base64.b64decode(viz_data))
+                logging.info(f"Saved visualization: {latest_filename}")
+            except Exception as e:
+                logging.error(f"Error saving visualization {viz_name}: {e}")
 
+    # Rest of your function remains the same...
     timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
     logging.info(f"Audio Analysis for: {audio_path}")
     logging.info(f"Predicted Emotion: {predicted_emotion}")
@@ -238,6 +665,7 @@ def analyze_audio(model=None, audio_path=AUDIO_FILE):
 
     results = {
         "timestamp": timestamp,
+        "audio_file": audio_path,
         "predicted_emotion": predicted_emotion,
         "emotion_scores": {emotion: float(score) for emotion, score in zip(CAT6, predictions)}
     }
@@ -245,11 +673,10 @@ def analyze_audio(model=None, audio_path=AUDIO_FILE):
     # Insert into MongoDB with error handling
     try:
         collection.insert_one(results)
-        logging.info(f"Inserted document for row into MongoDB")
+        logging.info(f"Inserted document with visualizations into MongoDB")
     except Exception as e:
         logging.error(f"Error inserting into MongoDB: {e}")
 
-    
     save_results_to_csv(results)
     save_results_to_json(results)
 
