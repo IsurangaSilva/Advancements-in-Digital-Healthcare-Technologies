@@ -219,8 +219,9 @@ const FERPredictions = () => {
 
   return (
     <Container sx={{ mt: 4, mb: 4 }}>
+      <h1 style={{ textAlign: "center", marginBottom: "20px" }}>Facial Emotions Aggregation Charts</h1>
       <Typography variant="h4" align="center" gutterBottom>
-        FER Predictions
+      
       </Typography>
 
       {/* Row for Line (5-min) and Bar (1-hour) charts */}

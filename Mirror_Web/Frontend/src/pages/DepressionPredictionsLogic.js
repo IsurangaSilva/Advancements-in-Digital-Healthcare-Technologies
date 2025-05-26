@@ -250,27 +250,34 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
     console.log("Initializing real-time data polling");
       // Function to fetch data from the API
     const fetchEmotionData = async () => {
-      try {
-        // Fetch both micro (5-min) and macro (hourly) data in parallel
-        const [microResponse, macroResponse] = await Promise.all([
+      try {        // Fetch micro (5-min), macro (hourly), and clinical (weekly) data in parallel
+        const [microResponse, macroResponse, clinicalResponse] = await Promise.all([
           fetch('http://localhost:4000/api/average/combined-5min-weighted-average'),
-          fetch('http://localhost:4000/api/average/hourlydepression')
+          fetch('http://localhost:4000/api/average/hourlydepression'),
+          fetch('http://localhost:4000/api/average/weeklydepression')
         ]);
-        
-        if (!microResponse.ok) {
+          if (!microResponse.ok) {
           throw new Error(`Micro API returned status: ${microResponse.status}`);
         }
         if (!macroResponse.ok) {
           console.warn(`Macro API returned status: ${macroResponse.status}, using micro score as fallback`);
         }
+        if (!clinicalResponse.ok) {
+          console.warn(`Clinical API returned status: ${clinicalResponse.status}, using micro score as fallback`);
+        }
         
         const microData = await microResponse.json();
         console.log('Received real-time micro emotion data:', microData);
-        
-        let macroData = null;
+          let macroData = null;
         if (macroResponse.ok) {
           macroData = await macroResponse.json();
           console.log('Received hourly macro emotion data:', macroData);
+        }
+        
+        let clinicalData = null;
+        if (clinicalResponse.ok) {
+          clinicalData = await clinicalResponse.json();
+          console.log('Received weekly clinical emotion data:', clinicalData);
         }
         
         if (microData.success && microData.emotions && microData.emotions.length > 0) {
@@ -310,17 +317,34 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
               } else {
                 console.log('Using micro score as fallback for macro score');
               }
+                // Calculate clinical score from weekly data if available
+              let clinicalScore = microScore; // Fallback to micro score
+              let clinicalEmotions = normalizedMicroEmotions; // Fallback to micro emotions
               
-              // For clinical score, use micro score as before (would be different endpoint in production)
-              const clinicalScore = microScore;
-              
-              // Consolidate data
+              if (clinicalData && clinicalData.success && clinicalData.emotionAverages) {
+                clinicalEmotions = {
+                  sadness: clinicalData.emotionAverages.sadness || 0,
+                  anger: clinicalData.emotionAverages.anger || 0,
+                  fear: clinicalData.emotionAverages.fear || 0,
+                  neutral: clinicalData.emotionAverages.neutral || 0,
+                  joy: clinicalData.emotionAverages.joy || 0,
+                  surprise: clinicalData.emotionAverages.surprise || 0
+                };
+                
+                // Apply the same weighted depression score calculation logic to weekly data
+                clinicalScore = calculateWeightedDepressionScore(clinicalEmotions);
+                console.log('Calculated clinical score from weekly data:', clinicalScore.toFixed(3));
+              } else {
+                console.log('Using micro score as fallback for clinical score');
+              }
+                // Consolidate data
               const data = {
                 microScore,
                 macroScore,
                 clinicalScore,
                 microEmotions: normalizedMicroEmotions,
                 macroEmotions: macroEmotions,
+                clinicalEmotions: clinicalEmotions,
                 averageEmotions: normalizedMicroEmotions, // Keep for backward compatibility
                 lastUpdated: new Date().toLocaleString()
               };

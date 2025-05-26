@@ -210,17 +210,17 @@ const DepressionPredictionsUI = ({
         </Alert>
       </Container>
     );
-  }
-  const { microScore, macroScore, clinicalScore, microEmotions, macroEmotions, averageEmotions } = predictionData;
+  }  const { microScore, macroScore, clinicalScore, microEmotions, macroEmotions, clinicalEmotions, averageEmotions } = predictionData;
   
   // Select emotion data based on dropdown selection
-  const selectedEmotionData = emotionType === 'macro' ? (macroEmotions || averageEmotions) : (microEmotions || averageEmotions);
+  const selectedEmotionData = emotionType === 'clinical' ? (clinicalEmotions || averageEmotions) : 
+                              emotionType === 'macro' ? (macroEmotions || averageEmotions) : 
+                              (microEmotions || averageEmotions);
   
   // Format chart data
   const charts = formatChartData(selectedEmotionData, theme, emotionType);
   const barChartData = charts.bar.data(microScore, macroScore, clinicalScore);
-  const radarData = charts.radar.data;
-    // Chart options
+  const radarData = charts.radar.data;  // Chart options (updated)
   const barChartOptions = {
     animation: false,
     maintainAspectRatio: true,
@@ -250,8 +250,7 @@ const DepressionPredictionsUI = ({
         },
         grid: { display: false }
       }
-    },
-    plugins: {
+    },    plugins: {
       legend: { display: false },
       tooltip: {
         backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)',
@@ -259,14 +258,10 @@ const DepressionPredictionsUI = ({
         bodyFont: { size: 13 },
         bodyColor: theme.palette.mode === 'dark' ? '#000' : '#fff'
       }
-    },
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: {
-      duration: 1500,
-      easing: 'easeOutCubic'
     }
-  };  const radarOptions = {
+  };
+
+  const radarOptions = {
     maintainAspectRatio: true,
     responsive: true,
     animation: {
@@ -711,10 +706,10 @@ const DepressionPredictionsUI = ({
                       id="emotion-type-select"
                       value={emotionType}
                       label="Emotion Data Type"
-                      onChange={(e) => setEmotionType(e.target.value)}
-                    >
+                      onChange={(e) => setEmotionType(e.target.value)}                    >
                       <MenuItem value="micro">Micro Emotions (5-min)</MenuItem>
                       <MenuItem value="macro">Macro Variations (24h)</MenuItem>
+                      <MenuItem value="clinical">Clinical Trends (7-day)</MenuItem>
                     </Select>
                   </FormControl>
                 </Box><Box sx={{ 
@@ -736,8 +731,11 @@ const DepressionPredictionsUI = ({
                     key="radar-chart-element"
                   />
                 </Box>                <Typography variant="body2" color="textSecondary">
-                  The radar chart shows your {emotionType === 'macro' ? 'macro emotion variations (24h averages)' : 'current micro emotion distribution (5-min)'} and how each emotion
-                  contributes to the depression score calculation.
+                  The radar chart shows your {
+                    emotionType === 'clinical' ? 'clinical emotion trends (7-day averages)' :
+                    emotionType === 'macro' ? 'macro emotion variations (24h averages)' : 
+                    'current micro emotion distribution (5-min)'
+                  } and how each emotion contributes to the depression score calculation.
                 </Typography>
               </Paper>
             </motion.div>

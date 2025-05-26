@@ -137,7 +137,9 @@ const VoiceEmotionPercenatge = ({ emotions, emotionCount,lastEmotion }) => {
   
 
   return (
+    
     <div style={{ padding: "20px 50px" }}> 
+   
       <Grid container spacing={2}>
 
       <Grid item xs={12} sm={12} md={6}>
