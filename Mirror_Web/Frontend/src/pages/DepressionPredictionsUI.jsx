@@ -1,17 +1,9 @@
-/**
- * DepressionPredictionsUI.jsx
- * 
- * This component handles the UI/presentation layer for depression predictions:
- * - Chart visualizations
- * - Score indicators with visual feedback
- * - Animations and responsive layout
- */
 
 import React, { useRef, useState } from 'react';
-import { Box, Container, Typography, CircularProgress, Alert, Grid, Paper, Chip, Divider, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Box, Container, Typography, CircularProgress, Alert, Grid, Paper, Chip, Divider, FormControl, InputLabel, Select, MenuItem, Collapse, IconButton } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { motion } from 'framer-motion';
-import { Bar, Radar } from 'react-chartjs-2';
+import { Bar, Radar, Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   BarElement,
@@ -29,14 +21,17 @@ import {
 import BarChartIcon from '@mui/icons-material/BarChart';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 import InfoIcon from '@mui/icons-material/Info';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
 import SentimentNeutralIcon from '@mui/icons-material/SentimentNeutral';
 import SentimentDissatisfiedIcon from '@mui/icons-material/SentimentDissatisfied';
 import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 // Import logic
-import { formatChartData } from './DepressionPredictionsLogic';
+import { formatChartData, formatTrendChartData } from './DepressionPredictionsLogic';
 
 // Register Chart.js components
 ChartJS.register(
@@ -71,6 +66,34 @@ const boxVariants = {
     boxShadow: "0px 14px 28px rgba(0, 0, 0, 0.25)",
     transition: { duration: 0.4, ease: "easeOut" }
   }
+};
+
+// Animation variants for depression level text
+const depressionLevelVariants = {
+  initial: { opacity: 0, scale: 0.8 },
+  animate: { 
+    opacity: 1, 
+    scale: 1,
+    transition: {
+      duration: 1.2,
+      ease: "easeOut"
+    }
+  },
+  severe: {
+    scale: [1, 1.05, 1],
+    textShadow: [
+      '1px 1px 3px rgba(0,0,0,0.3)',
+      '1px 1px 15px rgba(255,255,255,0.5)',
+      '1px 1px 3px rgba(0,0,0,0.3)'
+    ],
+    transition: { repeat: Infinity, duration: 2, ease: 'easeInOut' }
+  }
+};
+
+// Animation variants for expand more icon
+const expandIconVariants = {
+  collapsed: { rotate: 0 },
+  expanded: { rotate: 180 }
 };
 
 const chipVariants = {
@@ -171,6 +194,67 @@ const DepressionPredictionsUI = ({
   
   // State for emotion type selection
   const [emotionType, setEmotionType] = useState('micro');
+  
+  // State for tracking which dropdown is expanded
+  const [expandedCard, setExpandedCard] = useState({
+    Micro: false,
+    Macro: false,
+    Clinical: false
+  });
+
+  // Toggle expansion function
+  const handleExpandClick = (level) => {
+    setExpandedCard(prev => ({
+      ...prev,
+      [level]: !prev[level]
+    }));
+  };
+  
+  // Score explanation content
+  const scoreExplanations = {
+    Micro: {
+      title: "About Micro Score",
+      description: "The Micro Score analyzes your immediate emotional state based on the last 5 minutes of data. It uses a weighted algorithm that processes the following emotions:",
+      formula: "Score = (weighted_sum + shift_factor) / normalization_range",
+      weights: [
+        { emotion: "Sadness", weight: "1.0", impact: "Strong depression signal" },
+        { emotion: "Anger", weight: "0.7", impact: "Common in depression" },
+        { emotion: "Fear", weight: "0.6", impact: "Anxiety-related" },
+        { emotion: "Neutral", weight: "0.0", impact: "No impact" }, 
+        { emotion: "Joy", weight: "-1.0", impact: "Opposite of depression" },
+        { emotion: "Surprise", weight: "-0.3", impact: "Mildly counter-depressive" }
+      ],
+      interpretation: "Higher scores indicate more depressive emotional patterns in your immediate state."
+    },
+    Macro: {
+      title: "About Macro Score",
+      description: "The Macro Score evaluates emotional patterns over the past 24 hours. It averages multiple micro scores to detect sustained emotional states using the same weighted algorithm:",
+      formula: "Score = Average of multiple micro scores over 24 hours",
+      weights: [
+        { emotion: "Sadness", weight: "1.0", impact: "Strong depression signal" },
+        { emotion: "Anger", weight: "0.7", impact: "Common in depression" },
+        { emotion: "Fear", weight: "0.6", impact: "Anxiety-related" },
+        { emotion: "Neutral", weight: "0.0", impact: "No impact" }, 
+        { emotion: "Joy", weight: "-1.0", impact: "Opposite of depression" },
+        { emotion: "Surprise", weight: "-0.3", impact: "Mildly counter-depressive" }
+      ],
+      interpretation: "Higher scores sustained over 24 hours may indicate more concerning depressive patterns."
+    },
+    Clinical: {
+      title: "About Clinical Score",
+      description: "The Clinical Score assesses long-term emotional trends over a 7-day period, placing greater weight on recent days and persistent negative emotions:",
+      formula: "Score = Weighted average of macro scores with time decay factor",
+      weights: [
+        { emotion: "Sadness", weight: "1.0", impact: "Strong depression signal" },
+        { emotion: "Anger", weight: "0.7", impact: "Common in depression" },
+        { emotion: "Fear", weight: "0.6", impact: "Anxiety-related" },
+        { emotion: "Neutral", weight: "0.0", impact: "No impact" }, 
+        { emotion: "Joy", weight: "-1.0", impact: "Opposite of depression" },
+        { emotion: "Surprise", weight: "-0.3", impact: "Mildly counter-depressive" }
+      ],
+      interpretation: "This score is designed to align with clinical assessments of depression and may trigger alerts for healthcare providers."
+    }
+  };
 
   // Loading state
   if (loading) {
@@ -210,7 +294,7 @@ const DepressionPredictionsUI = ({
         </Alert>
       </Container>
     );
-  }  const { microScore, macroScore, clinicalScore, microEmotions, macroEmotions, clinicalEmotions, averageEmotions } = predictionData;
+  }  const { microScore, macroScore, clinicalScore, microEmotions, macroEmotions, clinicalEmotions, averageEmotions, trendData } = predictionData;
   
   // Select emotion data based on dropdown selection
   const selectedEmotionData = emotionType === 'clinical' ? (clinicalEmotions || averageEmotions) : 
@@ -595,21 +679,24 @@ const DepressionPredictionsUI = ({
             {indicators.map((indicator, index) => {
               const depressionInfo = getDepressionLevel(indicator.score);
               const IconComponent = getIconComponent(depressionInfo.icon);
+              const explanation = scoreExplanations[indicator.level];
             
-            return (              <Grid item xs={12} md={4} key={indicator.level}>
+            return (
+              <Grid item xs={12} md={4} key={indicator.level}>
                 <motion.div variants={boxVariants} whileHover="hover" style={{ height: '100%' }}>
                   <Paper 
                     elevation={3} 
                     sx={{ 
                       p: 3, 
                       height: '100%',
-                      minHeight: '320px', // Set a consistent minimum height
+                      minHeight: expandedCard[indicator.level] ? '540px' : '320px', // Adjusted height
                       display: 'flex',
                       flexDirection: 'column',
                       borderRadius: 2,
                       backgroundImage: depressionInfo.gradient,
                       color: '#fff',
-                      overflow: 'hidden'
+                      overflow: 'hidden',
+                      transition: 'min-height 0.3s ease-in-out' // Smooth transition for height change
                     }}
                   >                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                       <Typography variant="h5" component="h2">
@@ -618,28 +705,56 @@ const DepressionPredictionsUI = ({
                       <motion.div variants={iconVariants} animate="visible" whileHover="pulse">
                         <IconComponent fontSize="large" />
                       </motion.div>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, flexGrow: 0 }}>
-                      <motion.div variants={scoreNumberVariants}>
-                        <Typography variant="h2" component="span" sx={{ fontWeight: 'bold' }}>
-                          {indicator.score.toFixed(2)}
+                    </Box>                    {/* Depression Level - Now featured prominently above the score */}
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                      <motion.div
+                        initial="initial"
+                        animate={indicator.score > 0.7 ? 'severe' : 'animate'}
+                        variants={depressionLevelVariants}
+                      >
+                        <Typography 
+                          variant="h3" 
+                          sx={{ 
+                            fontWeight: 'bold',
+                            textAlign: 'center',
+                            textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
+                            letterSpacing: '0.5px'
+                          }}
+                        >
+                          {depressionInfo.level}
                         </Typography>
                       </motion.div>
-                      <Chip
-                        label={depressionInfo.level}
-                        component={motion.div}
-                        variants={chipVariants}
-                        animate={indicator.score > 0.7 ? 'severe' : 'initial'}
-                        sx={{ 
-                          ml: 2,
-                          color: '#fff',
-                          backgroundColor: 'rgba(255,255,255,0.25)',
-                          fontWeight: 'bold'
-                        }}
-                      />
                     </Box>
-                      <Box sx={{ my: 2, height: 10, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 5 }}>
+                    
+                    {/* Visual separator */}
+                    <Box 
+                      sx={{ 
+                        width: '40%', 
+                        height: '2px', 
+                        background: 'rgba(255,255,255,0.4)', 
+                        mx: 'auto', 
+                        mb: 2,
+                        borderRadius: '1px',
+                      }} 
+                    />
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3, flexGrow: 0 }}>
+                      <motion.div variants={scoreNumberVariants}>
+                        <Typography variant="h5" component="span" sx={{ fontWeight: 'bold', opacity: 0.8 }}>
+                          Score: {indicator.score.toFixed(2)}
+                        </Typography>
+                      </motion.div>
+                    </Box>
+                      <Box 
+                      sx={{ 
+                        my: 2, 
+                        height: 10, 
+                        bgcolor: 'rgba(255,255,255,0.2)', 
+                        borderRadius: 5,
+                        width: '90%',
+                        mx: 'auto'
+                      }}
+                    >
                       <motion.div
                         initial="initial"
                         animate="animate"
@@ -651,11 +766,111 @@ const DepressionPredictionsUI = ({
                           borderRadius: 5
                         }}
                       />
-                    </Box><Box sx={{ flexGrow: 1 }}>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
+                    </Box>
+                    
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography variant="body1" sx={{ mb: 1, textAlign: 'center' }}>
                         {depressionInfo.description}
                       </Typography>
                     </Box>
+                    
+                    {/* Dropdown Trigger Button */}
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        justifyContent: 'center', 
+                        cursor: 'pointer',
+                        p: 1,
+                        borderRadius: 1,
+                        my: 1,
+                        bgcolor: 'rgba(255,255,255,0.15)',
+                        '&:hover': {
+                          bgcolor: 'rgba(255,255,255,0.25)',
+                        }
+                      }}
+                      onClick={() => handleExpandClick(indicator.level)}
+                    >
+                      <InfoOutlinedIcon fontSize="small" sx={{ mr: 1 }} />
+                      <Typography variant="button">
+                        {expandedCard[indicator.level] ? 'Hide Details' : 'How This Score Works'}
+                      </Typography>
+                      <motion.div
+                        animate={expandedCard[indicator.level] ? 'expanded' : 'collapsed'}
+                        variants={expandIconVariants}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ExpandMoreIcon fontSize="small" sx={{ ml: 1 }} />
+                      </motion.div>
+                    </Box>
+                    
+                    {/* Dropdown Content */}
+                    <Collapse in={expandedCard[indicator.level]} timeout="auto" unmountOnExit>
+                      <Box 
+                        sx={{ 
+                          py: 2, 
+                          px: 1.5, 
+                          mt: 1, 
+                          mb: 2,
+                          bgcolor: 'rgba(0,0,0,0.15)', 
+                          borderRadius: 2,
+                          border: '1px solid rgba(255,255,255,0.1)'
+                        }}
+                      >
+                        <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
+                          {explanation.title}
+                        </Typography>
+                        
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                          {explanation.description}
+                        </Typography>
+                        
+                        <Typography variant="subtitle2" fontWeight="bold" sx={{ mt: 1.5, mb: 0.5 }}>
+                          Formula:
+                        </Typography>
+                        <Chip 
+                          label={explanation.formula} 
+                          size="small"
+                          sx={{ 
+                            mb: 1.5, 
+                            fontFamily: 'monospace', 
+                            fontWeight: 'bold',
+                            bgcolor: 'rgba(255,255,255,0.2)'
+                          }} 
+                        />
+                        
+                        <Typography variant="subtitle2" fontWeight="bold" sx={{ mt: 1.5, mb: 0.5 }}>
+                          Emotion Weights:
+                        </Typography>
+                        
+                        <Box sx={{ mb: 2, maxHeight: '120px', overflowY: 'auto' }}>
+                          {explanation.weights.map((item, i) => (
+                            <Box 
+                              key={i} 
+                              sx={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                py: 0.5,
+                                borderBottom: i < explanation.weights.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none'
+                              }}
+                            >
+                              <Typography variant="body2">{item.emotion}</Typography>
+                              <Typography variant="body2" fontWeight="bold">{item.weight}</Typography>
+                              <Typography variant="body2" color="rgba(255,255,255,0.7)" sx={{ fontSize: '0.8rem' }}>
+                                ({item.impact})
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                        
+                        <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 0.5 }}>
+                          Interpretation:
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                          {explanation.interpretation}
+                        </Typography>
+                      </Box>
+                    </Collapse>
                     
                     <Box sx={{ 
                       display: 'flex', 
@@ -685,13 +900,38 @@ const DepressionPredictionsUI = ({
         </motion.div>
 
         {/* Charts */}
-        <Grid container spacing={3}>
-          {/* Radar Chart */}          <Grid item xs={12} md={6}>
+        <Grid container spacing={3}>          {/* Radar Chart */}          <Grid item xs={12} md={6}>
             <motion.div variants={boxVariants}>
-              <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+              <Paper 
+                elevation={4} 
+                sx={{ 
+                  p: 3, 
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                  border: '1px solid rgba(66, 165, 245, 0.1)',
+                  boxShadow: '0 8px 32px rgba(66, 165, 245, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 12px 40px rgba(66, 165, 245, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08)',
+                    border: '1px solid rgba(66, 165, 245, 0.2)',
+                  }
+                }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <BubbleChartIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h5" component="h2">
+                  <BubbleChartIcon 
+                    color="primary" 
+                    sx={{ 
+                      mr: 1, 
+                      fontSize: 28,
+                      background: 'linear-gradient(135deg, #42a5f5 0%, #2196f3 100%)',
+                      color: 'white',
+                      borderRadius: '50%',
+                      p: 0.5,
+                      boxShadow: '0 4px 12px rgba(66, 165, 245, 0.3)'
+                    }} 
+                  />
+                  <Typography variant="h5" component="h2" sx={{ fontWeight: 600, color: '#1a237e' }}>
                     Emotion Distribution
                   </Typography>
                 </Box>
@@ -712,13 +952,16 @@ const DepressionPredictionsUI = ({
                       <MenuItem value="clinical">Clinical Trends (7-day)</MenuItem>
                     </Select>
                   </FormControl>
-                </Box><Box sx={{ 
-                  height: 400, 
+                </Box>                <Box sx={{ 
+                  height: 390, 
                   mb: 2,
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  width: '100%'
+                  width: '100%',
+                  background: 'linear-gradient(135deg, rgba(66, 165, 245, 0.02) 0%, rgba(33, 150, 243, 0.08) 100%)',
+                  borderRadius: 3,
+                  p: 2
                 }}>
                   <Radar 
                     ref={radarChartRef}
@@ -730,7 +973,7 @@ const DepressionPredictionsUI = ({
                     }}
                     key="radar-chart-element"
                   />
-                </Box>                <Typography variant="body2" color="textSecondary">
+                </Box><Typography variant="body2" color="textSecondary">
                   The radar chart shows your {
                     emotionType === 'clinical' ? 'clinical emotion trends (7-day averages)' :
                     emotionType === 'macro' ? 'macro emotion variations (24h averages)' : 
@@ -739,19 +982,52 @@ const DepressionPredictionsUI = ({
                 </Typography>
               </Paper>
             </motion.div>
-          </Grid>
-
-          {/* Bar Chart */}
+          </Grid>          {/* Bar Chart */}
           <Grid item xs={12} md={6}>
             <motion.div variants={boxVariants}>
-              <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+              <Paper 
+                elevation={4} 
+                sx={{ 
+                  p: 3, 
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                  border: '1px solid rgba(76, 175, 80, 0.1)',
+                  boxShadow: '0 8px 32px rgba(76, 175, 80, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 12px 40px rgba(76, 175, 80, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08)',
+                    border: '1px solid rgba(76, 175, 80, 0.2)',
+                  }
+                }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <BarChartIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h5" component="h2">
+                  <BarChartIcon 
+                    color="primary" 
+                    sx={{ 
+                      mr: 1, 
+                      fontSize: 28,
+                      background: 'linear-gradient(135deg, #4caf50 0%, #8bc34a 100%)',
+                      color: 'white',
+                      borderRadius: '50%',
+                      p: 0.5,
+                      boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)'
+                    }} 
+                  />
+                  <Typography variant="h5" component="h2" sx={{ fontWeight: 600, color: '#1b5e20' }}>
                     Score Comparison
                   </Typography>
                 </Box>
-                <Divider sx={{ mb: 3 }} />                <Box sx={{ height: 500, mb: 2 }}>
+                <Divider sx={{ mb: 3 }} />                <Box sx={{ 
+                  height: 450, 
+                  mb: 2,
+                  background: 'linear-gradient(135deg, rgba(76, 175, 80, 0.02) 0%, rgba(139, 195, 74, 0.08) 100%)',
+                  borderRadius: 3,
+                  p: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
                   <Bar 
                     ref={barChartRef}
                     data={barChartData}
@@ -768,8 +1044,188 @@ const DepressionPredictionsUI = ({
                 </Typography>
               </Paper>
             </motion.div>
+          </Grid>        </Grid>
+
+        {/* Trend Chart */}
+        {trendData && trendData.length > 0 && (
+          <Grid container spacing={3} sx={{ mt: 2 }}>
+            <Grid item xs={12}>
+              <motion.div variants={boxVariants}>                <Paper 
+                  elevation={4} 
+                  sx={{ 
+                    p: 3, 
+                    borderRadius: 3,
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                    border: '1px solid rgba(33, 150, 243, 0.1)',
+                    boxShadow: '0 8px 32px rgba(33, 150, 243, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 12px 40px rgba(33, 150, 243, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08)',
+                      border: '1px solid rgba(33, 150, 243, 0.2)',
+                    }
+                  }}
+                >                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <TrendingUpIcon 
+                      color="primary" 
+                      sx={{ 
+                        mr: 1, 
+                        fontSize: 28,
+                        background: 'linear-gradient(135deg, #29b6f6 0%, #1976d2 100%)',
+                        color: 'white',
+                        borderRadius: '50%',
+                        p: 0.5,
+                        boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)'
+                      }}
+                    />
+                    <Typography variant="h5" component="h2" sx={{ fontWeight: 600, color: '#1565c0' }}>
+                      Depression Score Trends Over Time
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ mb: 3 }} />                  <Box 
+                    sx={{ 
+                      height: 400, 
+                      mb: 2,
+                      background: 'linear-gradient(135deg, rgba(33, 150, 243, 0.02) 0%, rgba(25, 118, 210, 0.08) 100%)',
+                      borderRadius: 3,
+                      p: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {formatTrendChartData(trendData, theme) ? (
+                      <Line 
+                        data={formatTrendChartData(trendData, theme)}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          interaction: {
+                            mode: 'index',
+                            intersect: false,
+                          },
+                          animation: {
+                            duration: 2000,
+                            easing: 'easeOutQuart'
+                          },
+                          scales: {                            x: {
+                              title: {
+                                display: true,
+                                text: 'Timestamp',
+                                font: { size: 14, weight: 'bold' },
+                                color: theme.palette.text.primary
+                              },
+                              ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                color: theme.palette.text.secondary,
+                                font: { size: 11 }
+                              },
+                              grid: {
+                                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                                drawOnChartArea: true,
+                                drawTicks: true
+                              }
+                            },                            y: {
+                              beginAtZero: true,
+                              max: 1,
+                              title: {
+                                display: true,
+                                text: 'Depression Score',
+                                font: { size: 14, weight: 'bold' },
+                                color: theme.palette.text.primary
+                              },
+                              ticks: {
+                                stepSize: 0.1,
+                                color: theme.palette.text.secondary,
+                                font: { size: 11 },
+                                callback: function(value) {
+                                  return (value * 100).toFixed(0) + '%';
+                                }
+                              },
+                              grid: {
+                                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                                drawOnChartArea: true,
+                                drawTicks: true
+                              }
+                            }
+                          },
+                          plugins: {
+                            legend: {
+                              position: 'top',
+                              labels: {
+                                boxWidth: 15,
+                                padding: 15,
+                                font: { size: 12 },
+                                color: theme.palette.text.primary,
+                                usePointStyle: true
+                              }
+                            },                            tooltip: {
+                              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(0, 0, 0, 0.85)',
+                              titleFont: { size: 14, weight: 'bold' },
+                              bodyFont: { size: 13 },
+                              titleColor: theme.palette.mode === 'dark' ? '#000' : '#fff',
+                              bodyColor: theme.palette.mode === 'dark' ? '#000' : '#fff',
+                              borderColor: theme.palette.primary.main,
+                              borderWidth: 2,
+                              cornerRadius: 8,
+                              displayColors: true,                              callbacks: {
+                                label: function(context) {
+                                  const score = context.parsed.y;
+                                  const percentage = (score * 100).toFixed(1);
+                                  let level = 'No Depression';
+                                  if (score >= 0.40 && score <= 0.49) level = 'Mild Depression';
+                                  else if (score >= 0.50 && score <= 0.69) level = 'Moderate Depression';
+                                  else if (score >= 0.70 && score <= 0.85) level = 'Severe Depression';
+                                  else if (score > 0.85) level = 'Very Severe Depression';
+                                  
+                                  return `${context.dataset.label}: ${percentage}% (${level})`;
+                                }
+                              }
+                            }
+                          },                          elements: {
+                            line: {
+                              borderJoinStyle: 'round',
+                              borderCapStyle: 'round'
+                            },
+                            point: {
+                              hoverRadius: 8,
+                              hitRadius: 10
+                            }
+                          },
+                          animation: {
+                            duration: 1000,
+                            easing: 'easeInOutCubic'
+                          }
+                        }}
+                      />
+                    ) : (
+                      <Box sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        height: '100%',
+                        flexDirection: 'column'
+                      }}>
+                        <Typography variant="h6" color="textSecondary" gutterBottom>
+                          No Trend Data Available
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          Trend data will appear when enough historical data is collected.
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                    <Typography variant="body2" color="textSecondary">
+                    This chart shows how your depression score has changed over the last hour with 60-minute weighted averages. 
+                    The score is calculated using the weighted depression algorithm based on emotion analysis from multiple sources.
+                    Track your mental health trends and patterns over time.
+                  </Typography>
+                </Paper>
+              </motion.div>
+            </Grid>
           </Grid>
-        </Grid>
+        )}
 
         {/* Info Card */}
         <motion.div variants={boxVariants} style={{ marginTop: '24px' }}>

@@ -207,6 +207,90 @@ export const formatChartData = (emotionData, theme, dataType = 'micro') => {
   };
 };
 
+// Format trend data for line chart visualization - showing depression score over time
+export const formatTrendChartData = (trendData, theme) => {
+  if (!trendData || trendData.length === 0) {
+    return null;
+  }
+
+  // Extract timestamps and convert to readable format with date and time
+  const labels = trendData.map(item => {
+    const date = new Date(item.timestamp);
+    return date.toLocaleString('en-US', { 
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  });
+
+  // Calculate depression scores for each timestamp
+  const depressionScores = trendData.map(item => {
+    return calculateWeightedDepressionScore(item.emotions);
+  });
+  // Create datasets for enhanced visual effects
+  const datasets = [
+    // Shadow effect line (larger, behind main line)
+    {
+      label: 'Trend Shadow',
+      data: depressionScores,
+      borderColor: 'rgba(33, 150, 243, 0.3)',
+      backgroundColor: 'transparent',
+      borderWidth: 8,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      tension: 0.4,
+      fill: false,
+      cubicInterpolationMode: 'monotone',
+    },
+    // Glowing effect line
+    {
+      label: 'Trend Glow',
+      data: depressionScores,
+      borderColor: 'rgba(33, 150, 243, 0.2)',
+      backgroundColor: 'transparent',
+      borderWidth: 12,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      borderDash: [5, 5],
+      tension: 0.4,
+      fill: false,
+    },
+    // Main dataset line
+    {
+      label: 'Depression Score',
+      data: depressionScores,
+      borderColor: 'rgba(33, 150, 243, 0.9)',
+      backgroundColor: (context) => {
+        const ctx = context.chart.ctx;
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(33, 150, 243, 0.7)');
+        gradient.addColorStop(0.5, 'rgba(33, 150, 243, 0.3)');
+        gradient.addColorStop(1, 'rgba(33, 150, 243, 0.0)');
+        return gradient;
+      },
+      borderWidth: 3,
+      fill: true,
+      tension: 0.4,
+      pointRadius: 6,
+      pointHoverRadius: 10,
+      pointBackgroundColor: 'rgba(33, 150, 243, 1)',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 3,
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: 'rgba(33, 150, 243, 1)',
+      pointHoverBorderWidth: 4,
+      cubicInterpolationMode: 'monotone',
+    }
+  ];
+
+  return {
+    labels,
+    datasets
+  };
+};
+
 // Custom hook for depression data using Socket.IO for real-time updates
 export const useDepressionPredictions = () => {  const [predictionData, setPredictionData] = useState(null);
   const [error, setError] = useState(null);
@@ -250,13 +334,13 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
     console.log("Initializing real-time data polling");
       // Function to fetch data from the API
     const fetchEmotionData = async () => {
-      try {        // Fetch micro (5-min), macro (hourly), and clinical (weekly) data in parallel
-        const [microResponse, macroResponse, clinicalResponse] = await Promise.all([
+      try {        // Fetch micro (5-min), macro (hourly), clinical (weekly), and trend (60-min) data in parallel
+        const [microResponse, macroResponse, clinicalResponse, trendResponse] = await Promise.all([
           fetch('http://localhost:4000/api/average/combined-5min-weighted-average'),
           fetch('http://localhost:4000/api/average/hourlydepression'),
-          fetch('http://localhost:4000/api/average/weeklydepression')
-        ]);
-          if (!microResponse.ok) {
+          fetch('http://localhost:4000/api/average/weeklydepression'),
+          fetch('http://localhost:4000/api/average/combined-60min-weighted-average')
+        ]);        if (!microResponse.ok) {
           throw new Error(`Micro API returned status: ${microResponse.status}`);
         }
         if (!macroResponse.ok) {
@@ -264,6 +348,9 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
         }
         if (!clinicalResponse.ok) {
           console.warn(`Clinical API returned status: ${clinicalResponse.status}, using micro score as fallback`);
+        }
+        if (!trendResponse.ok) {
+          console.warn(`Trend API returned status: ${trendResponse.status}, trend chart will be unavailable`);
         }
         
         const microData = await microResponse.json();
@@ -273,11 +360,16 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
           macroData = await macroResponse.json();
           console.log('Received hourly macro emotion data:', macroData);
         }
-        
-        let clinicalData = null;
+          let clinicalData = null;
         if (clinicalResponse.ok) {
           clinicalData = await clinicalResponse.json();
           console.log('Received weekly clinical emotion data:', clinicalData);
+        }
+        
+        let trendResponseData = null;
+        if (trendResponse.ok) {
+          trendResponseData = await trendResponse.json();
+          console.log('Received trend emotion data:', trendResponseData);
         }
         
         if (microData.success && microData.emotions && microData.emotions.length > 0) {
@@ -333,11 +425,27 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
                 
                 // Apply the same weighted depression score calculation logic to weekly data
                 clinicalScore = calculateWeightedDepressionScore(clinicalEmotions);
-                console.log('Calculated clinical score from weekly data:', clinicalScore.toFixed(3));
-              } else {
+                console.log('Calculated clinical score from weekly data:', clinicalScore.toFixed(3));              } else {
                 console.log('Using micro score as fallback for clinical score');
               }
-                // Consolidate data
+                // Process trend data for chart visualization
+              let trendData = null;
+              if (trendResponseData && trendResponseData.success && trendResponseData.emotions) {
+                trendData = trendResponseData.emotions.map(item => ({
+                  timestamp: item.timestamp,
+                  emotions: {
+                    sadness: item.weightedAverages.sadness || 0,
+                    anger: item.weightedAverages.anger || 0,
+                    fear: item.weightedAverages.fear || 0,
+                    neutral: item.weightedAverages.neutral || 0,
+                    joy: item.weightedAverages.joy || 0,
+                    surprise: item.weightedAverages.surprise || 0
+                  }
+                }));
+                console.log('Processed trend data:', trendData);
+              }
+              
+              // Consolidate data
               const data = {
                 microScore,
                 macroScore,
@@ -345,6 +453,7 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
                 microEmotions: normalizedMicroEmotions,
                 macroEmotions: macroEmotions,
                 clinicalEmotions: clinicalEmotions,
+                trendData: trendData,
                 averageEmotions: normalizedMicroEmotions, // Keep for backward compatibility
                 lastUpdated: new Date().toLocaleString()
               };
@@ -406,8 +515,7 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
             joy: Math.random() * 0.7,
             surprise: Math.random() * 0.2
           };
-          
-          // Create slightly different macro emotions for variety
+            // Create slightly different macro emotions for variety
           const dummyMacroEmotions = {
             sadness: Math.random() * 0.5,
             anger: Math.random() * 0.3,
@@ -417,6 +525,16 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
             surprise: Math.random() * 0.3
           };
           
+          // Create clinical emotions for variety
+          const dummyClinicalEmotions = {
+            sadness: Math.random() * 0.4,
+            anger: Math.random() * 0.2,
+            fear: Math.random() * 0.3,
+            neutral: Math.random() * 0.7,
+            joy: Math.random() * 0.9,
+            surprise: Math.random() * 0.2
+          };
+          
           // Consolidate data
           const data = {
             microScore,
@@ -424,6 +542,7 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
             clinicalScore,
             microEmotions: dummyEmotions,
             macroEmotions: dummyMacroEmotions,
+            clinicalEmotions: dummyClinicalEmotions,
             averageEmotions: dummyEmotions, // Keep for backward compatibility
             lastUpdated: new Date().toLocaleString()
           };
