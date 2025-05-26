@@ -221,10 +221,7 @@ const getEmotionsByTimestampFilter = async (req, res) => {
             default:
                 return res.status(400).json({ msg: "Invalid filter provided", success: false });
         }
-
-        // const emotions = await Text_Emotion_Prediction.find({
-        //     timestamp: { $gte: startTime.toISOString(), $lte: now.toISOString() }
-        // }).sort({ timestamp: 1 });       
+  
         const startTimeNew = "2025-03-09 00:00:00";
         const endTime = "2025-03-09 23:59:59";
         
@@ -232,19 +229,8 @@ const getEmotionsByTimestampFilter = async (req, res) => {
             timestamp: { $gte: startTimeNew, $lte: endTime } // Compare as strings
         }).sort({ timestamp: 1 });
         
-        console.log("Filtered Emotions:", filteredEmotions);
 
-
-        // console.log("Fetched Emotions:", emotions);
-
-        // const emotionData = emotions.map(emotion => ({
-        //     timestamp: emotion.timestamp,
-        //     transcription: emotion.transcription,
-        //     // Extract only the prediction part before the parentheses
-        //     prediction: emotion?.prediction ? emotion.prediction.split(' ')[0] : "N/A",  
-        //     polarity: emotion?.polarity ?? "N/A",      // Polarity seems to be 0 in your case
-        // })).filter(Boolean);
-        const emotionData = emotions.map(emotion => {
+           const emotionData = emotions.map(emotion => {
             console.log("Timestamp:", emotion.timestamp, "Type:", typeof emotion.timestamp); // Log value and type
             return {
                 timestamp: emotion.timestamp,
