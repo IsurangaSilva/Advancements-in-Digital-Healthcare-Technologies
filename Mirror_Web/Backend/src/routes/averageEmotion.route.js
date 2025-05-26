@@ -8,7 +8,8 @@ const {
     getAllAggregateEmotions60minweightedaverage,
     getOne5minWeightedAggregatedEmotions,
     getOne60minWeightedAggregatedEmotions,
-    getHourlyDepression
+    getHourlyDepression,
+    getWeeklyDepression
 } = require("../controllers/combinedEmotionController");
 
 // average Time Frames
@@ -19,5 +20,6 @@ router.get("/60min-weighted-average", getAllAggregateEmotions60minweightedaverag
 router.get("/combined-5min-weighted-average", getOne5minWeightedAggregatedEmotions);
 router.get("/combined-60min-weighted-average", getOne60minWeightedAggregatedEmotions);
 router.get("/hourlydepression", getHourlyDepression);
+router.get("/weeklydepression", getWeeklyDepression);
 
 module.exports = router;
