@@ -75,7 +75,7 @@ const FERPredictions = () => {
   };
 
   // Prepare data for line/bar charts
-  const prepareLineOrBarData = (dataArray) => {
+  const prepareLineOrBarData = (dataArray, isHourly = false) => {
     const sortedData = sortByTimestamp(dataArray);
     const labels = sortedData.map((item) => item.timestamp);
     const emotions = ["Anger", "Fear", "Happy", "Neutral", "Sad", "Surprise"];
@@ -84,7 +84,11 @@ const FERPredictions = () => {
       labels,
       datasets: emotions.map((emotion, index) => ({
         label: emotion,
-        data: sortedData.map((item) => item.session_aggregate[emotion]),
+        data: sortedData.map((item) => {
+          // Check if this is hourly data (which uses session_aggregate) or 5-min data (which uses aggregated_emotions)
+          const emotionsData = isHourly ? item.session_aggregate : item.aggregated_emotions;
+          return emotionsData[emotion];
+        }),
         borderColor: colorPalette[index],
         backgroundColor: colorPalette[index],
         fill: false,
@@ -117,19 +121,18 @@ const FERPredictions = () => {
       Surprise: 0,
     };
     fiveMinData.forEach((item) => {
-      sums.Anger += item.session_aggregate.Anger;
-      sums.Fear += item.session_aggregate.Fear;
-      sums.Happy += item.session_aggregate.Happy;
-      sums.Neutral += item.session_aggregate.Neutral;
-      sums.Sad += item.session_aggregate.Sad;
-      sums.Surprise += item.session_aggregate.Surprise;
+      sums.Anger += item.aggregated_emotions.Anger;
+      sums.Fear += item.aggregated_emotions.Fear;
+      sums.Happy += item.aggregated_emotions.Happy;
+      sums.Neutral += item.aggregated_emotions.Neutral;
+      sums.Sad += item.aggregated_emotions.Sad;
+      sums.Surprise += item.aggregated_emotions.Surprise;
     });
     return sums;
   };
-
   // Prepare data for the line (5-min) and bar (1-hour) charts
-  const fiveMinChartData = prepareLineOrBarData(fiveMinData);
-  const hourlyChartData = prepareLineOrBarData(hourlyData);
+  const fiveMinChartData = prepareLineOrBarData(fiveMinData, false);
+  const hourlyChartData = prepareLineOrBarData(hourlyData, true);
 
   // Prepare data for pie charts
   const lastHourlyEmotions = getLastHourlyEmotions();
@@ -216,8 +219,9 @@ const FERPredictions = () => {
 
   return (
     <Container sx={{ mt: 4, mb: 4 }}>
+      <h1 style={{ textAlign: "center", marginBottom: "20px" }}>Facial Emotions Aggregation Charts</h1>
       <Typography variant="h4" align="center" gutterBottom>
-        FER Predictions
+      
       </Typography>
 
       {/* Row for Line (5-min) and Bar (1-hour) charts */}

@@ -78,7 +78,11 @@ class SessionDBSender:
                     try:
                         # Create a copy of the entry without modifying the original
                         db_entry = entry.copy()
-                        self.emotion_collection.insert_one(db_entry)
+                        self.emotion_collection.update_one(
+                            {"timestamp": db_entry.get("timestamp")},
+                            {"$set": db_entry},
+                            upsert=True
+                        )
                         
                         # Update the original entry with db_status
                         entry["db_status"] = True

@@ -399,11 +399,96 @@ const getOne60minWeightedAggregatedEmotions = async (req, res) => {
 };
 
 
+const getHourlyDepression = async (req, res) => {
+    try {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        
+        const weightedAverages = await Weighted_60min_Emotion_Aggregate.find({
+            timestamp: { $gte: twentyFourHoursAgo }
+        }).lean();
+        
+        const recordCount = weightedAverages.length;
+        
+        // Calculate averages for each emotion
+        const emotionSums = {
+            joy: 0,
+            sadness: 0,
+            anger: 0,
+            fear: 0,
+            surprise: 0,
+            neutral: 0
+        };
+        
+        weightedAverages.forEach(emotion => {
+            for (const key in emotion.weightedAverages) {
+                emotionSums[key] += emotion.weightedAverages[key];
+            }
+        });
+        
+        const emotionAverages = {};
+        for (const key in emotionSums) {
+            emotionAverages[key] = recordCount > 0 ? emotionSums[key] / recordCount : 0;
+        }
+
+        res.json({ 
+            success: true,
+            recordCount,
+            emotionAverages
+        });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+const getWeeklyDepression = async (req, res) => {
+    try {
+        const twentyFourHoursAgo = new Date(Date.now() - 7* 24 * 60 * 60 * 1000);
+        
+        const weightedAverages = await Weighted_60min_Emotion_Aggregate.find({
+            timestamp: { $gte: twentyFourHoursAgo }
+        }).lean();
+        
+        const recordCount = weightedAverages.length;
+        
+        // Calculate averages for each emotion
+        const emotionSums = {
+            joy: 0,
+            sadness: 0,
+            anger: 0,
+            fear: 0,
+            surprise: 0,
+            neutral: 0
+        };
+        
+        weightedAverages.forEach(emotion => {
+            for (const key in emotion.weightedAverages) {
+                emotionSums[key] += emotion.weightedAverages[key];
+            }
+        });
+        
+        const emotionAverages = {};
+        for (const key in emotionSums) {
+            emotionAverages[key] = recordCount > 0 ? emotionSums[key] / recordCount : 0;
+        }
+
+        res.json({ 
+            success: true,
+            recordCount,
+            emotionAverages
+        });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", success: false });
+    }
+};
+
+
 module.exports = {
     getAllAggregateEmotions5minaverage,
     getAllAggregateEmotions60minaverage,
     getAllAggregateEmotions5minweightedaverage,
     getAllAggregateEmotions60minweightedaverage,
     getOne5minWeightedAggregatedEmotions,
-    getOne60minWeightedAggregatedEmotions
+    getOne60minWeightedAggregatedEmotions,
+    getHourlyDepression,
+    getWeeklyDepression
 };

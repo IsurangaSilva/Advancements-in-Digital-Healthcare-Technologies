@@ -163,7 +163,7 @@ def finish_loading(app, splash):
     # Set up emotion processor with lazy loading=False since we already loaded models
     splash.update_progress(70, "Setting up emotion processing...")
     dummy_callback = lambda status: None
-    emotion_processor = EmotionBackgroundProcessor(status_update_callback=dummy_callback, lazy_load=False)
+    emotion_processor = EmotionBackgroundProcessor(status_update_callback=dummy_callback, lazy_load=False, no_personalization=True)
     emotion_thread = threading.Thread(target=emotion_processor.run, daemon=True)
     
     # Start Text and Audio emotion aggregators

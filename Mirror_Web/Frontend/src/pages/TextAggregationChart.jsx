@@ -204,6 +204,7 @@ const EmotionAggregationChart = ({ emotions, emotionsHourly }) => {
 
   return (
     <div style={{ padding: "50px", paddingBottom: "0px" }}>
+      <h1 style={{ textAlign: "center", marginBottom: "20px" }}>Text Emotions Aggregation Charts</h1>
       <Grid container spacing={2}>
         {/* <Grid item xs={12} md={6}>
           <Card
