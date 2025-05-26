@@ -6,5 +6,6 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 echo Starting the application with login...
-python src/start_app.py
+cd src
+python start_app.py
 pause
