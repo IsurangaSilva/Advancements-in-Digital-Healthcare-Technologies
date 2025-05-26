@@ -16,6 +16,7 @@ const feedbackRoute = require("./routes/feedback.routes");
 const ferEmotionsRoute = require("./routes/ferEmotion.route");
 const audioEmotionRoute = require("./routes/audioEmotion.route");
 const depressionRoute = require("./routes/depression.route");
+const { startScheduler } = require('./middleware/startShedular'); 
 
 dbConnect();
 
@@ -25,6 +26,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 // app.use(notFound);
 // app.use(errorHandler);
+
+// Start the scheduler
+if (process.env.NODE_ENV !== 'test') { 
+  startScheduler();
+}
 
 app.use("/api/text", textEmotionRoute);
 app.use("/api/average", averageAllEmotionRoute);
