@@ -1,3 +1,12 @@
+__pycache__
+env
+src/db
+src/logs
+src/models
+src/result
+src/audios
+src/profile_data.json
+chat_history.json
 models/base.pt
 models/tinyllama-1.1b-chat-v1.0.Q2_K.gguf
 models/base.pt
@@ -26,4 +35,6 @@ chat_history.json
 db/Text/text_emotion_data.json
 db/Text/text_session_summary_60.json
 db/Text/text_session_summary.json
-
+db/Audio/voice_emotion_data.json
+db/Audio/voice_session_summary_60.json
+db/Audio/voice_session_summary.json

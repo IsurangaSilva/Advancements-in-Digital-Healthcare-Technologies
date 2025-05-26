@@ -10,12 +10,18 @@ logging.getLogger('pymongo').setLevel(logging.INFO)
 
 class MongoDBConnection:
     _instance = None
-
+    
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(MongoDBConnection, cls).__new__(cls)
-            mongo_uri = os.getenv("MONGO_URI")
-            db_name = os.getenv("MONGO_DB_NAME")           
+            # Look for either MONGO_URI or MONGODB_URL (for compatibility)
+            mongo_uri = os.getenv("MONGO_URI") or os.getenv("MONGODB_URL")
+            db_name = os.getenv("MONGO_DB_NAME")
+            
+            if not mongo_uri:
+                logging.error("MongoDB connection string not found. Check env file for MONGO_URI or MONGODB_URL")
+                raise ValueError("MongoDB connection string not found")
+                
             cls._instance.client = MongoClient(mongo_uri)
             cls._instance.db = cls._instance.client[db_name]
         return cls._instance

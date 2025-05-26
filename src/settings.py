@@ -191,7 +191,7 @@ class SettingsPage(tk.Frame):
                 except json.JSONDecodeError:
                     print("Error decoding JSON file.")
         try:
-            profile = self.collection.find_one({"_id": ObjectId("67d3f9703a6dac84897c2245")})
+            profile = self.collection.find_one({"_id": ObjectId("67d99451cff9820fe1d11caa5")})
             if profile:
                 return {
                     "Name": profile.get("username", "N/A"),
@@ -212,7 +212,7 @@ class SettingsPage(tk.Frame):
 
         try:
             result = self.collection.update_one(
-                {"_id": ObjectId("67d3f9703a6dac84897c2245")},
+                {"_id": ObjectId("67d99451cff9820fe1d11caa")},
                 {"$set": {"username": name, "email": email, "phone": phone, "role": role}}
             )
             if result.modified_count > 0:

@@ -11,9 +11,12 @@ import Blog from "./pages/blog";
 import Plans from "./pages/plans";
 import Recommendation from "./pages/recommendation";
 import TextPrediction from "./pages/TextPrediction";
+import VoicePrediction from "./pages/VoicePrediction";
+import FERPredictions from "./pages/FERPredictions";
 import Header from "./components/Header";
 import LoggedInHeader from "./components/LoggedInHeader";
 import Footer from "./components/footer";
+import DepressionPredictions from "./pages/DepressionPredictions";
 
 
 const App = () => {
@@ -52,6 +55,8 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/plans" element={<Plans />} />
+
 
           </>
         )}
@@ -62,11 +67,13 @@ const App = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/predictions/text" element={<TextPrediction />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/plans" element={<Plans />} />
             <Route path="/recommendation" element={<Recommendation />} />
+            <Route path="/predictions/text" element={<TextPrediction />} />
+            <Route path="/predictions/voice" element={<VoicePrediction />} />
+            <Route path="/predictions/fer" element={<FERPredictions />} />
+            <Route path="/depression" element={<DepressionPredictions />} />
+            <Route path="/blog" element={<Blog />} />
+           
           </>
         ) : (
           <>
