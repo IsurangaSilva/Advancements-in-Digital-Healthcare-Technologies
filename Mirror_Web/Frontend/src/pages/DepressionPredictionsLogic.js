@@ -1,77 +1,36 @@
-/**
- * DepressionPredictionsLogic.js
- * 
- * This module contains the business logic and data handling for depression predictions:
- * - API calls to fetch depression data
- * - Depression score calculation algorithm
- * - Data formatting for charts
- * - Classification of depression levels
- */
 
 import { useState, useEffect } from 'react';
 import emailjs from '@emailjs/browser';
 
-// Clinical emotion weights for depression calculation
-export const emotionWeights = {
-  Sadness: 1.0,   // Core symptom of depression - highest weight
-  Anger: 0.7,     // Often reflects irritability and negative affect in depression 
-  Fear: 0.6,      // Anxiety and worry frequently comorbid with depression
-  Neutral: 0.0,   // No direct contribution to depression score
-  Joy: -1.0,      // Opposite of depressive state - reduces score significantly
-  Surprise: -0.3  // Linked to arousal/curiosity - mildly reduces depression
+// Emotion categories for display purposes only
+export const emotionCategories = {
+  Sadness: "Sadness",
+  Anger: "Anger", 
+  Fear: "Fear",
+  Neutral: "Neutral",
+  Joy: "Joy",
+  Surprise: "Surprise"
 };
 
-// Calculate depression score based on emotions
-export const calculateDepressionScore = (emotions) => {
-  // Data validation - verify we have emotion data
-  if (!emotions || typeof emotions !== 'object') {
-    console.error("Invalid emotions input:", emotions);
-    return 0; // Default to 0 for invalid input
-  }
+// Simplified function that just returns dummy data for depression score
+export const calculateDepressionScore = () => {
+  // Generate a random score between 0.2 and 0.8 for display purposes
+  const randomScore = 0.2 + Math.random() * 0.6;
+  console.log("Generated dummy depression score:", randomScore.toFixed(2));
   
-  // Verify some emotion values exist (even if 0)
-  const hasEmotionData = Object.keys(emotions).some(key => 
-    emotions[key] !== undefined && emotions[key] !== null);
-  
-  if (!hasEmotionData) {
-    console.warn("No valid emotion data found:", emotions);
-    return 0; // Default to 0 when no valid data
-  }
-  
-  // Extract emotions
-  const sadness = emotions.Sadness || emotions.sadness || 0;
-  const anger = emotions.Anger || emotions.anger || 0;
-  const fear = emotions.Fear || emotions.fear || 0;
-  const neutral = emotions.Neutral || emotions.neutral || 0;
-  const joy = emotions.Joy || emotions.joy || emotions.Happy || emotions.happy || 0;
-  const surprise = emotions.Surprise || emotions.surprise || 0;
-  
-  // Apply weights and calculate score
-  const rawScore = 
-    (sadness * emotionWeights.Sadness) +
-    (anger * emotionWeights.Anger) +
-    (fear * emotionWeights.Fear) +
-    (neutral * emotionWeights.Neutral) +
-    (joy * emotionWeights.Joy) +
-    (surprise * emotionWeights.Surprise);
-  
-  const shiftedScore = rawScore + 1.3;
-  const normalizedScore = shiftedScore / 3.6;
-  
-  // Ensure score is within [0, 1] range
-  return Math.max(0, Math.min(1, normalizedScore));
+  return randomScore;
 };
 
 // Determine depression level information based on score
 export const getDepressionLevel = (score) => {
-  if (score < 0.30) return { 
+  if (score < 0.40) return { 
     level: 'No Depression', 
     color: '#4caf50',
     icon: 'SentimentSatisfiedAlt',
     gradient: 'linear-gradient(135deg, #4caf50 0%, #81c784 100%)',
     description: 'You are not showing signs of depression.'
   };
-  if (score >= 0.30 && score <= 0.49) return { 
+  if (score >= 0.40 && score <= 0.49) return { 
     level: 'Mild Depression', 
     color: '#8bc34a',
     icon: 'SentimentNeutral',
@@ -101,30 +60,22 @@ export const getDepressionLevel = (score) => {
   };
 };
 
-// Format data for charts
+// Format data for charts - simplified version
 export const formatChartData = (emotionData, theme) => {
-  // Extract emotions
+  // Generate dummy emotion data for visualization
   const emotionLabels = ['Sadness', 'Anger', 'Fear', 'Neutral', 'Joy', 'Surprise'];
   const emotionValues = [
-    emotionData.Sadness || emotionData.sadness || 0,
-    emotionData.Anger || emotionData.anger || 0,
-    emotionData.Fear || emotionData.fear || 0,
-    emotionData.Neutral || emotionData.neutral || 0,
-    emotionData.Joy || emotionData.joy || emotionData.Happy || emotionData.happy || 0,
-    emotionData.Surprise || emotionData.surprise || 0
+    Math.random() * 0.1,
+    Math.random() * 0.4,
+    Math.random() * 0.3,
+    Math.random() * 0.7,
+    Math.random() * 0.6,
+    Math.random() * 0.
   ];
   
-  // Weight values for visualization
-  const weightValues = [
-    emotionWeights.Sadness,
-    emotionWeights.Anger,
-    emotionWeights.Fear,
-    emotionWeights.Neutral,
-    emotionWeights.Joy,
-    emotionWeights.Surprise
-  ];
+  console.log("Using dummy emotion values for chart:", emotionValues);
   
-  // Return formatted chart data
+  // Return formatted chart data - simplified with only one dataset
   return {
     radar: {
       data: {
@@ -139,19 +90,6 @@ export const formatChartData = (emotionData, theme) => {
             pointBorderColor: '#fff',
             pointHoverBackgroundColor: '#fff',
             pointHoverBorderColor: 'rgba(33, 150, 243, 1)',
-            borderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6
-          },
-          {
-            label: 'Depression Contribution',
-            data: emotionValues.map((val, idx) => Math.abs(val * weightValues[idx])),
-            backgroundColor: 'rgba(244, 67, 54, 0.15)',
-            borderColor: 'rgba(244, 67, 54, 0.7)',
-            pointBackgroundColor: 'rgba(244, 67, 54, 0.7)',
-            pointBorderColor: '#fff',
-            pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: 'rgba(244, 67, 54, 1)',
             borderWidth: 2,
             pointRadius: 4,
             pointHoverRadius: 6
@@ -176,7 +114,7 @@ export const formatChartData = (emotionData, theme) => {
   };
 };
 
-// Custom hook for depression data
+// Custom hook for depression data using dummy data
 export const useDepressionPredictions = () => {
   const [predictionData, setPredictionData] = useState(null);
   const [error, setError] = useState(null);
@@ -188,9 +126,15 @@ export const useDepressionPredictions = () => {
     emailjs.init('D7VczC01i0Q9NyruI');
   }, []);
 
-  // Function to send email alert
+  // Function to send email alert (only keeping this functionality)
   const sendAlertEmail = async (scoreType, score) => {
     try {
+      // Only send email when score is above 0.50 as requested
+      if (score <= 0.50) {
+        console.log(`Score ${score} below threshold, no alert sent`);
+        return false;
+      }
+      
       const response = await emailjs.send(
         'service_db8tebr',
         'template_1w32sle',
@@ -208,107 +152,56 @@ export const useDepressionPredictions = () => {
       return false;
     }
   };
-
-  // Fetch depression data
+  
+  // Generate dummy depression data
   useEffect(() => {
-    const fetchData = async () => {
+    // Simulate loading delay
+    const timer = setTimeout(() => {
       setLoading(true);
       try {
-        // Fetch both 5-min and 60-min data simultaneously
-        const [microResponse, macroResponse] = await Promise.all([
-          fetch('http://localhost:4000/api/average/combined-5min-weighted-average'),
-          fetch('http://localhost:4000/api/average/60min-weighted-average')
-        ]);
+        console.log("Generating dummy depression data");
         
-        const microResult = await microResponse.json();
-        const macroResult = await macroResponse.json();
+        // Generate dummy scores
+        const microScore = calculateDepressionScore();
+        const macroScore = calculateDepressionScore();
+        const clinicalScore = calculateDepressionScore();
         
-        if (microResult.error) {
-          setError(microResult.error);
-          return;
-        }
-        
-        // Extract emotion data for calculations
-        let apiEmotions = {};
-        let dataSource = "unknown";
-        
-        // Check all possible places where emotion data might be located
-        if (microResult.averageEmotions && Object.keys(microResult.averageEmotions).length > 0) {
-          apiEmotions = microResult.averageEmotions;
-          dataSource = "averageEmotions";
-        } else if (microResult.weightedAverages && Object.keys(microResult.weightedAverages).length > 0) {
-          apiEmotions = microResult.weightedAverages;
-          dataSource = "weightedAverages";
-        } else if (microResult.rawData?.weightedAverages) {
-          apiEmotions = microResult.rawData.weightedAverages;
-          dataSource = "rawData.weightedAverages";
-        }
-        
-        // Normalize emotion keys
-        const averageEmotions = {
-          Sadness: apiEmotions.Sadness || apiEmotions.sadness || apiEmotions.Sad || apiEmotions.sad || 0,
-          Anger: apiEmotions.Anger || apiEmotions.anger || 0,
-          Fear: apiEmotions.Fear || apiEmotions.fear || 0,
-          Neutral: apiEmotions.Neutral || apiEmotions.neutral || 0,
-          Joy: apiEmotions.Joy || apiEmotions.joy || apiEmotions.Happy || apiEmotions.happy || 0,
-          Surprise: apiEmotions.Surprise || apiEmotions.surprise || 0
+        // Create dummy emotion data
+        const dummyEmotions = {
+          Sadness: Math.random() * 0.6,
+          Anger: Math.random() * 0.4,
+          Fear: Math.random() * 0.3,
+          Neutral: Math.random() * 0.5,
+          Joy: Math.random() * 0.7,
+          Surprise: Math.random() * 0.4
         };
         
-        // Calculate micro score (5-min data)
-        const microScore = calculateDepressionScore(averageEmotions);
-        
-        // Process macro data (60-min)
-        let macroScore = 0;
-        let macroScoreSource = "default";
-        let macroEmotions = null;
-        
-        if (macroResult && macroResult.success) {
-          if (macroResult.macroScore !== undefined) {
-            // Use pre-calculated score from backend
-            macroScore = macroResult.macroScore;
-            macroScoreSource = "pre-calculated";
-          } else if (macroResult.averageEmotions || macroResult.weightedAverages) {
-            const macroEmotionData = macroResult.averageEmotions || macroResult.weightedAverages || {};
-            macroEmotions = macroEmotionData;
-            macroScore = calculateDepressionScore(macroEmotionData);
-            macroScoreSource = "calculated-frontend";
-          }
-        }
-        
-        // Get clinical score (long-term data if available)
-        const clinicalScore = microResult.clinicalScore || microResult.clinicalDepressionScore || 0;
-          
         // Consolidate data
         const data = {
           microScore,
           macroScore,
           clinicalScore,
-          averageEmotions,
-          macroData: {
-            ...macroResult,
-            recordCount: macroResult.recordCount || 24,
-            timestamp: macroResult.timestamp || new Date().toISOString(),
-          },
-          dataSource,
+          averageEmotions: dummyEmotions,
           lastUpdated: new Date().toLocaleString()
         };
         
+        console.log("Dummy depression data:", data);
         setPredictionData(data);
         
-        // Check for high scores and send email alerts
-        if (microScore > 0.85) await sendAlertEmail('Micro', microScore);
-        if (macroScore > 0.85) await sendAlertEmail('Macro', macroScore);
-        if (clinicalScore > 0.85) await sendAlertEmail('Clinical', clinicalScore);
+        // Send email alerts for scores above 0.50
+        if (microScore > 0.50) sendAlertEmail('Micro', microScore);
+        if (macroScore > 0.50) sendAlertEmail('Macro', macroScore);
+        if (clinicalScore > 0.50) sendAlertEmail('Clinical', clinicalScore);
         
       } catch (err) {
-        console.error('Fetch error:', err);
-        setError('Failed to fetch depression prediction data. Please try again later.');
+        console.error('Error generating dummy data:', err);
+        setError('Failed to generate depression data. Please try again later.');
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchData();
+    }, 1000); // 1 second delay to simulate loading
+    
+    return () => clearTimeout(timer);
   }, []);
   return { predictionData, error, loading, emailError, getDepressionLevel };
 };

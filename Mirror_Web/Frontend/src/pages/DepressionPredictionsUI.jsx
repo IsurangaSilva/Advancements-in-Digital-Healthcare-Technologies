@@ -37,7 +37,7 @@ import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDiss
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
 // Import logic
-import { formatChartData, emotionWeights } from './DepressionPredictionsLogic';
+import { formatChartData } from './DepressionPredictionsLogic';
 
 // Register Chart.js components
 ChartJS.register(
@@ -353,7 +353,7 @@ const DepressionPredictionsUI = ({
         {/* Page Title */}
         <motion.div variants={boxVariants}>
           <Typography variant="h3" component="h1" align="center" gutterBottom>
-            Depression Predictions
+            Depression Prediction
           </Typography>
           <Typography variant="body1" align="center" color="textSecondary" sx={{ mb: 4 }}>
             Analysis based on emotional indicators from text, voice, and facial expressions
