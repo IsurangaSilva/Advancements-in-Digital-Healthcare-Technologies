@@ -140,55 +140,13 @@ const Footer = () => {
       overflow: 'hidden'
     }}>
       {/* Enhanced top wave decoration with multiple waves */}
-      <Box sx={{ 
-        position: 'absolute', 
-        top: 0, 
-        left: 0, 
-        width: '100%', 
-        height: '80px',
-        overflow: 'hidden',
-        zIndex: 1
-      }}>
-        <motion.svg
-          viewBox="0 0 1440 100"
-          style={{ 
-            position: 'absolute', 
-            top: 0, 
-            left: 0, 
-            width: '120%', 
-            height: '100%' 
-          }}
-          initial="initial"
-          animate={waveControls}
-        >
-          <motion.path
-            d="M0,0 C320,80 640,80 960,40 C1280,0 1440,40 1440,80 L1440,100 L0,100 Z"
-            fill="rgba(44, 62, 80, 0.95)"
-            variants={wavePathVariants}
-          />
-        </motion.svg>
-        <motion.svg
-          viewBox="0 0 1440 100"
-          style={{ 
-            position: 'absolute', 
-            top: 20, 
-            left: -50, 
-            width: '120%', 
-            height: '100%',
-            opacity: 0.4
-          }}
-          initial="initial"
-          animate={waveControls}
-        >
+      
           <motion.path
             d="M0,40 C280,10 620,90 960,50 C1280,10 1440,30 1440,60 L1440,100 L0,100 Z"
             fill="rgba(100, 181, 246, 0.4)"
             variants={wavePathVariants}
           />
-        </motion.svg>
-      </Box>
-
-      {/* Main Footer Content */}
+   
       <Box 
         component={motion.div}
         initial={{ opacity: 0 }}
@@ -214,27 +172,21 @@ const Footer = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.7, delay: 0.2 }}
-              >
-                <motion.div 
-                  whileHover={{ scale: 1.05 }}
-                  style={{ display: "inline-block", marginBottom: "16px" }}
-                >
-                  <Typography variant="h5" sx={{ 
+              >                <Typography variant="h5" sx={{ 
                     fontWeight: "bold", 
                     mb: 1,
+                    display: "inline-block",
+                    marginBottom: "16px",
                     background: "linear-gradient(90deg, #64b5f6, #1976d2)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent"
                   }}>
                     MIRROR
                   </Typography>
-                </motion.div>
-                <motion.div variants={floatEffect} animate="animate">
-                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 3, lineHeight: 1.6 }}>
-                    Empowering mental wellbeing through advanced emotion recognition technology.
-                    Start your journey to better psychological wellness today.
-                  </Typography>
-                </motion.div>
+                <Typography variant="body2" sx={{ opacity: 0.9, mb: 3, lineHeight: 1.6 }}>
+                  Empowering mental wellbeing through advanced emotion recognition technology.
+                  Start your journey to better psychological wellness today.
+                </Typography>
                 
                 <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
                   <motion.div whileHover={{ scale: 1.2, rotate: 10 }} whileTap={{ scale: 0.9 }}>
@@ -519,82 +471,8 @@ const Footer = () => {
           </Box>
         </Container>
       </Box>
-      
-      {/* Enhanced animated glow effects */}
-      <Box
-        component={motion.div}
-        initial={{ opacity: 0 }}
-        animate={{ 
-          opacity: [0.1, 0.2, 0.1],
-          x: [0, -10, 0],
-          transition: { 
-            repeat: Infinity,
-            duration: 5
-          }
-        }}
-        sx={{ 
-          position: 'absolute',
-          bottom: '20%',
-          right: '5%',
-          width: '200px',
-          height: '200px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, #64b5f6 0%, transparent 70%)',
-          filter: 'blur(40px)',
-          zIndex: 0
-        }}
-      />
-      
-      <Box
-        component={motion.div}
-        initial={{ opacity: 0 }}
-        animate={{ 
-          opacity: [0.1, 0.15, 0.1],
-          y: [0, -15, 0],
-          transition: { 
-            repeat: Infinity,
-            duration: 6,
-            delay: 1.5
-          }
-        }}
-        sx={{ 
-          position: 'absolute',
-          top: '30%',
-          left: '10%',
-          width: '150px',
-          height: '150px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, #2196F3 0%, transparent 70%)',
-          filter: 'blur(30px)',
-          zIndex: 0
-        }}
-      />
-      
-      {/* New glow effect */}
-      <Box
-        component={motion.div}
-        initial={{ opacity: 0 }}
-        animate={{ 
-          opacity: [0.05, 0.1, 0.05],
-          scale: [1, 1.1, 1],
-          transition: { 
-            repeat: Infinity,
-            duration: 7,
-            delay: 0.5
-          }
-        }}
-        sx={{ 
-          position: 'absolute',
-          top: '60%',
-          right: '20%',
-          width: '180px',
-          height: '180px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, #9c27b0 0%, transparent 70%)',
-          filter: 'blur(35px)',
-          zIndex: 0
-        }}
-      />
+        {/* Glow effects removed */}
+    
     </Box>
   );
 };

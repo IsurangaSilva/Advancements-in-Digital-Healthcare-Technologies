@@ -7,8 +7,8 @@
  * - Animations and responsive layout
  */
 
-import React, { useRef } from 'react';
-import { Box, Container, Typography, CircularProgress, Alert, Grid, Paper, Chip, Divider } from '@mui/material';
+import React, { useRef, useState } from 'react';
+import { Box, Container, Typography, CircularProgress, Alert, Grid, Paper, Chip, Divider, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { motion } from 'framer-motion';
 import { Bar, Radar } from 'react-chartjs-2';
@@ -168,6 +168,9 @@ const DepressionPredictionsUI = ({
   const theme = useTheme();
   const barChartRef = useRef(null);
   const radarChartRef = useRef(null);
+  
+  // State for emotion type selection
+  const [emotionType, setEmotionType] = useState('micro');
 
   // Loading state
   if (loading) {
@@ -208,16 +211,20 @@ const DepressionPredictionsUI = ({
       </Container>
     );
   }
-
-  const { microScore, macroScore, clinicalScore, averageEmotions } = predictionData;
+  const { microScore, macroScore, clinicalScore, microEmotions, macroEmotions, averageEmotions } = predictionData;
+  
+  // Select emotion data based on dropdown selection
+  const selectedEmotionData = emotionType === 'macro' ? (macroEmotions || averageEmotions) : (microEmotions || averageEmotions);
   
   // Format chart data
-  const charts = formatChartData(averageEmotions, theme);
+  const charts = formatChartData(selectedEmotionData, theme, emotionType);
   const barChartData = charts.bar.data(microScore, macroScore, clinicalScore);
   const radarData = charts.radar.data;
-  
-  // Chart options
+    // Chart options
   const barChartOptions = {
+    animation: false,
+    maintainAspectRatio: true,
+    responsive: true,
     scales: {
       y: {
         beginAtZero: true,
@@ -259,9 +266,13 @@ const DepressionPredictionsUI = ({
       duration: 1500,
       easing: 'easeOutCubic'
     }
-  };
-
-  const radarOptions = {
+  };  const radarOptions = {
+    maintainAspectRatio: true,
+    responsive: true,
+    animation: {
+      duration: 1500,
+      easing: 'easeOutCubic'
+    },
     scales: {
       r: {
         angleLines: { color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)' },
@@ -300,12 +311,6 @@ const DepressionPredictionsUI = ({
         bodyFont: { size: 13 },
         bodyColor: theme.palette.mode === 'dark' ? '#000' : '#fff'
       }
-    },
-    responsive: true,
-    maintainAspectRatio: true,
-    animation: {
-      duration: 1500,
-      easing: 'easeOutCubic'
     }
   };
   // Prepare indicator data
@@ -686,8 +691,7 @@ const DepressionPredictionsUI = ({
 
         {/* Charts */}
         <Grid container spacing={3}>
-          {/* Radar Chart */}
-          <Grid item xs={12} md={6}>
+          {/* Radar Chart */}          <Grid item xs={12} md={6}>
             <motion.div variants={boxVariants}>
               <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -697,15 +701,42 @@ const DepressionPredictionsUI = ({
                   </Typography>
                 </Box>
                 <Divider sx={{ mb: 3 }} />
-                <Box sx={{ height: 400, mb: 2 }}>
+                
+                {/* Emotion Type Dropdown */}
+                <Box sx={{ mb: 3 }}>
+                  <FormControl size="small" sx={{ minWidth: 200 }}>
+                    <InputLabel id="emotion-type-select-label">Emotion Data Type</InputLabel>
+                    <Select
+                      labelId="emotion-type-select-label"
+                      id="emotion-type-select"
+                      value={emotionType}
+                      label="Emotion Data Type"
+                      onChange={(e) => setEmotionType(e.target.value)}
+                    >
+                      <MenuItem value="micro">Micro Emotions (5-min)</MenuItem>
+                      <MenuItem value="macro">Macro Variations (24h)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box><Box sx={{ 
+                  height: 400, 
+                  mb: 2,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  width: '100%'
+                }}>
                   <Radar 
                     ref={radarChartRef}
                     data={radarData} 
-                    options={radarOptions}
+                    options={{
+                      ...radarOptions,
+                      animation: false,
+                      maintainAspectRatio: true
+                    }}
+                    key="radar-chart-element"
                   />
-                </Box>
-                <Typography variant="body2" color="textSecondary">
-                  The radar chart shows your current emotion distribution and how each emotion
+                </Box>                <Typography variant="body2" color="textSecondary">
+                  The radar chart shows your {emotionType === 'macro' ? 'macro emotion variations (24h averages)' : 'current micro emotion distribution (5-min)'} and how each emotion
                   contributes to the depression score calculation.
                 </Typography>
               </Paper>
@@ -722,12 +753,15 @@ const DepressionPredictionsUI = ({
                     Score Comparison
                   </Typography>
                 </Box>
-                <Divider sx={{ mb: 3 }} />
-                <Box sx={{ height: 400, mb: 2 }}>
+                <Divider sx={{ mb: 3 }} />                <Box sx={{ height: 500, mb: 2 }}>
                   <Bar 
                     ref={barChartRef}
                     data={barChartData}
-                    options={barChartOptions}
+                    options={{
+                      ...barChartOptions,
+                      animation: false
+                    }}
+                    key="bar-chart-element"
                   />
                 </Box>
                 <Typography variant="body2" color="textSecondary">

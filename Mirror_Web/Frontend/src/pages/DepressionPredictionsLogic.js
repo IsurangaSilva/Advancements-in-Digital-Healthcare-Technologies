@@ -98,7 +98,7 @@ export const getDepressionLevel = (score) => {
 };
 
 // Format data for charts with real emotion values when available
-export const formatChartData = (emotionData, theme) => {
+export const formatChartData = (emotionData, theme, dataType = 'micro') => {
   // Standard emotion labels
   const emotionLabels = ['Sadness', 'Anger', 'Fear', 'Neutral', 'Joy', 'Surprise'];
   
@@ -115,7 +115,7 @@ export const formatChartData = (emotionData, theme) => {
       emotionData.joy || 0,
       emotionData.surprise || 0
     ];
-    console.log("Using real emotion values for chart:", emotionValues);
+    console.log(`Using real ${dataType} emotion values for chart:`, emotionValues);
   } else {
     // Fallback to dummy data if no real data available
     emotionValues = [
@@ -126,10 +126,9 @@ export const formatChartData = (emotionData, theme) => {
       Math.random() * 0.6,
       Math.random() * 0.2
     ];
-    console.log("Using dummy emotion values for chart:", emotionValues);
+    console.log(`Using dummy ${dataType} emotion values for chart:`, emotionValues);
   }
-  
-  // Return formatted chart data
+    // Return formatted chart data with enhanced visuals
   return {
     radar: {
       data: {
@@ -138,32 +137,72 @@ export const formatChartData = (emotionData, theme) => {
           {
             label: 'Emotion Values',
             data: emotionValues,
-            backgroundColor: 'rgba(66, 165, 245, 0.2)',
-            borderColor: 'rgba(33, 150, 243, 1)',
+            backgroundColor: 'rgba(66, 165, 245, 0.3)',
+            borderColor: 'rgba(33, 150, 243, 0.8)',
             pointBackgroundColor: 'rgba(33, 150, 243, 1)',
             pointBorderColor: '#fff',
             pointHoverBackgroundColor: '#fff',
             pointHoverBorderColor: 'rgba(33, 150, 243, 1)',
-            borderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6
+            borderWidth: 3,
+            pointRadius: 5,
+            pointHoverRadius: 8,
+            fill: true,
+            // Add second dataset for glowing effect
+            tension: 0.2
+          },
+          {
+            label: 'Emotion Trend',
+            data: emotionValues.map(val => Math.max(val - 0.05, 0)),
+            backgroundColor: 'rgba(116, 209, 234, 0.2)',
+            borderColor: 'rgba(116, 209, 234, 0.5)',
+            pointBackgroundColor: 'transparent',
+            pointBorderColor: 'transparent',
+            pointHoverBackgroundColor: 'transparent',
+            pointHoverBorderColor: 'transparent',
+            borderWidth: 1,
+            pointRadius: 0,
+            fill: true,
+            tension: 0.2
           }
         ]
       }
     },
     bar: {
-      data: (microScore, macroScore, clinicalScore) => ({
-        labels: ['Micro Score (5-min)', 'Macro Score (Last 24 Hrs)', 'Clinical Score'],
-        datasets: [
-          {
-            label: 'Depression Scores',
-            data: [microScore, macroScore, clinicalScore],
-            backgroundColor: ['#4caf50', '#2196f3', '#ff9800'],
-            borderColor: ['#388e3c', '#1976d2', '#f57c00'],
-            borderWidth: 1
-          }
-        ]
-      })
+      data: (microScore, macroScore, clinicalScore) => {
+        // Generate gradient colors for bars
+        const gradientColors = [
+          ['rgba(76, 175, 80, 0.9)', 'rgba(76, 175, 80, 0.4)'],  // Green
+          ['rgba(33, 150, 243, 0.9)', 'rgba(33, 150, 243, 0.4)'], // Blue
+          ['rgba(255, 152, 0, 0.9)', 'rgba(255, 152, 0, 0.4)']   // Orange
+        ];
+        
+        return {
+          labels: ['Micro Score (5-min)', 'Macro Score (Last 24 Hrs)', 'Clinical Score'],
+          datasets: [
+            {
+              label: 'Depression Scores',
+              data: [microScore, macroScore, clinicalScore],
+              backgroundColor: gradientColors.map(colors => colors[0]),
+              borderColor: ['rgba(56, 142, 60, 1)', 'rgba(25, 118, 210, 1)', 'rgba(245, 124, 0, 1)'],
+              borderWidth: 2,
+              borderRadius: 6,
+              hoverBorderWidth: 3,
+              hoverBorderRadius: 8
+            },
+            // Add secondary dataset for shadow effect
+            {
+              label: 'Base Score',
+              data: [0.1, 0.1, 0.1],
+              backgroundColor: gradientColors.map(colors => colors[1]),
+              borderWidth: 0,
+              borderRadius: 6,
+              barPercentage: 0.9,
+              categoryPercentage: 0.9,
+              grouped: false
+            }
+          ]
+        };
+      }
     }
   };
 };
@@ -209,26 +248,38 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
   useEffect(() => {
     setLoading(true);
     console.log("Initializing real-time data polling");
-    
-    // Function to fetch data from the API
+      // Function to fetch data from the API
     const fetchEmotionData = async () => {
       try {
-        const response = await fetch('http://localhost:4000/api/average/combined-5min-weighted-average');
+        // Fetch both micro (5-min) and macro (hourly) data in parallel
+        const [microResponse, macroResponse] = await Promise.all([
+          fetch('http://localhost:4000/api/average/combined-5min-weighted-average'),
+          fetch('http://localhost:4000/api/average/hourlydepression')
+        ]);
         
-        if (!response.ok) {
-          throw new Error(`API returned status: ${response.status}`);
+        if (!microResponse.ok) {
+          throw new Error(`Micro API returned status: ${microResponse.status}`);
+        }
+        if (!macroResponse.ok) {
+          console.warn(`Macro API returned status: ${macroResponse.status}, using micro score as fallback`);
         }
         
-        const responseData = await response.json();
-        console.log('Received real-time emotion data:', responseData);
+        const microData = await microResponse.json();
+        console.log('Received real-time micro emotion data:', microData);
         
-        if (responseData.success && responseData.emotions && responseData.emotions.length > 0) {
-          const latestEmotionData = responseData.emotions[0].weightedAverages;
+        let macroData = null;
+        if (macroResponse.ok) {
+          macroData = await macroResponse.json();
+          console.log('Received hourly macro emotion data:', macroData);
+        }
+        
+        if (microData.success && microData.emotions && microData.emotions.length > 0) {
+          const latestEmotionData = microData.emotions[0].weightedAverages;
           
           if (latestEmotionData && typeof latestEmotionData === 'object') {
             try {
-              // Normalize emotion data to lowercase keys for consistency
-              const normalizedEmotions = {
+              // Normalize micro emotion data to lowercase keys for consistency
+              const normalizedMicroEmotions = {
                 sadness: latestEmotionData.sadness || 0,
                 anger: latestEmotionData.anger || 0, 
                 fear: latestEmotionData.fear || 0,
@@ -237,12 +288,30 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
                 surprise: latestEmotionData.surprise || 0
               };
 
-              // Calculate weighted depression score from real emotion data
-              const microScore = calculateWeightedDepressionScore(normalizedEmotions);
+              // Calculate weighted depression score from micro emotion data
+              const microScore = calculateWeightedDepressionScore(normalizedMicroEmotions);
+                // Calculate macro score from hourly data if available
+              let macroScore = microScore; // Fallback to micro score
+              let macroEmotions = normalizedMicroEmotions; // Fallback to micro emotions
               
-              // For now, use the same score for macro and clinical 
-              // In a production environment, these would come from different endpoints
-              const macroScore = microScore;
+              if (macroData && macroData.success && macroData.emotionAverages) {
+                macroEmotions = {
+                  sadness: macroData.emotionAverages.sadness || 0,
+                  anger: macroData.emotionAverages.anger || 0,
+                  fear: macroData.emotionAverages.fear || 0,
+                  neutral: macroData.emotionAverages.neutral || 0,
+                  joy: macroData.emotionAverages.joy || 0,
+                  surprise: macroData.emotionAverages.surprise || 0
+                };
+                
+                // Apply the same weighted depression score calculation logic to hourly data
+                macroScore = calculateWeightedDepressionScore(macroEmotions);
+                console.log('Calculated macro score from hourly data:', macroScore.toFixed(3));
+              } else {
+                console.log('Using micro score as fallback for macro score');
+              }
+              
+              // For clinical score, use micro score as before (would be different endpoint in production)
               const clinicalScore = microScore;
               
               // Consolidate data
@@ -250,7 +319,9 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
                 microScore,
                 macroScore,
                 clinicalScore,
-                averageEmotions: normalizedEmotions,
+                microEmotions: normalizedMicroEmotions,
+                macroEmotions: macroEmotions,
+                averageEmotions: normalizedMicroEmotions, // Keep for backward compatibility
                 lastUpdated: new Date().toLocaleString()
               };
               
@@ -302,8 +373,7 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
           const microScore = calculateDepressionScore(); 
           const macroScore = calculateDepressionScore();
           const clinicalScore = calculateDepressionScore();
-          
-          // Create dummy emotion data
+            // Create dummy emotion data
           const dummyEmotions = {
             sadness: Math.random() * 0.6,
             anger: Math.random() * 0.4,
@@ -313,12 +383,24 @@ export const useDepressionPredictions = () => {  const [predictionData, setPredi
             surprise: Math.random() * 0.2
           };
           
+          // Create slightly different macro emotions for variety
+          const dummyMacroEmotions = {
+            sadness: Math.random() * 0.5,
+            anger: Math.random() * 0.3,
+            fear: Math.random() * 0.4,
+            neutral: Math.random() * 0.6,
+            joy: Math.random() * 0.8,
+            surprise: Math.random() * 0.3
+          };
+          
           // Consolidate data
           const data = {
             microScore,
             macroScore,
             clinicalScore,
-            averageEmotions: dummyEmotions,
+            microEmotions: dummyEmotions,
+            macroEmotions: dummyMacroEmotions,
+            averageEmotions: dummyEmotions, // Keep for backward compatibility
             lastUpdated: new Date().toLocaleString()
           };
           
