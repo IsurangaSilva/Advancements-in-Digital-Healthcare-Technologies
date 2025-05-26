@@ -161,22 +161,24 @@ const Recommendations = () => {
       const data = await response.json();
       console.log("API Response Data:", data);
 
-      if (!data || typeof data !== "object" || !Array.isArray(data.emotions)) {
-        throw new Error("Invalid response format: 'emotions' array not found - " + JSON.stringify(data));
+      // Expecting data to be an array or object with weightedAverages
+      let weightedAverages = null;
+      if (Array.isArray(data)) {
+        // If API returns an array, take the first element
+        weightedAverages = data[0]?.weightedAverages;
+      } else if (data.weightedAverages) {
+        weightedAverages = data.weightedAverages;
+      } else if (data.emotions && Array.isArray(data.emotions) && data.emotions[0]?.weightedAverages) {
+        // If wrapped in 'emotions' array
+        weightedAverages = data.emotions[0].weightedAverages;
       }
 
-      const sessions = data.emotions;
-      if (sessions.length === 0) {
-        throw new Error("No emotion data found in response (empty emotions array)");
+      if (!weightedAverages) {
+        throw new Error("No weightedAverages found in API response: " + JSON.stringify(data));
       }
 
-      const hasSessionAggregate = sessions.some((session) => session.session_aggregate);
-      console.log("Has Session Aggregate:", hasSessionAggregate);
-      if (!hasSessionAggregate) {
-        throw new Error("No session_aggregate found in any session");
-      }
-
-      return sessions;
+      // Return as a single session array for compatibility
+      return [weightedAverages];
     } catch (err) {
       console.error("Error fetching emotion data:", err);
       setError(err.message);
@@ -184,10 +186,10 @@ const Recommendations = () => {
     }
   };
 
-  // Calculate average emotion scores across all sessions
+  // Calculate average emotion scores across all sessions (now expects array of weightedAverages objects)
   const calculateEmotionAverages = (sessions) => {
     if (!sessions || sessions.length === 0) return null;
-
+    // Only one session expected, but keep logic for future-proofing
     const emotionTotals = {
       anger: 0,
       fear: 0,
@@ -196,10 +198,8 @@ const Recommendations = () => {
       sadness: 0,
       surprise: 0,
     };
-
     let validSessions = 0;
-    sessions.forEach((session) => {
-      const scores = session.session_aggregate;
+    sessions.forEach((scores) => {
       if (scores) {
         emotionTotals.anger += scores.anger || 0;
         emotionTotals.fear += scores.fear || 0;
@@ -210,9 +210,7 @@ const Recommendations = () => {
         validSessions += 1;
       }
     });
-
     if (validSessions === 0) return null;
-
     const averages = {
       anger: emotionTotals.anger / validSessions,
       fear: emotionTotals.fear / validSessions,
@@ -228,19 +226,18 @@ const Recommendations = () => {
   // Fetch AI recommendation from OpenRouter API
   const fetchRecommendation = async (avgEmotions) => {
     setLoading(true);
-    const OPENROUTER_API_KEY = "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";
+    const OPENROUTER_API_KEY = "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";
     const YOUR_SITE_URL = "http://localhost:3000";
-    const YOUR_SITE_NAME = "Mental Health App";
-
-    const prompt = `
-      Based on the following averaged emotion data from a user's sessions:
+    const YOUR_SITE_NAME = "Mental Health App";    const prompt = `
+      As a healthcare professional, you are reviewing the following emotional data for your patient:
       Joy: ${avgEmotions.joy.toFixed(4)},
       Sadness: ${avgEmotions.sadness.toFixed(4)},
       Anger: ${avgEmotions.anger.toFixed(4)},
       Fear: ${avgEmotions.fear.toFixed(4)},
       Surprise: ${avgEmotions.surprise.toFixed(4)},
-      Neutral: ${avgEmotions.neutral.toFixed(4)},
-      provide personalized recommendations.
+      Neutral: ${avgEmotions.neutral.toFixed(4)}.
+      
+      Please provide professional recommendations for how to best support this patient's mental health needs. Format your response as clear, actionable bullet points that a healthcare professional could implement. Include specific approaches for addressing any concerning emotions detected in the data.
     `;
 
     const requestBody = {
@@ -278,10 +275,60 @@ const Recommendations = () => {
 
       if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
         throw new Error("Invalid response format from OpenRouter API");
+      }      const aiResponse = data.choices[0].message.content;
+      
+      // Format the response for better readability
+      let plainTextResponse = stripMarkdown(aiResponse); // First remove markdown
+      
+      // Strip any JSON formatting if present
+      plainTextResponse = plainTextResponse.replace(/^\s*[\{\[].*?[\}\]]\s*$/gms, (match) => {
+        try {
+          // Try to parse as JSON and extract any useful text
+          const parsed = JSON.parse(match);
+          if (parsed.recommendations) {
+            return parsed.recommendations.map(rec => 
+              typeof rec === 'string' ? rec : rec.text || rec.recommendation || rec.category || ''
+            ).join(' ');
+          }
+          return Object.values(parsed).join(' ');
+        } catch (e) {
+          // If it's not valid JSON, just remove JSON-like syntax
+          return match.replace(/[{}\[\]"]/g, '')
+            .replace(/:\s*/g, ': ')
+            .replace(/,\s*/g, '. ');
+        }
+      });
+      
+      // Remove boxed notation if present (like \boxed{...})
+      plainTextResponse = plainTextResponse.replace(/\\boxed\s*\{\s*(.*?)\s*\}/gs, '$1');
+      
+      // Remove any code block markers
+      plainTextResponse = plainTextResponse.replace(/```\w*\n|\n```/g, '');
+      
+      // Remove any emotion score references (e.g., "Joy: 0.5550, ")
+      plainTextResponse = plainTextResponse.replace(/\b(Joy|Sadness|Anger|Fear|Surprise|Neutral):\s*\d+\.\d+,?\s*/g, '');
+      
+      // If we have sections with labels like "Daily:", "Weekly:", extract them as separate items
+      if (/\b(Daily|Weekly|Monthly|Yearly):/i.test(plainTextResponse)) {
+        const timePatterns = plainTextResponse.match(/\b(Daily|Weekly|Monthly|Yearly):[^.!?]+(\.|\!|\?)/gi) || [];
+        if (timePatterns.length > 0) {
+          plainTextResponse = timePatterns.map(pattern => `• ${pattern.trim()}`).join('\n\n');
+        }
+      } 
+      // Otherwise, convert paragraphs to bullet points if not already in point form
+      else if (!plainTextResponse.includes('•') && !plainTextResponse.includes('- ')) {
+        // Split by sentences or periods, ignoring periods in numbers and abbreviations
+        const sentences = plainTextResponse
+          .replace(/\r\n|\n|\r/g, ' ') // Normalize line breaks
+          .split(/(?<=[.!?])\s+(?=[A-Z])/)
+          .filter(s => s.trim().length > 0);
+        
+        plainTextResponse = sentences
+          .filter(sentence => sentence.trim().length > 10) // Only keep meaningful sentences
+          .map(sentence => `• ${sentence.trim()}`)
+          .join('\n\n');
       }
-
-      const aiResponse = data.choices[0].message.content;
-      const plainTextResponse = stripMarkdown(aiResponse); // Convert Markdown to plain text
+      
       setRecommendation(plainTextResponse);
     } catch (error) {
       console.error("Error fetching recommendation:", error);
@@ -370,8 +417,7 @@ const Recommendations = () => {
                 }}
               >
                 <PsychologyIcon sx={{ fontSize: 40 }} />
-              </Avatar>
-              <Typography
+              </Avatar>              <Typography
                 variant="h2"
                 sx={{
                   fontWeight: 700,
@@ -384,7 +430,7 @@ const Recommendations = () => {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Your Recommendations
+                Patient Care Recommendations
               </Typography>
             </Box>
           </motion.div>
@@ -402,7 +448,7 @@ const Recommendations = () => {
                 lineHeight: 1.6
               }}
             >
-              Based on your emotional data analysis, here's how you can maintain and improve your mental well-being.
+              Based on your patient's emotional data analysis, here are professional recommendations to help support their mental well-being.
             </Typography>
           </motion.div>
 
@@ -462,7 +508,7 @@ const Recommendations = () => {
                         fontWeight: 500 
                       }}
                     >
-                      Processing your emotional data...
+                      Processing patient emotional data...
                     </Typography>
                   </Box>
                 ) : emotions ? (
@@ -472,15 +518,14 @@ const Recommendations = () => {
                         <Avatar sx={{ bgcolor: "#1a3c5e", mr: 2 }}>
                           <MoodIcon />
                         </Avatar>
-                        <Typography
-                          variant="h5"
+                        <Typography                          variant="h5"
                           sx={{
                             fontWeight: 600,
                             color: "#1a3c5e",
                             textTransform: "uppercase",
                           }}
                         >
-                          Your Emotional Profile
+                          Patient Emotional Profile
                         </Typography>
                       </Box>
                       
@@ -581,16 +626,14 @@ const Recommendations = () => {
                         </Avatar>
                         <Typography
                           variant="h5"
-                          sx={{
-                            fontWeight: 600,
+                          sx={{                            fontWeight: 600,
                             color: "#1a3c5e",
                             textTransform: "uppercase",
                           }}
                         >
-                          AI-Powered Insights
+                          Professional Care Suggestions
                         </Typography>
-                      </Box>
-                      <Paper 
+                      </Box>                      <Paper 
                         elevation={0}
                         sx={{ 
                           p: 3, 
@@ -603,11 +646,16 @@ const Recommendations = () => {
                           variant="body1"
                           sx={{
                             color: "#333",
-                            lineHeight: 1.8,
+                            lineHeight: 2,
                             fontSize: "16px",
-                            textAlign: "justify",
-                            fontWeight: 300
+                            fontWeight: 300,
+                            whiteSpace: 'pre-line', // Preserve line breaks
+                            '& ::marker': { // Style for bullet points
+                              color: theme.palette.primary.main,
+                              fontWeight: 'bold'
+                            }
                           }}
+                          component="div" // Use div to support whitespace formatting
                         >
                           {recommendation}
                         </Typography>

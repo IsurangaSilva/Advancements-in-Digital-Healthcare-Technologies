@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Box, Container, Typography, CircularProgress, Alert, Grid, Paper, Chip, Divider, FormControl, InputLabel, Select, MenuItem, Collapse, IconButton } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -200,14 +199,27 @@ const DepressionPredictionsUI = ({
     Micro: false,
     Macro: false,
     Clinical: false
-  });
-
-  // Toggle expansion function
+  });  // Toggle expansion function - ensures only one card can be expanded at a time
   const handleExpandClick = (level) => {
-    setExpandedCard(prev => ({
-      ...prev,
-      [level]: !prev[level]
-    }));
+    setExpandedCard(prev => {
+      // If this card is already expanded, collapse it
+      if (prev[level]) {
+        return {
+          Micro: false,
+          Macro: false,
+          Clinical: false
+        };
+      } 
+      // Otherwise collapse all cards and expand only this one
+      else {
+        return {
+          Micro: false,
+          Macro: false,
+          Clinical: false,
+          [level]: true
+        };
+      }
+    });
   };
   
   // Score explanation content
@@ -300,11 +312,53 @@ const DepressionPredictionsUI = ({
   const selectedEmotionData = emotionType === 'clinical' ? (clinicalEmotions || averageEmotions) : 
                               emotionType === 'macro' ? (macroEmotions || averageEmotions) : 
                               (microEmotions || averageEmotions);
+    // Import the calculation constants and weights
+  const SHIFT_FACTOR = 1.3;
+  const NORMALIZATION_RANGE = 3.6;
+  const emotionWeights = {
+    sadness: 1.0,
+    anger: 0.7,
+    fear: 0.6,
+    neutral: 0.0,
+    joy: -1.0,
+    surprise: -0.3
+  };
+
+  // Calculate detailed score breakdowns for displaying in the UI
+  const calculateScoreBreakdown = (emotions) => {
+    if (!emotions) return { weightedValues: {}, sum: 0, shiftedSum: 0, normalizedScore: 0 };
+    
+    const weightedValues = {};
+    let weightedSum = 0;
+    
+    // Calculate individual weighted values and total
+    Object.keys(emotions).forEach(emotion => {
+      if (emotions[emotion] !== undefined && emotionWeights[emotion] !== undefined) {
+        weightedValues[emotion] = emotions[emotion] * emotionWeights[emotion];
+        weightedSum += weightedValues[emotion];
+      }
+    });
+    
+    const shiftedSum = weightedSum + SHIFT_FACTOR;
+    const normalizedScore = shiftedSum / NORMALIZATION_RANGE;
+    
+    return {
+      weightedValues,
+      sum: weightedSum,
+      shiftedSum,
+      normalizedScore: Math.min(Math.max(normalizedScore, 0), 1)
+    };
+  };
+  
+  // Get detailed score breakdowns for each emotion score type
+  const microScoreDetails = calculateScoreBreakdown(microEmotions);
+  const macroScoreDetails = calculateScoreBreakdown(macroEmotions);
+  const clinicalScoreDetails = calculateScoreBreakdown(clinicalEmotions);
   
   // Format chart data
   const charts = formatChartData(selectedEmotionData, theme, emotionType);
   const barChartData = charts.bar.data(microScore, macroScore, clinicalScore);
-  const radarData = charts.radar.data;  // Chart options (updated)
+  const radarData = charts.radar.data;// Chart options (updated)
   const barChartOptions = {
     animation: false,
     maintainAspectRatio: true,
@@ -573,8 +627,7 @@ const DepressionPredictionsUI = ({
                         display: 'inline-block',
                         background: 'linear-gradient(90deg, #ffffff, #a2d2ff)',
                         WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
-                      }}
+                        WebkitTextFillColor: 'transparent'                      }}
                     >
                       Prediction
                     </motion.span>
@@ -671,9 +724,146 @@ const DepressionPredictionsUI = ({
                   />
                 </Box>
               </motion.div>
-            </Box>
+            </Box>          </Box>
+        </motion.div>
+          {/* Depression Score Ranges Info */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          style={{ width: '100%', marginBottom: '1.5rem' }}
+        >
+          <Box
+            sx={{
+              textAlign: 'center',
+              maxWidth: '95%',
+              mx: 'auto',
+              pt: 1
+            }}
+          >
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontWeight: 600,
+                fontSize: '1.1rem',
+                letterSpacing: '0.3px',
+                color: 'rgba(0, 0, 0, 0.87)',
+                mb: 2
+              }}
+            >
+
+            </Typography>
+            
+            <Grid container spacing={2} justifyContent="center">
+              {/* No Depression */}
+              <Grid item>
+                <Paper
+                  elevation={2}
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    backgroundColor: '#4caf50',
+                    color: 'white',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    minWidth: '120px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    boxShadow: '0 4px 8px rgba(76, 175, 80, 0.3)'
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={700}>0.00-0.40</Typography>
+                  <Typography variant="caption" display="block" fontWeight={500}>No Depression</Typography>
+                </Paper>
+              </Grid>
+              
+              {/* Mild */}
+              <Grid item>
+                <Paper
+                  elevation={2}
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    backgroundColor: '#8bc34a',
+                    color: 'white',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    minWidth: '120px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    boxShadow: '0 4px 8px rgba(139, 195, 74, 0.3)'
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={700}>0.40-0.49</Typography>
+                  <Typography variant="caption" display="block" fontWeight={500}>Mild</Typography>
+                </Paper>
+              </Grid>
+              
+              {/* Moderate */}
+              <Grid item>
+                <Paper
+                  elevation={2}
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    backgroundColor: '#ff9800',
+                    color: 'white',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    minWidth: '120px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    boxShadow: '0 4px 8px rgba(255, 152, 0, 0.3)'
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={700}>0.50-0.69</Typography>
+                  <Typography variant="caption" display="block" fontWeight={500}>Moderate</Typography>
+                </Paper>
+              </Grid>
+              
+              {/* Severe */}
+              <Grid item>
+                <Paper
+                  elevation={2}
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    backgroundColor: '#f44336',
+                    color: 'white',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    minWidth: '120px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    boxShadow: '0 4px 8px rgba(244, 67, 54, 0.3)'
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={700}>0.70-0.85</Typography>
+                  <Typography variant="caption" display="block" fontWeight={500}>Severe</Typography>
+                </Paper>
+              </Grid>
+              
+              {/* Very Severe */}
+              <Grid item>
+                <Paper
+                  elevation={2}
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    backgroundColor: '#9c27b0',
+                    color: 'white',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    minWidth: '120px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    boxShadow: '0 4px 8px rgba(156, 39, 176, 0.3)'
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={700}>0.85-1.00</Typography>
+                  <Typography variant="caption" display="block" fontWeight={500}>Very Severe</Typography>
+                </Paper>
+              </Grid>
+            </Grid>
           </Box>
-        </motion.div>{/* Score Cards */}
+        </motion.div>
+        
+        {/* Score Cards */}
         <motion.div style={{ width: '100%' }}>
           <Grid container spacing={3} sx={{ mb: 4 }} alignItems="stretch">
             {indicators.map((indicator, index) => {
@@ -803,8 +993,7 @@ const DepressionPredictionsUI = ({
                         <ExpandMoreIcon fontSize="small" sx={{ ml: 1 }} />
                       </motion.div>
                     </Box>
-                    
-                    {/* Dropdown Content */}
+                      {/* Dropdown Content - Enhanced with calculation details */}
                     <Collapse in={expandedCard[indicator.level]} timeout="auto" unmountOnExit>
                       <Box 
                         sx={{ 
@@ -825,19 +1014,178 @@ const DepressionPredictionsUI = ({
                           {explanation.description}
                         </Typography>
                         
-                        <Typography variant="subtitle2" fontWeight="bold" sx={{ mt: 1.5, mb: 0.5 }}>
-                          Formula:
-                        </Typography>
-                        <Chip 
-                          label={explanation.formula} 
-                          size="small"
+                        {/* Calculation Formula Section */}
+                        <Box 
                           sx={{ 
-                            mb: 1.5, 
-                            fontFamily: 'monospace', 
-                            fontWeight: 'bold',
-                            bgcolor: 'rgba(255,255,255,0.2)'
-                          }} 
-                        />
+                            bgcolor: 'rgba(255,255,255,0.1)', 
+                            p: 1.5, 
+                            borderRadius: 2, 
+                            mb: 2,
+                            border: '1px dashed rgba(255,255,255,0.2)'
+                          }}
+                        >
+                          <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
+                            Score Calculation:
+                          </Typography>
+                            {/* The emotion values used for this score - enhanced with weighted values */}
+                          <Box sx={{ mb: 1.5 }}>
+                            <Typography variant="body2" fontWeight="medium" sx={{ mb: 0.5 }}>
+                              Current Emotion Values:
+                            </Typography>
+                            <Grid container spacing={1}>
+                              {(() => {
+                                const emotions = indicator.level === 'Micro' ? microEmotions || {} : 
+                                                indicator.level === 'Macro' ? macroEmotions || {} : 
+                                                clinicalEmotions || {};
+                                
+                                return Object.entries(emotions).map(([emotion, value], i) => {
+                                  const weight = emotionWeights[emotion] || 0;
+                                  const weightedValue = value * weight;
+                                  // Determine if this emotion increases or decreases depression score
+                                  const impactType = weight > 0 
+                                    ? 'increases' 
+                                    : weight < 0 
+                                      ? 'decreases' 
+                                      : 'neutral';
+                                  
+                                  // Determine color based on impact
+                                  const impactColor = weight > 0 
+                                    ? 'rgba(255,100,100,0.7)' 
+                                    : weight < 0 
+                                      ? 'rgba(100,255,100,0.7)' 
+                                      : 'rgba(255,255,255,0.7)';
+                                  
+                                  return (
+                                    <Grid item xs={12} sm={6} key={i}>
+                                      <Box sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: 'column',
+                                        bgcolor: 'rgba(255,255,255,0.1)',
+                                        px: 1.5,
+                                        py: 0.75,
+                                        borderRadius: 1,
+                                        fontSize: '0.85rem',
+                                        height: '100%'
+                                      }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                          <Typography variant="body2" sx={{ 
+                                            textTransform: 'capitalize',
+                                            fontWeight: 'medium'
+                                          }}>
+                                            {emotion}:
+                                          </Typography>
+                                          <Typography variant="body2" fontWeight="bold">
+                                            {value.toFixed(2)}
+                                          </Typography>
+                                        </Box>
+                                        
+                                        <Box sx={{ 
+                                          display: 'flex', 
+                                          justifyContent: 'space-between',
+                                          alignItems: 'center',
+                                          mt: 0.5
+                                        }}>
+                                          <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                                            Weight: {weight.toFixed(1)}
+                                          </Typography>
+                                          <Chip 
+                                            label={`${Math.abs(weightedValue).toFixed(3)}`} 
+                                            size="small"
+                                            sx={{ 
+                                              height: 20, 
+                                              fontSize: '0.7rem',
+                                              bgcolor: impactColor,
+                                              '& .MuiChip-label': { px: 1 }
+                                            }} 
+                                          />
+                                        </Box>
+                                        
+                                        <Typography variant="caption" sx={{ 
+                                          mt: 0.5, 
+                                          opacity: 0.8,
+                                          fontStyle: 'italic',
+                                          color: impactColor
+                                        }}>
+                                          {weight === 0 
+                                            ? 'No effect on score' 
+                                            : `${impactType} score by ${Math.abs(weightedValue).toFixed(3)}`}
+                                        </Typography>
+                                      </Box>
+                                    </Grid>
+                                  );
+                                });
+                              })()}
+                            </Grid>
+                          </Box>
+
+                          {/* Calculation Steps */}
+                          <Typography variant="body2" fontWeight="medium" sx={{ mt: 1.5, mb: 0.5 }}>
+                            Detailed Calculation:
+                          </Typography>
+                          <Box sx={{ 
+                            bgcolor: 'rgba(0,0,0,0.2)', 
+                            p: 1.5, 
+                            borderRadius: 1,
+                            fontFamily: 'monospace',
+                            fontSize: '0.85rem',
+                            overflowX: 'auto',
+                            whiteSpace: 'nowrap'
+                          }}>                            {/* Get the appropriate score details based on indicator level */}
+                            {(() => {
+                              const emotions = indicator.level === 'Micro' ? microEmotions || {} : 
+                                               indicator.level === 'Macro' ? macroEmotions || {} : 
+                                               clinicalEmotions || {};
+                              
+                              const scoreDetails = indicator.level === 'Micro' ? microScoreDetails : 
+                                                  indicator.level === 'Macro' ? macroScoreDetails : 
+                                                  clinicalScoreDetails;
+                              
+                              let weightedSumFormula = '';
+                              let weightedSumCalculation = '';
+                              let weightedSum = 0;
+                              
+                              // Build the formula components
+                              Object.entries(emotions).forEach(([emotion, value], i) => {
+                                const weight = emotionWeights[emotion] || 0;
+                                const weightedValue = value * weight;
+                                weightedSum += weightedValue;
+                                
+                                // Formula representation
+                                weightedSumFormula += `${i > 0 ? ' + ' : ''}(${value.toFixed(2)} × ${weight.toFixed(1)})`;
+                                
+                                // Calculation representation
+                                weightedSumCalculation += `${i > 0 ? ' + ' : ''}${weightedValue.toFixed(3)}`;
+                              });
+                              
+                              return (
+                                <>
+                                  {/* Step 1: Sum of weighted emotions */}
+                                  <Typography variant="body2" color="rgba(255,255,255,0.9)">
+                                    1. Weighted Sum = {weightedSumFormula}
+                                  </Typography>
+                                  
+                                  <Typography variant="body2" color="rgba(255,255,255,0.9)" sx={{ mt: 0.5, pl: 1 }}>
+                                    = {weightedSumCalculation} = {weightedSum.toFixed(3)}
+                                  </Typography>
+                                  
+                                  {/* Step 2: Add shift factor */}
+                                  <Typography variant="body2" color="rgba(255,255,255,0.9)" sx={{ mt: 0.5 }}>
+                                    2. Add Shift Factor = {weightedSum.toFixed(3)} + 1.3 = {(weightedSum + 1.3).toFixed(3)}
+                                  </Typography>
+                                  
+                                  {/* Step 3: Normalize */}
+                                  <Typography variant="body2" color="rgba(255,255,255,0.9)" sx={{ mt: 0.5 }}>
+                                    3. Normalize = {(weightedSum + 1.3).toFixed(3)} ÷ 3.6 = {((weightedSum + 1.3) / 3.6).toFixed(3)}
+                                  </Typography>
+                                  
+                                  {/* Final Score */}
+                                  <Typography variant="body2" color="rgba(255,255,255,1)" fontWeight="bold" sx={{ mt: 1 }}>
+                                    Final {indicator.level} Score = {indicator.score.toFixed(2)}
+                                  </Typography>
+                                </>
+                              );
+                            })()}                            
+                          </Box>                        </Box>
                         
                         <Typography variant="subtitle2" fontWeight="bold" sx={{ mt: 1.5, mb: 0.5 }}>
                           Emotion Weights:
@@ -1241,7 +1589,7 @@ const DepressionPredictionsUI = ({
               The scoring system ranges from 0 (no depression) to 1 (severe depression).
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              <strong>Score ranges:</strong> 0.00-0.30 (No Depression), 0.30-0.49 (Mild), 
+              <strong>Score ranges:</strong> 0.00-0.40 (No Depression), 0.30-0.49 (Mild), 
               0.50-0.69 (Moderate), 0.70-0.85 (Severe), 0.85-1.00 (Very Severe)
             </Typography>
           </Paper>
