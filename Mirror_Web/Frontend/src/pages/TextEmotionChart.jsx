@@ -147,7 +147,7 @@ const EmotionChart = ({ emotions }) => {
       >
         <CardContent>
           <Typography
-            sx={{ fontSize: "17px", marginLeft: 2, margiTop: "20px" }}
+            sx={{ fontSize: "17px", marginLeft: 2, paddingTop: "20px" }}
           >
             VADER Compound Score
           </Typography>
@@ -169,7 +169,7 @@ const EmotionChart = ({ emotions }) => {
       >
         <CardContent>
           <Typography
-            sx={{ fontSize: "17px", marginLeft: 2, margiTop: "20px" }}
+            sx={{ fontSize: "17px", marginLeft: 2, paddingTop: "20px" }}
           >
             TextBlob Polarity and Subjectivity
           </Typography>
@@ -186,7 +186,7 @@ const EmotionChart = ({ emotions }) => {
           border: "1px solid #e0e0e0",
           boxShadow: `0 4px 8px rgba(0, 0, 0, 0.05),`,
           transition: "all 0.3s ease-in-out",
-          marginBottom:2
+          marginBottom:10
         }}
       >
         <CardContent>
