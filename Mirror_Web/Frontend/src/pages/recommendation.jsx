@@ -7,7 +7,21 @@ import {
   CardContent,
   CircularProgress,
   Divider,
+  Paper,
+  Grid,
+  useTheme,
+  Avatar,
+  LinearProgress,
+  Chip,
 } from "@mui/material";
+import { motion } from "framer-motion";
+import MoodIcon from "@mui/icons-material/Mood";
+import SentimentSatisfiedAltIcon from "@mui/icons-material/SentimentSatisfiedAlt";
+import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
+import SentimentDissatisfiedIcon from "@mui/icons-material/SentimentDissatisfied";
+import SentimentSatisfiedIcon from "@mui/icons-material/SentimentSatisfied";
+import PsychologyIcon from "@mui/icons-material/Psychology";
+import RecommendIcon from "@mui/icons-material/Recommend";
 
 // Utility function to convert Markdown to plain text
 const stripMarkdown = (markdown) => {
@@ -30,6 +44,102 @@ const Recommendations = () => {
   const [recommendation, setRecommendation] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const theme = useTheme();
+  
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        when: "beforeChildren",
+        staggerChildren: 0.2
+      }
+    }
+  };
+  
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.5, ease: "easeOut" }
+    }
+  };
+  
+  const fadeInVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { duration: 1 }
+    }
+  };
+  
+  const titleVariants = {
+    hidden: { y: -30, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10
+      }
+    }
+  };
+  
+  const cardVariants = {
+    hidden: { y: 50, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 12,
+        delay: 0.3
+      }
+    },
+    hover: {
+      y: -10,
+      boxShadow: "0 20px 30px rgba(0,0,0,0.15)",
+      transition: { duration: 0.3 }
+    }
+  };
+  
+  // Helper function to get emotion icon
+  const getEmotionIcon = (emotion, value) => {
+    if (emotion === "joy" || emotion === "neutral") {
+      return value > 0.5 ? <SentimentSatisfiedAltIcon /> : <SentimentSatisfiedIcon />;
+    } else if (emotion === "sadness") {
+      return <SentimentDissatisfiedIcon />;
+    } else if (emotion === "anger" || emotion === "fear") {
+      return <SentimentVeryDissatisfiedIcon />;
+    } else {
+      return <MoodIcon />;
+    }
+  };
+  
+  // Get emotion color
+  const getEmotionColor = (emotion) => {
+    switch(emotion) {
+      case "joy":
+        return "#4caf50";
+      case "sadness":
+        return "#5c6bc0";
+      case "anger":
+        return "#f44336";
+      case "fear":
+        return "#ff9800";
+      case "surprise":
+        return "#9c27b0";
+      case "neutral":
+        return "#2196f3";
+      default:
+        return "#607d8b";
+    }
+  };
 
   // Fetch emotion data from MongoDB via API
   const fetchEmotionData = async () => {
@@ -118,7 +228,7 @@ const Recommendations = () => {
   // Fetch AI recommendation from OpenRouter API
   const fetchRecommendation = async (avgEmotions) => {
     setLoading(true);
-    const OPENROUTER_API_KEY = "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";
+    const OPENROUTER_API_KEY = "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";
     const YOUR_SITE_URL = "http://localhost:3000";
     const YOUR_SITE_NAME = "Mental Health App";
 
@@ -130,7 +240,7 @@ const Recommendations = () => {
       Fear: ${avgEmotions.fear.toFixed(4)},
       Surprise: ${avgEmotions.surprise.toFixed(4)},
       Neutral: ${avgEmotions.neutral.toFixed(4)},
-      provide personalized recommendations to help the user maintain their mental health and well-being.
+      provide personalized recommendations.
     `;
 
     const requestBody = {
@@ -201,133 +311,348 @@ const Recommendations = () => {
   }, []);
 
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         background: "linear-gradient(135deg, #e8eef3 0%, #f5f7fa 100%)",
         minHeight: "100vh",
-        padding: "60px 0",
+        padding: { xs: "40px 0", md: "60px 0" },
+        position: "relative",
+        overflow: "hidden"
       }}
     >
-      <Box sx={{ textAlign: "center", py: 6 }}>
-        {/* Header */}
-        <Typography
-          variant="h2"
-          sx={{
-            fontWeight: 700,
-            color: "#1a3c5e",
-            fontSize: { xs: "32px", md: "48px" },
-            mb: 2,
-            letterSpacing: "1px",
-          }}
-        >
-          Your Personalized Recommendations
-        </Typography>
-        <Typography
-          variant="subtitle1"
-          sx={{
-            color: "#666",
-            fontSize: "20px",
-            maxWidth: "800px",
-            mx: "auto",
-            mb: 6,
-          }}
-        >
-          Based on your emotional data, here’s how you can maintain your mental well-being.
-        </Typography>
+      {/* Decorative elements */}
+      <Box 
+        component={motion.div}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.6 }}
+        transition={{ delay: 1, duration: 1.5 }}
+        sx={{ 
+          position: "absolute",
+          top: "-10%",
+          left: "-10%",
+          width: "300px",
+          height: "300px",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(33,150,243,0.1) 0%, rgba(33,150,243,0) 70%)",
+          zIndex: 0
+        }}
+      />
+      
+      <Box 
+        component={motion.div}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.5 }}
+        transition={{ delay: 1.2, duration: 1.5 }}
+        sx={{ 
+          position: "absolute",
+          bottom: "5%",
+          right: "5%",
+          width: "250px",
+          height: "250px",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(76,175,80,0.1) 0%, rgba(76,175,80,0) 70%)",
+          zIndex: 0
+        }}
+      />
+      
+      <Container maxWidth="lg" component={motion.div} variants={containerVariants} initial="hidden" animate="visible">
+        {/* Enhanced Header */}
+        <Box sx={{ textAlign: "center", py: { xs: 4, md: 6 }, position: "relative", zIndex: 1 }}>
+          <motion.div variants={titleVariants}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", mb: 2 }}>
+              <Avatar 
+                sx={{ 
+                  bgcolor: "#1a3c5e", 
+                  width: 60, 
+                  height: 60, 
+                  mr: 2,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                }}
+              >
+                <PsychologyIcon sx={{ fontSize: 40 }} />
+              </Avatar>
+              <Typography
+                variant="h2"
+                sx={{
+                  fontWeight: 700,
+                  color: "#1a3c5e",
+                  fontSize: { xs: "32px", md: "48px" },
+                  letterSpacing: "0.5px",
+                  background: "linear-gradient(45deg, #1a3c5e 30%, #4a8db7 90%)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Your Recommendations
+              </Typography>
+            </Box>
+          </motion.div>
+          
+          <motion.div variants={fadeInVariants}>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                color: "#566573",
+                fontSize: { xs: "16px", md: "20px" },
+                maxWidth: "800px",
+                mx: "auto",
+                mb: { xs: 4, md: 6 },
+                fontWeight: 300,
+                lineHeight: 1.6
+              }}
+            >
+              Based on your emotional data analysis, here's how you can maintain and improve your mental well-being.
+            </Typography>
+          </motion.div>
 
-        {/* Main Content */}
-        <Container maxWidth="md">
-          <Card
-            sx={{
-              backgroundColor: "#fff",
-              borderRadius: "16px",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
-              p: 4,
-            }}
-          >
-            <CardContent>
-              {loading ? (
-                <Box sx={{ textAlign: "center", py: 4 }}>
-                  <CircularProgress sx={{ color: "#1a3c5e" }} />
-                  <Typography sx={{ mt: 2, color: "#666" }}>
-                    Loading your emotional data...
-                  </Typography>
-                </Box>
-              ) : emotions ? (
-                <>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 600,
-                      color: "#1a3c5e",
-                      mb: 3,
-                      textTransform: "uppercase",
+        {/* Main Content - Enhanced with animations */}
+        <motion.div variants={cardVariants} whileHover="hover">
+          <Container maxWidth="md">
+            <Card
+              sx={{
+                backgroundColor: "#fff",
+                borderRadius: "16px",
+                boxShadow: "0 8px 30px rgba(26, 60, 94, 0.15)",
+                p: { xs: 2, sm: 4 },
+                overflow: "hidden",
+                position: "relative"
+              }}
+            >
+              {/* Decorative card elements */}
+              <Box 
+                sx={{ 
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "4px",
+                  background: "linear-gradient(90deg, #1a3c5e, #4a8db7)"
+                }} 
+              />
+              
+              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                {loading ? (
+                  <Box 
+                    component={motion.div}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    sx={{ 
+                      textAlign: "center", 
+                      py: 8,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center"
                     }}
                   >
-                    Your Emotional Profile
-                  </Typography>
-                  <Box sx={{ mb: 4 }}>
-                    {Object.entries(emotions).map(([emotion, value]) => (
-                      <Box
-                        key={emotion}
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          py: 1,
-                          borderBottom: "1px solid #eee",
+                    <CircularProgress 
+                      sx={{ 
+                        color: "#1a3c5e",
+                        mb: 3
+                      }} 
+                      size={60}
+                      thickness={4}
+                    />
+                    <Typography 
+                      variant="h6"
+                      sx={{ 
+                        mt: 2, 
+                        color: "#566573",
+                        fontWeight: 500 
+                      }}
+                    >
+                      Processing your emotional data...
+                    </Typography>
+                  </Box>
+                ) : emotions ? (
+                  <>
+                    <motion.div variants={itemVariants}>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                        <Avatar sx={{ bgcolor: "#1a3c5e", mr: 2 }}>
+                          <MoodIcon />
+                        </Avatar>
+                        <Typography
+                          variant="h5"
+                          sx={{
+                            fontWeight: 600,
+                            color: "#1a3c5e",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Your Emotional Profile
+                        </Typography>
+                      </Box>
+                      
+                      <Grid container spacing={2} sx={{ mb: 4 }}>
+                        {Object.entries(emotions).map(([emotion, value], index) => (
+                          <Grid item xs={12} sm={6} key={emotion}>
+                            <motion.div
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.1 + 0.3, duration: 0.5 }}
+                            >
+                              <Paper 
+                                elevation={1}
+                                sx={{ 
+                                  p: 2, 
+                                  borderRadius: 2,
+                                  background: `linear-gradient(to right, ${getEmotionColor(emotion)}10, ${getEmotionColor(emotion)}05)`,
+                                  border: `1px solid ${getEmotionColor(emotion)}30`,
+                                }}
+                              >
+                                <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+                                  <Avatar 
+                                    sx={{ 
+                                      bgcolor: `${getEmotionColor(emotion)}20`, 
+                                      color: getEmotionColor(emotion),
+                                      width: 32,
+                                      height: 32,
+                                      mr: 1.5
+                                    }}
+                                  >
+                                    {getEmotionIcon(emotion, value)}
+                                  </Avatar>
+                                  <Typography
+                                    variant="body1"
+                                    sx={{ 
+                                      color: "#333", 
+                                      textTransform: "capitalize",
+                                      fontWeight: 600
+                                    }}
+                                  >
+                                    {emotion}
+                                  </Typography>
+                                  <Box sx={{ ml: "auto" }}>
+                                    <Chip 
+                                      label={`${(value * 100).toFixed(1)}%`} 
+                                      size="small"
+                                      sx={{
+                                        bgcolor: getEmotionColor(emotion),
+                                        color: "#fff",
+                                        fontWeight: 600
+                                      }}
+                                    />
+                                  </Box>
+                                </Box>
+                                <LinearProgress 
+                                  variant="determinate" 
+                                  value={value * 100}
+                                  sx={{ 
+                                    borderRadius: 5,
+                                    height: 8,
+                                    bgcolor: `${getEmotionColor(emotion)}20`,
+                                    ".MuiLinearProgress-bar": {
+                                      bgcolor: getEmotionColor(emotion) 
+                                    }
+                                  }} 
+                                />
+                              </Paper>
+                            </motion.div>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </motion.div>
+
+                    <Divider 
+                      sx={{ 
+                        my: 4,
+                        "&::before, &::after": {
+                          borderColor: "rgba(26, 60, 94, 0.2)",
+                        }
+                      }}
+                    >
+                      <Chip 
+                        icon={<RecommendIcon />}
+                        label="Recommendations" 
+                        sx={{ 
+                          bgcolor: "#1a3c5e", 
+                          color: "#fff",
+                          fontWeight: 600,
+                          px: 1
+                        }}
+                      />
+                    </Divider>
+
+                    <motion.div variants={itemVariants}>
+                      <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
+                        <Avatar sx={{ bgcolor: "#1a3c5e", mr: 2 }}>
+                          <RecommendIcon />
+                        </Avatar>
+                        <Typography
+                          variant="h5"
+                          sx={{
+                            fontWeight: 600,
+                            color: "#1a3c5e",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          AI-Powered Insights
+                        </Typography>
+                      </Box>
+                      <Paper 
+                        elevation={0}
+                        sx={{ 
+                          p: 3, 
+                          borderRadius: 2,
+                          bgcolor: "rgba(26, 60, 94, 0.03)",
+                          border: "1px dashed rgba(26, 60, 94, 0.2)"
                         }}
                       >
                         <Typography
                           variant="body1"
-                          sx={{ color: "#555", textTransform: "capitalize" }}
+                          sx={{
+                            color: "#333",
+                            lineHeight: 1.8,
+                            fontSize: "16px",
+                            textAlign: "justify",
+                            fontWeight: 300
+                          }}
                         >
-                          {emotion}
+                          {recommendation}
                         </Typography>
-                        <Typography variant="body1" sx={{ color: "#1a3c5e", fontWeight: 600 }}>
-                          {(value * 100).toFixed(2)}%
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-
-                  <Divider sx={{ my: 4 }} />
-
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 600,
-                      color: "#1a3c5e",
-                      mb: 3,
-                      textTransform: "uppercase",
-                    }}
+                      </Paper>
+                    </motion.div>
+                  </>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6 }}
                   >
-                    AI-Powered Recommendations
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: "#555",
-                      lineHeight: 1.8,
-                      fontSize: "16px",
-                      textAlign: "justify",
-                    }}
-                  >
-                    {recommendation}
-                  </Typography>
-                </>
-              ) : (
-                <Typography
-                  variant="body1"
-                  sx={{ color: "#d32f2f", py: 4, textAlign: "center" }}
-                >
-                  Error: {error || "Unable to load emotional data"}
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Container>
-      </Box>
-    </div>
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 4,
+                        borderRadius: 2,
+                        bgcolor: "#ffebee",
+                        border: "1px solid #ffcdd2",
+                        textAlign: "center",
+                      }}
+                    >
+                      <SentimentDissatisfiedIcon sx={{ fontSize: 60, color: "#d32f2f", mb: 2, opacity: 0.7 }} />
+                      <Typography
+                        variant="h6"
+                        sx={{ color: "#d32f2f", py: 1, fontWeight: 600 }}
+                      >
+                        Error Loading Data
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{ color: "#d32f2f" }}
+                      >
+                        {error || "Unable to load emotional data. Please try again later."}
+                      </Typography>
+                    </Paper>
+                  </motion.div>
+                )}
+              </CardContent>
+            </Card>
+          </Container>
+        </motion.div>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 
