@@ -26,7 +26,6 @@ import {
 } from 'chart.js';
 
 // Import icons
-import PsychologyIcon from '@mui/icons-material/Psychology';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 import InfoIcon from '@mui/icons-material/Info';
@@ -349,16 +348,248 @@ const DepressionPredictionsUI = ({
             } 
           } 
         }}
-      >
-        {/* Page Title */}
-        <motion.div variants={boxVariants}>
-          <Typography variant="h3" component="h1" align="center" gutterBottom>
-            Depression Prediction
-          </Typography>
-          <Typography variant="body1" align="center" color="textSecondary" sx={{ mb: 4 }}>
-            Analysis based on emotional indicators from text, voice, and facial expressions
-          </Typography>
-        </motion.div>        {/* Score Cards */}
+      >        {/* Page Title - Enhanced with colors and animations */}
+        <motion.div 
+          variants={boxVariants}
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ 
+            type: "spring", 
+            duration: 1.2, 
+            bounce: 0.4 
+          }}
+        >          <Box 
+            sx={{ 
+              background: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)', 
+              p: 4, 
+              borderRadius: 4,
+              boxShadow: '0 10px 25px rgba(42, 117, 252, 0.3)',
+              mb: 4,
+              position: 'relative',
+              overflow: 'hidden',
+              width: '80%',
+              mx: 'auto' /* Centers the box horizontally */
+            }}
+          >            {/* Animated background elements */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 0.07, scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              style={{
+                position: 'absolute',
+                top: '-10%',
+                right: '-5%',
+                width: '300px',
+                height: '300px',
+                borderRadius: '50%',
+                background: 'white',
+                zIndex: 0
+              }}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 0.05, scale: 1 }}
+              transition={{ delay: 0.5, duration: 1 }}
+              style={{
+                position: 'absolute',
+                bottom: '-15%',
+                left: '10%',
+                width: '250px',
+                height: '250px',
+                borderRadius: '50%',
+                background: 'white',
+                zIndex: 0
+              }}
+            />
+            <motion.div
+              animate={{ 
+                x: [0, 10, 0, -10, 0], 
+                y: [0, -10, 0, 10, 0],
+                opacity: [0.04, 0.06, 0.04]
+              }}
+              transition={{ 
+                repeat: Infinity, 
+                duration: 8,
+                ease: "easeInOut" 
+              }}
+              style={{
+                position: 'absolute',
+                top: '20%',
+                left: '25%',
+                width: '120px',
+                height: '120px',
+                borderRadius: '50%',
+                background: 'white',
+                zIndex: 0
+              }}
+            />
+            <motion.div
+              animate={{ 
+                x: [0, -15, 0, 15, 0], 
+                y: [0, 10, 0, -10, 0],
+                opacity: [0.03, 0.05, 0.03]
+              }}
+              transition={{ 
+                repeat: Infinity, 
+                duration: 10,
+                ease: "easeInOut" 
+              }}
+              style={{
+                position: 'absolute',
+                bottom: '30%',
+                right: '20%',
+                width: '100px',
+                height: '100px',
+                borderRadius: '50%',
+                background: 'white',
+                zIndex: 0
+              }}
+            />
+            <Box sx={{ position: 'relative', zIndex: 1 }}>              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.8 }}
+              >                <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', width: '100%' }}>
+                  <Typography 
+                    variant="h2" 
+                    component="h1" 
+                    align="center" 
+                    gutterBottom 
+                    sx={{ 
+                      color: 'white', 
+                      fontWeight: 700,
+                      textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+                      letterSpacing: '0.5px',
+                      position: 'relative',
+                      textAlign: 'center',
+                      '&::after': {
+                        content: '""',
+                        display: 'block',
+                        width: '100px',
+                        height: '4px',
+                        background: 'rgba(255,255,255,0.7)',
+                        borderRadius: '2px',
+                        margin: '8px auto 0',
+                      }
+                    }}
+                  >
+                    <motion.span
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3, duration: 0.5 }}
+                      style={{ display: 'inline-block' }}
+                    >
+                      Depression
+                    </motion.span>{' '}
+                    <motion.span
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5, duration: 0.5 }}
+                      style={{ 
+                        display: 'inline-block',
+                        background: 'linear-gradient(90deg, #ffffff, #a2d2ff)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                      }}
+                    >
+                      Prediction
+                    </motion.span>
+                  </Typography>
+                  
+                  {/* Decorative elements */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 0.7, scale: 1 }}
+                    transition={{ delay: 0.7, duration: 0.5 }}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      right: '15%',
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: 'white'
+                    }}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 0.5, scale: 1 }}
+                    transition={{ delay: 0.9, duration: 0.5 }}
+                    style={{
+                      position: 'absolute',
+                      top: '30%',
+                      left: '20%',
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: 'white'
+                    }}
+                  />
+                </Box>
+              </motion.div>
+                <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 0.8 }}
+              >
+                <Box sx={{ 
+                  position: 'relative',
+                  mt: 3,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: '60px' }}
+                    transition={{ delay: 1, duration: 0.6 }}
+                    style={{
+                      height: '1px',
+                      background: 'rgba(255,255,255,0.5)',
+                      marginRight: '15px'
+                    }}
+                  />
+                  <Typography 
+                    variant="h6" 
+                    align="center" 
+                    sx={{ 
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      maxWidth: '800px',
+                      mx: 'auto',
+                      lineHeight: 1.6,
+                      fontWeight: 300,
+                      letterSpacing: '0.5px',
+                      textTransform: 'none',
+                      px: 2
+                    }}
+                  >
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ 
+                        delay: 0.7, 
+                        duration: 0.3,
+                        staggerChildren: 0.08 
+                      }}
+                    >
+                      Analysis based on emotional indicators from text, voice, and facial expressions
+                    </motion.span>
+                  </Typography>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: '60px' }}
+                    transition={{ delay: 1, duration: 0.6 }}
+                    style={{
+                      height: '1px',
+                      background: 'rgba(255,255,255,0.5)',
+                      marginLeft: '15px'
+                    }}
+                  />
+                </Box>
+              </motion.div>
+            </Box>
+          </Box>
+        </motion.div>{/* Score Cards */}
         <motion.div style={{ width: '100%' }}>
           <Grid container spacing={3} sx={{ mb: 4 }} alignItems="stretch">
             {indicators.map((indicator, index) => {
