@@ -23,11 +23,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("emotion_background")
 
 class EmotionBackgroundProcessor:
-    def __init__(self, status_update_callback, capture_interval=1.0, lazy_load=True):
+    def __init__(self, status_update_callback, capture_interval=1.0, lazy_load=True, no_personalization=True):
         """
         status_update_callback: function(status: bool) to update dot indicator (True=working, False=not working)
         capture_interval: seconds between webcam frame captures
         lazy_load: if True, load models only when needed
+        no_personalization: if True, uses the largest face detected instead of matching against reference face
         """
         self.status_update_callback = status_update_callback
         self.capture_interval = capture_interval
@@ -48,22 +49,31 @@ class EmotionBackgroundProcessor:
 
         # Initialize the aggregator
         self.save_path = os.path.join(self.BASE_DIR, "db", "FER", "emotion_data.json")
-        self.aggregator = EmotionAggregator(window_seconds=60, save_path=self.save_path)
+        self.aggregator = EmotionAggregator(window_seconds=20, save_path=self.save_path)
         
-        # Load reference embedding from file (if available); otherwise, use a dummy vector
-        ref_path = os.path.join(self.BASE_DIR, "db", "FER", "average_embedding.npy")
-        if os.path.exists(ref_path):
-            self.reference_embedding = np.load(ref_path)
+        # Set personalization flag based on parameter
+        # We'll keep the reference embedding structure for backward compatibility
+        # but it won't be used for face matching if no_personalization=True
+        self.no_personalization = no_personalization
+        
+        # Only load reference embedding if personalization is enabled
+        if not no_personalization:
+            ref_path = os.path.join(self.BASE_DIR, "db", "FER", "average_embedding.npy")
+            if os.path.exists(ref_path):
+                self.reference_embedding = np.load(ref_path)
+            else:
+                self.reference_embedding = np.zeros(512)  # Dummy embedding
         else:
-            self.reference_embedding = np.zeros(512)
-        self.similarity_threshold = 0.6
+            self.reference_embedding = np.zeros(512)  # Dummy embedding
+            
+        self.similarity_threshold = 0.6  # Only used when no_personalization=False
         
         # Load models if not using lazy loading
         if not lazy_load:
             self._load_models()
             
         # Initiate session aggregator in separate daemon threads
-        self.session_aggregator = SessionAggregator(interval_seconds=310, emotion_file=self.save_path)
+        self.session_aggregator = SessionAggregator(interval_seconds=60, emotion_file=self.save_path)
         self.session_thread = threading.Thread(target=self.session_aggregator.run, daemon=True)
         self.session_thread.start()
         logger.info("Session aggregator thread started.")
@@ -131,25 +141,47 @@ class EmotionBackgroundProcessor:
             
         results = self.detector.detect_and_predict(frame)
         if results:
-            best_face = None
-            best_similarity = 0
-            for (box, emotion_dict) in results:
-                x1, y1, x2, y2 = box
-                face_roi = frame[y1:y2, x1:x2]
-                if face_roi.size != 0:
-                    pil_face = Image.fromarray(cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB))
-                    face_embedding = self.get_face_embedding(pil_face)
-                    if face_embedding is not None:
-                        similarity = 1 - cosine(face_embedding, self.reference_embedding)
-                        if similarity > self.similarity_threshold and similarity > best_similarity:
-                            best_face = (emotion_dict, similarity)
-                            best_similarity = similarity
-            if best_face:
-                emotion_dict, similarity = best_face
-                if "Disgust" in emotion_dict and "Sad" in emotion_dict:
-                    emotion_dict["Sad"] += emotion_dict["Disgust"]
-                    del emotion_dict["Disgust"]
-                self.aggregator.add_emotion(emotion_dict)
+            if self.no_personalization:
+                # Without personalization: process the largest face
+                largest_face = None
+                largest_area = 0
+                
+                for (box, emotion_dict) in results:
+                    x1, y1, x2, y2 = box
+                    face_area = (x2 - x1) * (y2 - y1)
+                    
+                    # Find the largest face in the frame
+                    if face_area > largest_area:
+                        largest_face = emotion_dict
+                        largest_area = face_area
+                
+                if largest_face:
+                    # Merge "Disgust" into "Sad" if needed
+                    if "Disgust" in largest_face and "Sad" in largest_face:
+                        largest_face["Sad"] += largest_face["Disgust"]
+                        del largest_face["Disgust"]
+                    self.aggregator.add_emotion(largest_face)
+            else:
+                # Original personalization code
+                best_face = None
+                best_similarity = 0
+                for (box, emotion_dict) in results:
+                    x1, y1, x2, y2 = box
+                    face_roi = frame[y1:y2, x1:x2]
+                    if face_roi.size != 0:
+                        pil_face = Image.fromarray(cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB))
+                        face_embedding = self.get_face_embedding(pil_face)
+                        if face_embedding is not None:
+                            similarity = 1 - cosine(face_embedding, self.reference_embedding)
+                            if similarity > self.similarity_threshold and similarity > best_similarity:
+                                best_face = (emotion_dict, similarity)
+                                best_similarity = similarity
+                if best_face:
+                    emotion_dict, similarity = best_face
+                    if "Disgust" in emotion_dict and "Sad" in emotion_dict:
+                        emotion_dict["Sad"] += emotion_dict["Disgust"]
+                        del emotion_dict["Disgust"]
+                    self.aggregator.add_emotion(emotion_dict)
         self.status_update_callback(True)
 
     def run(self):
