@@ -144,8 +144,8 @@ const Recommendations = () => {
   // Fetch emotion data from MongoDB via API
   const fetchEmotionData = async () => {
     try {
-      console.log("Fetching data from API: http://localhost:4000/api/text/textaggregateemotions");
-      const response = await fetch("http://localhost:4000/api/text/textaggregateemotions", {
+      console.log("Fetching data from API: http://localhost:4000/api/average/combined-5min-weighted-average");
+      const response = await fetch("http://localhost:4000/api/average/combined-5min-weighted-average", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

@@ -232,31 +232,7 @@ export const formatTrendChartData = (trendData, theme) => {
   // Create datasets for enhanced visual effects
   const datasets = [
     // Shadow effect line (larger, behind main line)
-    {
-      label: 'Trend Shadow',
-      data: depressionScores,
-      borderColor: 'rgba(33, 150, 243, 0.3)',
-      backgroundColor: 'transparent',
-      borderWidth: 8,
-      pointRadius: 0,
-      pointHoverRadius: 0,
-      tension: 0.4,
-      fill: false,
-      cubicInterpolationMode: 'monotone',
-    },
-    // Glowing effect line
-    {
-      label: 'Trend Glow',
-      data: depressionScores,
-      borderColor: 'rgba(33, 150, 243, 0.2)',
-      backgroundColor: 'transparent',
-      borderWidth: 12,
-      pointRadius: 0,
-      pointHoverRadius: 0,
-      borderDash: [5, 5],
-      tension: 0.4,
-      fill: false,
-    },
+    
     // Main dataset line
     {
       label: 'Depression Score',
